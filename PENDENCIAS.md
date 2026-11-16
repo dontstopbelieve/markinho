@@ -9,6 +9,9 @@ sistema, privacidade, anonimização (com avisos), cobertura de testes, decisão
 aberto e **licença AGPL-3.0 aplicada**. Instalador PADRÃO (Windows/Linux) gerado sem erros na execução
 #10 (commit dfc39ec, ainda sem a licença).
 
+Instaladores **LEVE e PADRÃO** (Windows e Linux) gerados sem erros em 16/11/2026, já com a licença
+AGPL-3.0 e o ícone novo — falta o teste no Windows.
+
 **Próximos passos, em ordem:**
 1. Dono testa no Windows o instalador PADRÃO (anonimização, relatório de erro, botão direito, pastas
    lembradas, Ver original ao lado) e relata o que achar.
