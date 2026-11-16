@@ -24,6 +24,8 @@ class Credit:
 
 INCLUDED: tuple[Credit, ...] = (
     Credit("Python", "Python Software Foundation", "PSF-2.0", "https://www.python.org", "Linguagem do programa"),
+    Credit("Raleway (fonte)", "The Raleway Project Authors", "OFL-1.1", "https://github.com/impallari/Raleway",
+           "Letras “MD” do ícone (convertidas em desenho; a fonte não é instalada)"),
     Credit("Qt / PySide6", "The Qt Company e colaboradores", "LGPL-3.0", "https://www.qt.io/qt-for-python",
            "Interface gráfica e visualizador de PDF", "PySide6"),
     Credit("pypdf", "Mathieu Fenniak e colaboradores", "BSD-3-Clause", "https://github.com/py-pdf/pypdf",

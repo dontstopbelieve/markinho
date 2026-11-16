@@ -78,7 +78,7 @@ markinho/
   sanitize.py      limpeza antes de exportar: sem downloads, sem scripts, imagens só das pastas do MCP
   __main__.py      `markinho` sem argumentos abre a interface; com arquivos roda no terminal
 packaging/         build.py (todos os instaladores), markinho.spec (PyInstaller por edição),
-                   windows/ (Inno Setup, WiX), icons/ (ícone atual)
+                   windows/ (Inno Setup, WiX), icons/ (ícone: markinho.svg é o original; LEIA-ME.md explica)
 tests/             pytest; fixtures/ com .doc/.xls/.ppt/.odt/.rtf de teste
 SEGURANCA.md       registro das verificações de segurança: acrescente uma entrada a cada nova verificação
 ```

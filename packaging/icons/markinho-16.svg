@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16">
+  <title>Markinho (16 px)</title>
+  <!-- versão para 16 px: linhas grossas, sem letras -->
+  <rect x="0" y="0" width="512" height="512" rx="96" fill="#002776"/>
+  <path d="M318 432 H130 A34 34 0 0 1 96 398 V196" fill="none" stroke="#1DBF4E"
+        stroke-width="72" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M96 40 L18 196 H174 Z" fill="#1DBF4E"/>
+  <path d="M206 84 H326 L416 174 V316" fill="none" stroke="#FFDF00"
+        stroke-width="72" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M416 472 L338 316 H494 Z" fill="#FFDF00"/>
+</svg>

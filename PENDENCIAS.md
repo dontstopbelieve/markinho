@@ -12,7 +12,7 @@ aberto e **licença AGPL-3.0 aplicada**. Instalador PADRÃO (Windows/Linux) gera
 **Próximos passos, em ordem:**
 1. Dono testa no Windows o instalador PADRÃO (anonimização, relatório de erro, botão direito, pastas
    lembradas, Ver original ao lado) e relata o que achar.
-2. Ícone (dono decide; começar do zero).
+2. ~~Ícone~~ definido em 16/11 (packaging/icons/).
 3. Antes de tornar público: revisar o histórico do Git, avisar que pull requests não são aceitos,
    modelo de relato de problema (issue).
 4. Tornar o repositório público (o dono aperta o botão) → GitHub Actions passa a ser gratuito.
@@ -33,7 +33,8 @@ aberto e **licença AGPL-3.0 aplicada**. Instalador PADRÃO (Windows/Linux) gera
 - [ ] **Registro da marca “Markinho” no INPI** (opcional; tem taxa, com desconto para pessoa física
       e microempresa). O subtítulo “Conversor Markdown” é descritivo e não se registra.
 - [x] **Repositório renomeado** para `dontstopbelieve/markinho` (13/11/2026).
-- [ ] **Ícone**: a definir.
+- [x] **Ícone** (16/11/2026): folha com setas verde e amarela e “MD” (Raleway) em fundo azul da
+      bandeira — arquivos e instruções em `packaging/icons/` (LEIA-ME.md). Mascote (foca bebê): em estudo.
 - [x] **Modelo do projeto** (decidido em 16/11/2026): **gratuito e de código aberto, “como está”**, sem
       venda e sem obrigação de atualizações ou suporte (projeto pessoal, versões quando o dono quiser).
       As três edições continuam, como tamanhos de download, todas grátis.

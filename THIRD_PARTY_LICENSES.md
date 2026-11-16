@@ -17,6 +17,7 @@ inspiraram ideias (markitdown, Marker, PyMuPDF4LLM, Unstructured, file2markdown)
 | Componente | Licença | Observação |
 |---|---|---|
 | Python | PSF License | https://docs.python.org/3/license.html |
+| Fonte Raleway (letras “MD” do ícone) | SIL Open Font License 1.1 | https://github.com/impallari/Raleway — as letras foram convertidas em desenho no ícone; a fonte em si não é distribuída. Texto da licença em `licenses/Raleway-OFL-1.1.txt` |
 | Qt 6 / PySide6 / Shiboken6 | **LGPL-3.0** | Usado por ligação dinâmica: as bibliotecas do Qt ficam como arquivos separados na pasta do programa e podem ser substituídas pelo usuário. Código-fonte: https://code.qt.io |
 | pypdf | BSD-3-Clause | https://github.com/py-pdf/pypdf |
 | pdfplumber, pdfminer.six | MIT | https://github.com/jsvine/pdfplumber |
