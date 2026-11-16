@@ -57,8 +57,8 @@ aberto e **licença AGPL-3.0 aplicada**. Instalador PADRÃO (Windows/Linux) gera
       edições e nas ferramentas de desenvolvimento. Nome real trocado por fictício num teste.
 - [x] **Histórico recomeçado** (16/11/2026): um único commit inicial; o histórico antigo (com rascunhos
       de ícone e um nome de usuário de teste) foi guardado pelo dono fora do GitHub
-      (`markinho-historico-ate-2026-11-16.bundle`). Antes de tornar público: apagar as execuções antigas
-      do GitHub Actions (cada execução > “…” > Delete workflow run), que apontam para commits antigos.
+      (`markinho-historico-ate-2026-11-16.bundle`). Execuções antigas do GitHub Actions apagadas
+      pelo dono (16/11/2026).
 - [ ] **Antes de tornar público**: avisar que pull requests não são aceitos, modelo de issue simples.
 - [ ] **Depois de público**: ligar os alertas do Dependabot (Settings > Code security > Dependabot
       alerts) — avisam sozinhos quando uma biblioteca ganha falha conhecida. Rodar `pip-audit` antes de
