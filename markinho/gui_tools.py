@@ -1,0 +1,714 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (C) 2026 dontstopbelieve — Markinho
+"""Janelas das ferramentas: Copiar para IA, Dividir por títulos, Pasta monitorada, Relatório de erro e
+Primeira abertura."""
+from __future__ import annotations
+
+from pathlib import Path
+
+from PySide6.QtCore import QSettings, Qt
+from PySide6.QtGui import QGuiApplication
+from PySide6.QtWidgets import (
+    QButtonGroup, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout, QGroupBox,
+    QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton,
+    QRadioButton, QSpinBox, QVBoxLayout,
+)
+
+
+WARN_STYLE = ("QLabel{background: #fff3cd; color: #3d2e00; border: 1px solid #e0b100; border-radius: 4px; "
+              "padding: 6px; font-size: 12px;}")
+
+
+def anon_warning(text: str | None = None) -> QLabel:
+    """Quadro amarelo com o aviso de responsabilidade da anonimização (sempre visível, não é dica)."""
+    from .anonymize import DISCLAIMER
+
+    lb = QLabel("⚠ <b>" + (text or DISCLAIMER) + "</b>")
+    lb.setWordWrap(True)
+    lb.setStyleSheet(WARN_STYLE)
+    return lb
+
+
+def _hint(text: str) -> QLabel:
+    lb = QLabel(text)
+    lb.setWordWrap(True)
+    lb.setStyleSheet("color: palette(window-text); font-size: 11px;")
+    return lb
+
+
+# --------------------------------------------------------------------------- #
+# Copiar para IA
+# --------------------------------------------------------------------------- #
+class AiCopyDialog(QDialog):
+    """Texto enxuto para colar no ChatGPT, Claude, Gemini…, com tokens e divisão em partes."""
+
+    def __init__(self, parent, markdown: str, settings: QSettings):
+        from .aitools import LIMITS, estimate_tokens, prepare
+
+        super().__init__(parent)
+        self.setWindowTitle("Copiar para IA")
+        self.resize(580, 480)
+        self.settings = settings
+        self.text = prepare(markdown)
+        lay = QVBoxLayout(self)
+        tokens = estimate_tokens(self.text)
+        lay.addWidget(QLabel("<b>Copiar o texto para colar no ChatGPT, Claude, Gemini…</b>"))
+        lay.addWidget(_hint("O Markinho <b>não usa IA nem gasta tokens</b> aqui: ele só prepara o texto (tira "
+                            "imagens, comentários e marcas de página) e copia para a área de transferência. "
+                            "Nada é enviado para a internet."))
+        size = QLabel(f"Tamanho do texto: <b>{len(self.text):,} caracteres ≈ {tokens:,} tokens</b>".replace(",", "."))
+        lay.addWidget(size)
+        lay.addWidget(_hint("“Tokens” são a medida de tamanho que os assistentes de IA usam. Cada assistente tem um "
+                            "limite por mensagem; se o texto passar do limite, divida em partes e cole uma por vez. "
+                            "A contagem é uma estimativa."))
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Se for grande demais, dividir em partes de até:"))
+        self.limit = QComboBox()
+        for label, val in LIMITS:
+            self.limit.addItem(label, val)
+        self.limit.addItem("Outro valor…", -1)
+        self.custom = QSpinBox()
+        self.custom.setRange(1_000, 2_000_000)
+        self.custom.setSingleStep(1_000)
+        self.custom.setSuffix(" tokens")
+        self.custom.setValue(int(settings.value("ai/custom", 50_000)))
+        saved = int(settings.value("ai/limit", 0))
+        i = self.limit.findData(saved)
+        self.limit.setCurrentIndex(i if i >= 0 else self.limit.count() - 1)
+        row.addWidget(self.limit, 1)
+        row.addWidget(self.custom)
+        lay.addLayout(row)
+        self.parts_list = QListWidget()
+        lay.addWidget(self.parts_list, 1)
+        self.status = _hint("")
+        lay.addWidget(self.status)
+        bb = QDialogButtonBox(QDialogButtonBox.Close)
+        bb.button(QDialogButtonBox.Close).setText("Fechar")
+        self.copy_btn = bb.addButton("Copiar parte selecionada", QDialogButtonBox.ActionRole)
+        self.copy_btn.clicked.connect(self._copy_selected)
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+        self.limit.currentIndexChanged.connect(self._refresh)
+        self.custom.valueChanged.connect(self._refresh)
+        self.parts_list.itemDoubleClicked.connect(lambda _i: self._copy_selected())
+        self._refresh()
+
+    def _max_tokens(self) -> int:
+        v = self.limit.currentData()
+        return self.custom.value() if v == -1 else int(v)
+
+    def _refresh(self) -> None:
+        from .aitools import estimate_tokens, split_for_ai
+
+        self.custom.setVisible(self.limit.currentData() == -1)
+        self.settings.setValue("ai/limit", self.limit.currentData())
+        self.settings.setValue("ai/custom", self.custom.value())
+        self.parts = split_for_ai(self.text, self._max_tokens())
+        self.parts_list.clear()
+        for k, p in enumerate(self.parts, 1):
+            label = "Texto inteiro" if len(self.parts) == 1 else f"Parte {k} de {len(self.parts)}"
+            it = QListWidgetItem(f"{label} — ≈ {estimate_tokens(p):,} tokens".replace(",", "."))
+            it.setData(Qt.UserRole, k - 1)
+            self.parts_list.addItem(it)
+        self.parts_list.setCurrentRow(0)
+        self.copy_btn.setText("Copiar texto" if len(self.parts) == 1 else "Copiar parte selecionada")
+        if len(self.parts) == 1:
+            limit = self._max_tokens()
+            self.status.setText("O texto cabe inteiro numa mensagem: não precisa dividir." if limit else
+                                "Texto inteiro, sem divisão.")
+        else:
+            self.status.setText(f"O texto foi dividido em {len(self.parts)} partes. Cole em ordem, uma por "
+                                "mensagem; cada parte avisa o assistente para esperar a última antes de "
+                                "responder. Duplo clique copia.")
+
+    def _copy_selected(self) -> None:
+        it = self.parts_list.currentItem()
+        k = it.data(Qt.UserRole) if it else 0
+        QGuiApplication.clipboard().setText(self.parts[k])
+        self.status.setText(f"✓ {'Texto copiado' if len(self.parts) == 1 else f'Parte {k + 1} copiada'}. "
+                            "Cole no assistente com Ctrl+V.")
+        if k + 1 < len(self.parts):
+            self.parts_list.setCurrentRow(k + 1)
+
+
+# --------------------------------------------------------------------------- #
+# Dividir por títulos
+# --------------------------------------------------------------------------- #
+class SplitDialog(QDialog):
+    def __init__(self, parent, markdown: str, assets: dict[str, bytes], settings: QSettings, start_dir: str):
+        super().__init__(parent)
+        self.setWindowTitle("Dividir por títulos")
+        self.md, self.assets, self.settings = markdown, assets, settings
+        lay = QVBoxLayout(self)
+        lay.addWidget(_hint("Cria um arquivo .md para cada capítulo ou seção, numerados na ordem "
+                            "(01_Introdução.md, 02_…). Útil para Obsidian, documentação e IA."))
+        form = QFormLayout()
+        self.level = QComboBox()
+        self.level.addItem("Títulos de nível 1 (# Capítulo)", 1)
+        self.level.addItem("Títulos de nível 1 e 2 (## Seção)", 2)
+        self.level.addItem("Títulos de nível 1 a 3", 3)
+        form.addRow("Cortar em:", self.level)
+        row = QHBoxLayout()
+        self.folder = QLineEdit(start_dir)
+        b = QPushButton("…")
+        b.setFixedWidth(32)
+        b.clicked.connect(self._pick)
+        row.addWidget(self.folder)
+        row.addWidget(b)
+        form.addRow("Pasta:", row)
+        lay.addLayout(form)
+        self.preview = _hint("")
+        lay.addWidget(self.preview)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.button(QDialogButtonBox.Ok).setText("Dividir e salvar")
+        bb.accepted.connect(self._save)
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+        self.level.currentIndexChanged.connect(self._update)
+        self._update()
+
+    def _pick(self) -> None:
+        d = QFileDialog.getExistingDirectory(self, "Pasta para os arquivos", self.folder.text())
+        if d:
+            from .gui import remember_dir
+
+            remember_dir(self.settings, d, "save")
+            self.folder.setText(d)
+
+    def _update(self) -> None:
+        from .splitter import split_by_headings
+
+        self.parts = split_by_headings(self.md, self.level.currentData())
+        names = ", ".join(t for t, _ in self.parts[:6]) + ("…" if len(self.parts) > 6 else "")
+        self.preview.setText(f"{len(self.parts)} arquivo(s): {names}")
+
+    def _save(self) -> None:
+        from .assets import write_assets
+        from .naming import clean
+
+        folder = Path(self.folder.text())
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            digits = max(2, len(str(len(self.parts))))
+            written = 0
+            for k, (title, text) in enumerate(self.parts, 1):
+                name = f"{k:0{digits}d}_{clean(title) or 'parte'}.md"
+                target = folder / name
+                n = 2
+                while target.exists():
+                    target = folder / f"{Path(name).stem}_{n}.md"
+                    n += 1
+                target.write_text(text, encoding="utf-8")
+                if self.assets:
+                    write_assets(text, self.assets, folder)        # só as imagens usadas nesta parte
+                written += 1
+        except OSError as exc:
+            QMessageBox.critical(self, "Dividir por títulos", f"Não foi possível salvar:\n{exc}")
+            return
+        QMessageBox.information(self, "Dividir por títulos", f"{written} arquivo(s) salvo(s) em:\n{folder}")
+        self.accept()
+
+
+# --------------------------------------------------------------------------- #
+# Pasta monitorada
+# --------------------------------------------------------------------------- #
+class WatchDialog(QDialog):
+    def __init__(self, parent, settings: QSettings):
+        super().__init__(parent)
+        self.setWindowTitle("Pasta monitorada")
+        self.settings = settings
+        lay = QVBoxLayout(self)
+        lay.addWidget(_hint("Enquanto o Markinho estiver aberto, todo arquivo novo que aparecer na pasta "
+                            "(baixado, escaneado, copiado…) é convertido sozinho com as configurações atuais. "
+                            "Os arquivos que já estavam lá não são convertidos."))
+        self.enabled = QCheckBox("Monitorar a pasta")
+        self.enabled.setChecked(settings.value("watch/enabled", False, type=bool))
+        lay.addWidget(self.enabled)
+        form = QFormLayout()
+        self.folder = self._row(form, "Pasta:", settings.value("watch/folder", str(Path.home() / "Downloads")))
+        self.same = QCheckBox("Salvar o .md na mesma pasta")
+        self.same.setChecked(settings.value("watch/same", True, type=bool))
+        form.addRow(self.same)
+        self.out = self._row(form, "Salvar em:", settings.value("watch/out", str(Path.home() / "Documents" / "Markinho")))
+        self.same.toggled.connect(lambda v: self.out.setEnabled(not v))
+        self.out.setEnabled(not self.same.isChecked())
+        lay.addLayout(form)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(self._ok)
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+
+    def _row(self, form, label, value) -> QLineEdit:
+        row = QHBoxLayout()
+        edit = QLineEdit(value)
+        b = QPushButton("…")
+        b.setFixedWidth(32)
+        b.clicked.connect(lambda: (d := QFileDialog.getExistingDirectory(self, label, edit.text())) and edit.setText(d))
+        row.addWidget(edit)
+        row.addWidget(b)
+        form.addRow(label, row)
+        return edit
+
+    def _ok(self) -> None:
+        if self.enabled.isChecked() and not Path(self.folder.text()).is_dir():
+            QMessageBox.warning(self, "Pasta monitorada", "A pasta escolhida não existe.")
+            return
+        s = self.settings
+        s.setValue("watch/enabled", self.enabled.isChecked())
+        s.setValue("watch/folder", self.folder.text())
+        s.setValue("watch/same", self.same.isChecked())
+        s.setValue("watch/out", self.out.text())
+        self.accept()
+
+
+# --------------------------------------------------------------------------- #
+# Relatório de erro
+# --------------------------------------------------------------------------- #
+class ErrorReportDialog(QDialog):
+    def __init__(self, parent, settings: QSettings):
+        from .diagnostics import report_text
+
+        super().__init__(parent)
+        self.setWindowTitle("Relatório de erro")
+        self.resize(720, 560)
+        lay = QVBoxLayout(self)
+        lay.addWidget(_hint("<b>O que este relatório contém:</b> versão e edição do Markinho; sistema, processador, "
+                            "memória, idioma e tela; motores disponíveis; suas configurações (sem pastas); e os erros "
+                            "desde que o programa foi aberto — nome, tipo e tamanho do arquivo, a mensagem, detalhes "
+                            "técnicos e a configuração usada naquela conversão. <b>Não contém o conteúdo dos "
+                            "documentos</b>, e o nome do seu usuário do computador é omitido.<br>"
+                            "<b>Nada é enviado:</b> você confere, salva e decide se manda ao suporte. "
+                            "Veja Ajuda > Privacidade."))
+        self.settings = settings
+        self.hide = QCheckBox("Esconder os nomes dos arquivos (trocar por arquivo1.pdf, arquivo2.docx…)")
+        self.hide.toggled.connect(lambda v: self.text.setPlainText(report_text(self.settings, hide_names=v)))
+        lay.addWidget(self.hide)
+        self.text = QPlainTextEdit(report_text(settings))
+        self.text.setReadOnly(True)
+        lay.addWidget(self.text, 1)
+        bb = QDialogButtonBox(QDialogButtonBox.Close)
+        save = bb.addButton("Salvar…", QDialogButtonBox.ActionRole)
+        copy = bb.addButton("Copiar", QDialogButtonBox.ActionRole)
+        save.clicked.connect(self._save)
+        copy.clicked.connect(lambda: QGuiApplication.clipboard().setText(self.text.toPlainText()))
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+
+    def _save(self) -> None:
+        import datetime as dt
+
+        from .gui import recall_dir, remember_dir
+
+        s = QSettings("Markinho", "Markinho")
+        f, _ = QFileDialog.getSaveFileName(self, "Salvar relatório",
+                                           str(Path(recall_dir(s, "save")) / f"markinho-relatorio-{dt.date.today()}.txt"),
+                                           "Texto (*.txt)")
+        if f:
+            remember_dir(s, f, "save")
+            Path(f).write_text(self.text.toPlainText(), encoding="utf-8")
+
+
+# --------------------------------------------------------------------------- #
+# Primeira abertura
+# --------------------------------------------------------------------------- #
+PURPOSES = [
+    ("ia", "Usar com IA (ChatGPT, Claude, Gemini, RAG)",
+     {"out/profile": "llm", "out/images": "none", "out/frontmatter": False}),
+    ("obsidian", "Notas no Obsidian",
+     {"out/profile": "obsidian", "out/images": "folder", "out/frontmatter": True}),
+    ("docs", "Documentação, sites ou GitHub",
+     {"out/profile": "gfm", "out/images": "folder", "out/frontmatter": False}),
+    ("outro", "Outro / ainda não sei", {"out/profile": "gfm", "out/images": "folder", "out/frontmatter": False}),
+]
+
+
+class FirstRunDialog(QDialog):
+    def __init__(self, parent, settings: QSettings):
+        super().__init__(parent)
+        self.setWindowTitle("Bem-vindo ao Markinho")
+        self.settings = settings
+        lay = QVBoxLayout(self)
+        lay.addWidget(QLabel("<h3>Para que você vai usar o Markinho?</h3>"))
+        lay.addWidget(_hint("Isso só ajusta as opções iniciais. Dá para mudar depois no painel Configurações "
+                            "ou em Ferramentas > Assistente inicial."))
+        box = QGroupBox()
+        bl = QVBoxLayout(box)
+        self.group = QButtonGroup(self)
+        current = settings.value("ui/purpose", "outro")
+        for k, (pid, label, _) in enumerate(PURPOSES):
+            rb = QRadioButton(label)
+            rb.setChecked(pid == current)
+            self.group.addButton(rb, k)
+            bl.addWidget(rb)
+        if self.group.checkedId() < 0:
+            self.group.button(len(PURPOSES) - 1).setChecked(True)
+        lay.addWidget(box)
+        self.simple = QCheckBox("Modo simples: esconder motores e opções avançadas")
+        self.simple.setChecked(settings.value("ui/simple", True, type=bool))
+        lay.addWidget(self.simple)
+        from . import winshell
+
+        self.shell = QCheckBox("Adicionar o menu “Markinho” ao botão direito do Windows")
+        self.shell.setToolTip("Converter arquivos clicando com o botão direito neles (no Windows 11: “Mostrar mais "
+                              "opções”). Pode ser desligado em Ferramentas.")
+        self.shell.setVisible(winshell.available())
+        self.shell.setChecked(winshell.available() and not winshell.is_registered())
+        lay.addWidget(self.shell)
+        lay.addWidget(_hint("Como usar: arraste arquivos para a janela e clique em Converter (F5). No Windows, "
+                            "também dá para clicar com o botão direito num arquivo > Markinho > Converter para "
+                            "Markdown aqui."))
+        bb = QDialogButtonBox(QDialogButtonBox.Ok)
+        bb.button(QDialogButtonBox.Ok).setText("Começar")
+        bb.accepted.connect(self._ok)
+        lay.addWidget(bb)
+
+    def _ok(self) -> None:
+        pid, _, values = PURPOSES[max(0, self.group.checkedId())]
+        for k, v in values.items():
+            self.settings.setValue(k, v)
+        self.settings.setValue("ui/purpose", pid)
+        self.settings.setValue("ui/simple", self.simple.isChecked())
+        self.settings.setValue("ui/first_run_done", True)
+        if self.shell.isVisible() and self.shell.isChecked():
+            try:
+                from . import winshell
+
+                winshell.register()
+            except Exception:  # noqa: BLE001 — opcional: dá para ligar depois em Ferramentas
+                pass
+        self.accept()
+
+
+# --------------------------------------------------------------------------- #
+# Botão direito: andamento, escolha do formato e alerta de concluído
+# --------------------------------------------------------------------------- #
+class ProgressPopup(QDialog):
+    """Janelinha com a porcentagem da tarefa. O usuário pode ocultá-la (e escolher não vê-la mais)."""
+
+    def __init__(self, settings: QSettings, stop=None):
+        from PySide6.QtCore import QTimer
+        from PySide6.QtWidgets import QProgressBar
+
+        super().__init__(None, Qt.Window | Qt.WindowStaysOnTopHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
+        self.setWindowTitle("Markinho — convertendo")
+        self.settings, self._stop = settings, stop
+        self.setMinimumWidth(380)
+        lay = QVBoxLayout(self)
+        self.label = QLabel("Preparando…")
+        self.label.setWordWrap(True)
+        lay.addWidget(self.label)
+        self.bar = QProgressBar()
+        self.bar.setRange(0, 100)
+        self.bar.setFormat("%p%")
+        lay.addWidget(self.bar)
+        self.show_next = QCheckBox("Mostrar esta janela nas próximas conversões")
+        self.show_next.setChecked(settings.value("quick/show_progress", True, type=bool))
+        self.show_next.toggled.connect(lambda v: settings.setValue("quick/show_progress", v))
+        lay.addWidget(self.show_next)
+        row = QHBoxLayout()
+        row.addWidget(_hint("Ao terminar, aparece um aviso."), 1)
+        hide = QPushButton("Ocultar")
+        hide.setToolTip("Continua convertendo sem esta janela")
+        hide.clicked.connect(self.hide)
+        stop_btn = QPushButton("Parar")
+        stop_btn.clicked.connect(self._on_stop)
+        row.addWidget(hide)
+        row.addWidget(stop_btn)
+        lay.addLayout(row)
+        self._timer = QTimer(self, singleShot=True, interval=300, timeout=self._maybe_show)
+        self._closed = False
+
+    def start(self, total: int) -> None:
+        self.set_total(total)
+        if self.settings.value("quick/show_progress", True, type=bool):
+            self._timer.start()             # tarefas muito rápidas nem mostram a janela
+
+    def _maybe_show(self) -> None:
+        if not self._closed:
+            self.show()
+            self.raise_()
+
+    def set_total(self, total: int) -> None:
+        self._total = max(1, total)
+
+    def set_file(self, name: str, done: int, total: int) -> None:
+        self._total = max(1, total)
+        self.label.setText(f"Convertendo <b>{name}</b>" + (f"  ({done + 1} de {total})" if total > 1 else ""))
+        self.set_progress(done, total, 0.0)
+
+    def set_progress(self, done: int, total: int, fraction: float) -> None:
+        total = max(1, total)
+        self.bar.setValue(int(round(100 * min(1.0, (done + max(0.0, min(fraction, 1.0))) / total))))
+
+    def _on_stop(self) -> None:
+        if self._stop:
+            self._stop()
+        self.label.setText("Parando… (termina a página atual)")
+
+    def closeEvent(self, e):           # fechar no X = ocultar; a conversão continua
+        e.ignore()
+        self.hide()
+
+    def close(self) -> bool:
+        self._closed = True
+        self._timer.stop()
+        self.hide()
+        return True
+
+
+class ExportChoiceDialog(QDialog):
+    """Escolher o formato para converter um .md (Word, PDF, HTML…)."""
+
+    def __init__(self, parent, settings: QSettings):
+        from .exporter import available_formats
+
+        super().__init__(parent)
+        self.setWindowTitle("Converter Markdown para…")
+        self.settings = settings
+        lay = QVBoxLayout(self)
+        form = QFormLayout()
+        self.fmt = QComboBox()
+        for f in available_formats():
+            if not f.id.startswith("chunks_"):
+                self.fmt.addItem(f.label, f.id)
+        self.fmt.setCurrentIndex(max(0, self.fmt.findData(settings.value("export/fmt", "docx"))))
+        form.addRow("Formato:", self.fmt)
+        self.abnt = QCheckBox("Word no padrão ABNT (trabalhos acadêmicos)")
+        self.abnt.setChecked(settings.value("export/template", "") == "abnt")
+        form.addRow(self.abnt)
+        lay.addLayout(form)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.button(QDialogButtonBox.Ok).setText("Continuar")
+        bb.accepted.connect(self.accept)
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+        self.fmt.currentIndexChanged.connect(lambda _i: self.abnt.setVisible(self.fmt.currentData() == "docx"))
+        self.abnt.setVisible(self.fmt.currentData() == "docx")
+
+    def values(self) -> tuple[str, dict, str]:
+        from .exporter import FORMATS_BY_ID
+
+        fid = self.fmt.currentData()
+        self.settings.setValue("export/fmt", fid)
+        opts: dict = {}
+        if fid == "docx":
+            self.settings.setValue("export/template", "abnt" if self.abnt.isChecked() else "")
+            if self.abnt.isChecked():
+                opts.update(template="abnt", number_sections=True)
+        return fid, opts, FORMATS_BY_ID[fid].ext
+
+
+class DoneDialog(QDialog):
+    """Alerta de concluído, com atalhos para abrir o arquivo ou a pasta."""
+
+    def __init__(self, results: list, stopped: bool = False, skipped: int = 0):
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        from PySide6.QtWidgets import QStyle
+
+        from .quick import summary
+
+        super().__init__(None, Qt.Window | Qt.WindowStaysOnTopHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
+        title, text = summary(results) if results else ("Markinho", "Nenhum arquivo convertido.")
+        if stopped:
+            title = "Markinho: conversão interrompida"
+            text += f" {skipped} arquivo(s) não foram convertidos." if skipped > 0 else ""
+        self.setWindowTitle(title.replace("Markinho: ", "Markinho — "))
+        lay = QVBoxLayout(self)
+        head = QHBoxLayout()
+        bad = [r for r in results if r.error]
+        icon = QLabel()
+        icon.setPixmap(self.style().standardIcon(
+            QStyle.SP_MessageBoxWarning if (bad or stopped) else QStyle.SP_DialogApplyButton).pixmap(40, 40))
+        head.addWidget(icon)
+        msg = QLabel(f"<b>{title.replace('Markinho: ', '').capitalize()}</b><br>{text}")
+        msg.setWordWrap(True)
+        head.addWidget(msg, 1)
+        lay.addLayout(head)
+        try:
+            from .quick import settings as _settings
+
+            if results and _settings().value("anon/enabled", False, type=bool):
+                lay.addWidget(anon_warning("Os arquivos foram anonimizados. " + __import__(
+                    "markinho.anonymize", fromlist=["DISCLAIMER"]).DISCLAIMER))
+        except Exception:  # noqa: BLE001
+            pass
+        if bad:
+            det = QPlainTextEdit("\n".join(f"• {r.source.name}: {r.error}" for r in bad))
+            det.setReadOnly(True)
+            det.setMaximumHeight(140)
+            lay.addWidget(det)
+            lay.addWidget(_hint("Dica: use “Abrir no Markinho” para ver os detalhes e testar outro motor."))
+        ok = [r for r in results if r.output and not r.error]
+        bb = QDialogButtonBox(QDialogButtonBox.Ok)
+        if len(ok) == 1 and ok[0].output.is_file():
+            b = bb.addButton("Abrir arquivo", QDialogButtonBox.ActionRole)
+            b.clicked.connect(lambda: (QDesktopServices.openUrl(QUrl.fromLocalFile(str(ok[0].output))), self.accept()))
+        if ok:
+            folder = ok[0].output.parent
+            b = bb.addButton("Abrir pasta", QDialogButtonBox.ActionRole)
+            b.clicked.connect(lambda: (QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder))), self.accept()))
+        bb.accepted.connect(self.accept)
+        lay.addWidget(bb)
+        self.setMinimumWidth(420)
+
+
+# --------------------------------------------------------------------------- #
+# Anonimizar
+# --------------------------------------------------------------------------- #
+class AnonDialog(QDialog):
+    """O que anonimizar e como. Com `markdown`, mostra quanto foi encontrado e permite salvar uma cópia
+    anonimizada (Ferramentas > Anonimizar um arquivo Markdown…)."""
+
+    def __init__(self, parent, settings: QSettings, markdown: str | None = None, source: Path | None = None):
+        from .anonymize import DISCLAIMER, KINDS, LIST_HELP, MODES
+        from .quick import anon_options
+
+        super().__init__(parent)
+        self.settings, self.markdown, self.source = settings, markdown, source
+        self.setWindowTitle("Anonimizar dados pessoais" + (f" — {source.name}" if source else ""))
+        self.resize(680, 640)
+        o = anon_options(settings)
+        lay = QVBoxLayout(self)
+        lay.addWidget(_hint("Troca dados pessoais do <b>Markdown convertido</b> (o arquivo original não muda). "
+                            "Tudo acontece no seu computador, só com regras — nada vai para a internet. "
+                            "<b>Revise sempre o resultado:</b> a anonimização automática nunca é 100% "
+                            "(nomes sem pista, como “Rosa”, só saem pela sua lista)."))
+        lay.addWidget(anon_warning(DISCLAIMER))
+        from PySide6.QtWidgets import QFrame, QGridLayout, QScrollArea, QWidget
+
+        body = QWidget()
+        blay = QVBoxLayout(body)
+        blay.setContentsMargins(0, 0, 0, 0)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setWidget(body)
+        lay.addWidget(scroll, 1)
+        kinds = QGroupBox("O que procurar no texto")
+        kl = QGridLayout(kinds)
+        self.kind_boxes: dict[str, QCheckBox] = {}
+        half = (len(KINDS) + 1) // 2
+        for i, (kid, label, _, _) in enumerate(KINDS):
+            cb = QCheckBox(label.split(" (")[0])
+            cb.setToolTip(label)
+            cb.setChecked(kid in o.kinds)
+            self.kind_boxes[kid] = cb
+            kl.addWidget(cb, i % half, i // half)
+        blay.addWidget(kinds)
+        words = QGroupBox("Sua lista: nomes, empresas, lugares… (um por linha)")
+        wl = QVBoxLayout(words)
+        self.words = QPlainTextEdit(o.words)
+        self.words.setPlaceholderText("João da Silva\nJoão = [PESSOA A]\nSr. Silva = [PESSOA A]\n"
+                                      "Empresa Exemplo Ltda\nExemplo Ltda\nSão Paulo = [CIDADE]")
+        self.words.setFixedHeight(90)
+        wl.addWidget(self.words)
+        rules = QLabel("<b>Como a lista funciona:</b> " + LIST_HELP)
+        rules.setWordWrap(True)
+        rules.setStyleSheet("color: palette(window-text); font-size: 12px;")
+        wl.addWidget(rules)
+        blay.addWidget(words)
+        mode = QGroupBox("Como substituir")
+        ml = QVBoxLayout(mode)
+        self.modes = QButtonGroup(self)
+        for mid, label in MODES:
+            rb = QRadioButton(label)
+            rb.setProperty("mode", mid)
+            rb.setChecked(mid == o.mode)
+            self.modes.addButton(rb)
+            ml.addWidget(rb)
+        blay.addWidget(mode)
+        extra = QGroupBox("Metadados e imagens")
+        el = QVBoxLayout(extra)
+        self.meta = QCheckBox("Tirar autor, datas, assunto e nome do arquivo dos metadados (frontmatter)")
+        self.meta.setChecked(o.metadata)
+        self.exif = QCheckBox("Tirar dados escondidos das imagens (GPS, câmera, data) — sem perder qualidade")
+        self.exif.setChecked(o.image_metadata)
+        self.noimg = QCheckBox("Não incluir imagens (fotos, assinaturas e documentos escaneados)")
+        self.noimg.setChecked(o.remove_images)
+        for w in (self.meta, self.exif, self.noimg):
+            el.addWidget(w)
+        el.addWidget(_hint("O nome do arquivo .md segue o padrão de nomes das configurações: se o nome do "
+                           "original identificar alguém, use um padrão como “documento_{n}”."))
+        blay.addWidget(extra)
+        self.found = QLabel()
+        self.found.setWordWrap(True)
+        lay.addWidget(self.found)
+        bb = QDialogButtonBox()
+        if markdown is not None:
+            b_prev = bb.addButton("Ver resultado…", QDialogButtonBox.ActionRole)
+            b_prev.clicked.connect(self._preview)
+            bb.addButton("Salvar cópia anonimizada…", QDialogButtonBox.AcceptRole)
+            bb.addButton(QDialogButtonBox.Cancel)
+            for w in list(self.kind_boxes.values()) + [self.words] + self.modes.buttons():
+                (w.textChanged if w is self.words else w.toggled).connect(self._count)
+            self._count()
+        else:
+            bb.addButton(QDialogButtonBox.Ok)
+            bb.addButton(QDialogButtonBox.Cancel)
+        bb.accepted.connect(self._accept)
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+
+    def options(self):
+        from .anonymize import AnonOptions
+
+        mode = next((b.property("mode") for b in self.modes.buttons() if b.isChecked()), "pseudonimo")
+        return AnonOptions(kinds=[k for k, cb in self.kind_boxes.items() if cb.isChecked()], mode=mode,
+                           words=self.words.toPlainText(), metadata=self.meta.isChecked(),
+                           image_metadata=self.exif.isChecked(), remove_images=self.noimg.isChecked())
+
+    def result_text(self) -> tuple[str, object]:
+        from .anonymize import anonymize, strip_frontmatter_private
+
+        o = self.options()
+        md = self.markdown or ""
+        if o.metadata:
+            md = strip_frontmatter_private(md)
+        if o.remove_images:
+            import re
+
+            md = re.sub(r"!\[[^\]\n]{0,500}\]\([^)\n]{0,2000}\)", "", md)
+        return anonymize(md, o)
+
+    def _count(self, *_):
+        _, rep = self.result_text()
+        self.found.setText(f"<b>Encontrado neste texto:</b> {rep.summary()}.")
+
+    def _preview(self) -> None:
+        text, _ = self.result_text()
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Resultado da anonimização")
+        dlg.resize(700, 600)
+        lay = QVBoxLayout(dlg)
+        view = QPlainTextEdit(text)
+        view.setReadOnly(True)
+        lay.addWidget(view)
+        bb = QDialogButtonBox(QDialogButtonBox.Close)
+        bb.rejected.connect(dlg.reject)
+        lay.addWidget(bb)
+        dlg.exec()
+
+    def _accept(self) -> None:
+        from .anonymize import DISCLAIMER
+        from .quick import save_anon_options
+
+        save_anon_options(self.settings, self.options())
+        self.settings.setValue("anon/ack", True)        # o aviso estava à vista nesta janela
+        if self.markdown is None:
+            self.accept()
+            return
+        from .gui import recall_dir, remember_dir
+
+        stem = self.source.stem if self.source else "documento"
+        start = str(Path(recall_dir(self.settings, "anon", str(self.source.parent if self.source else Path.home())))
+                    / f"{stem}_anonimizado.md")
+        path, _ = QFileDialog.getSaveFileName(self, "Salvar cópia anonimizada", start, "Markdown (*.md)")
+        if not path:
+            return
+        remember_dir(self.settings, path, "anon")
+        text, rep = self.result_text()
+        Path(path).write_text(text, encoding="utf-8")
+        QMessageBox.information(self, "Anonimizar", f"Cópia anonimizada salva.\n\n{rep.summary()}\n\n"
+                                + DISCLAIMER)
+        self.accept()

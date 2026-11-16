@@ -1,0 +1,4 @@
+# Edição PADRÃO: LEVE + Pandoc + OCR com Tesseract
+-r requirements-leve.txt
+pypandoc_binary>=1.13
+pytesseract>=0.3.10

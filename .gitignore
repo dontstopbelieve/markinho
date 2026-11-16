@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+build/
+dist/
+.pytest_cache/
+release/
+packaging/vendor/
+*.AppImage
+*.egg-info/
+
+# cobertura de testes (pytest-cov)
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# backup do histórico (nunca enviar ao GitHub)
+*.bundle

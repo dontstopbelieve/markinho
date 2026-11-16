@@ -1,0 +1,7 @@
+# Edição COMPLETA: PADRÃO + IA de layout (Docling) + MarkItDown + RapidOCR
+# Para gerar o instalador só com processador (sem placa de vídeo), instale antes o PyTorch para CPU:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+-r requirements-padrao.txt
+docling>=2.0
+markitdown[docx,xlsx,pptx,pdf,outlook]>=0.1
+rapidocr_onnxruntime>=1.3

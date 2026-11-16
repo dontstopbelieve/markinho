@@ -1,0 +1,3 @@
+# Para rodar pelo código-fonte: edição PADRÃO.
+# Outras: requirements-leve.txt (mínimo) ou requirements-completa.txt (tudo, com IA de layout).
+-r requirements-padrao.txt

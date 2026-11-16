@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "markinho"
+dynamic = ["version"]
+description = "Markinho — Conversor Markdown: documentos para Markdown e de Markdown para outros formatos, com interface gráfica e linha de comando — 100% local."
+readme = "README.md"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "dontstopbelieve" }]
+keywords = ["markdown", "pdf", "docx", "converter", "ocr", "pandoc", "llm"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Environment :: X11 Applications :: Qt",
+    "Natural Language :: Portuguese (Brazilian)",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+dependencies = [
+    "PySide6>=6.6",
+    "pypdf>=6.21.4",
+    "pdfplumber>=0.11",
+    "python-docx>=1.1",
+    "openpyxl>=3.1",
+    "python-pptx>=0.6.23",
+    "beautifulsoup4>=4.12",
+    "soupsieve>=4.0",
+    "Pillow>=13.0",
+    "markdownify>=0.12",
+    "markdown>=3.5",
+    "xlrd>=2.0",
+    "ftfy>=6.1",
+    "mdformat>=0.7",
+    "mdformat-gfm>=0.3",
+    "firecrawl-anydoc>=0.2.4,<0.3",
+    "mcp>=2.3,<3",
+    "opentelemetry-api>=1.45.2",
+]
+
+[project.optional-dependencies]
+# pip install markinho            -> edição LEVE
+# pip install "markinho[padrao]"  -> edição PADRÃO
+# pip install "markinho[completa]"-> edição COMPLETA
+padrao = ["pypandoc_binary>=1.13", "pytesseract>=0.3.10"]
+completa = ["pypandoc_binary>=1.13", "pytesseract>=0.3.10", "docling>=2.0",
+            "markitdown[docx,xlsx,pptx,pdf,outlook]>=0.1", "rapidocr_onnxruntime>=1.3"]
+dev = ["pytest>=8", "reportlab>=4", "build", "pyinstaller>=6.6"]
+
+[project.scripts]
+markinho = "markinho.__main__:main"
+
+[project.gui-scripts]
+markinho-gui = "markinho.__main__:gui_entry"
+
+[project.urls]
+Homepage = "https://github.com/dontstopbelieve/markinho"
+
+[tool.setuptools]
+packages = ["markinho"]
+
+[tool.setuptools.package-data]
+markinho = ["resources/*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "markinho.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# Cobertura de testes:  python -m pytest --cov   (relatório em htmlcov/index.html com --cov-report=html)
+[tool.coverage.run]
+source = ["markinho"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 75        # trava: abaixo disso o teste falha (subir aos poucos)

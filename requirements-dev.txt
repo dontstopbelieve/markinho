@@ -1,0 +1,5 @@
+pytest>=8
+pytest-cov>=7   # cobertura de testes (MIT; só para desenvolvimento)
+reportlab>=4
+build
+pyinstaller>=6.6

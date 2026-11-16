@@ -1,0 +1,1 @@
+Marcador: garante que a pasta exista dentro do pacote (python-docx usa caminhos como docx/parts/../templates).
