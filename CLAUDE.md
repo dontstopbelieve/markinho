@@ -30,8 +30,8 @@ para poder oferecer licença comercial no futuro).
    `anydoc._anydoc`, sem caminho de rede); a descrição de imagens só usa Ollama local.
 3. **Servidor MCP**: só acessa as pastas autorizadas; gravar exige permissão; nunca sobrescreve
    sem pedido. Qualquer mudança aí precisa manter os testes de acesso negado.
-4. **Sem custos**: o dono não paga assinatura digital, serviços ou planos. Atenção ao consumo do
-   GitHub Actions no repositório privado (macOS conta 10×).
+4. **Sem custos**: o dono não paga assinatura digital, serviços ou planos. O repositório é **público**
+   desde 26/11/2026 (Actions e armazenamento gratuitos, inclusive macOS).
 5. Arquivo `.py` novo começa com `# SPDX-License-Identifier: AGPL-3.0-only` e a linha de copyright.
 6. Commit e push **ao fim de cada etapa**, com mensagem em português e as linhas de atribuição.
 
@@ -113,7 +113,9 @@ python packaging/build.py --edition leve app zip deb             # instaladores 
 - O exportador cria `QApplication` (não só `QGuiApplication`), senão a interface quebra depois.
 - QtPdf **precisa** ficar nos instaladores (visualizador “Comparar com o original”).
 - Links Markdown não aceitam espaço: pastas de imagens usam `safe_stem()`.
-- O repositório é privado: não dá para ver o GitHub Actions daqui; peça ao dono os erros.
+- Repositório público: dá para ver o GitHub Actions daqui sem login, pela API
+  (`curl -s https://api.github.com/repos/dontstopbelieve/markinho/actions/runs?per_page=5` e `/runs/<id>/jobs`).
+  Os registros completos (logs) exigem login: peça ao dono o print da etapa vermelha.
 - Sinais de QThread ligados a função comum rodam na thread de quem emite: use um QObject receptor
   (ver `quick.py`), senão a interface é mexida fora da thread principal e entra em loop.
 - Segurança (auditoria de 14/11/2026): não use regex com `.*?` seguido de `\s*`/fechamento em texto

@@ -49,7 +49,7 @@ AGPL-3.0 e o ícone novo — falta o teste no Windows.
       (licenciamento duplo). Ideias de outros projetos podem inspirar; código nunca é copiado.
       Dependências continuam **permissivas** (MIT/BSD/Apache/LGPL): uma dependência GPL/AGPL embutida
       impediria a licença comercial futura — por isso Marker e PyMuPDF continuam fora dos instaladores.
-- [ ] **Repositório público**: decidido abrir, depois de aplicar a licença e revisar o histórico.
+- [x] **Repositório público** (26/11/2026), com aviso “Versão em preparação” no README.
 
 ## Antes de publicar
 
@@ -65,11 +65,9 @@ AGPL-3.0 e o ícone novo — falta o teste no Windows.
       pelo dono (16/11/2026).
 - [x] **Aviso de contribuições** (26/11/2026): CONTRIBUTING.md, modelo de pull request com aviso,
       modelos de issue (problema e sugestão) e link para relato privado de segurança.
-- [ ] **Depois de público**: ligar o relato privado de falhas (Settings > Security > Private
-      vulnerability reporting > Enable) — só existe em repositório público.
-- [ ] **Depois de público**: ligar os alertas do Dependabot (Settings > Code security > Dependabot
-      alerts) — avisam sozinhos quando uma biblioteca ganha falha conhecida. Rodar `pip-audit` antes de
-      cada release (`pip install pip-audit` e `pip-audit -r requirements-padrao.txt`).
+- [x] **Relato privado de falhas** ligado (26/11/2026; conferido pela API).
+- [x] **Dependabot** (26/11/2026): o GitHub já analisa as dependências (execução “Graph Update: pip”).
+      Rodar `pip-audit` antes de cada release (`pip install pip-audit` e `pip-audit -r requirements-padrao.txt`).
 - [ ] **Revisão jurídica dos avisos** (16/11/2026): o aviso “O Markinho não se responsabiliza…” da
       anonimização (janela, painel, termos de uso do instalador, PRIVACIDADE.md) e o “como está” dos
       termos; sem venda, o risco é menor, mas vale (opcional) um advogado revisar antes de divulgar.
