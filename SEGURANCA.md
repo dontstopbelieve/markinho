@@ -92,6 +92,21 @@ O programa é fornecido “como está”, sem garantia de qualquer tipo (licenç
   inicial, sem os rascunhos antigos nem o nome de usuário que havia num teste. O histórico anterior
   foi guardado pelo dono, fora do GitHub.
 
+### 26/11/2026 — Revisão de código (privacidade da anonimização)
+
+Revisão do pacote inteiro com a ferramenta de revisão do Claude Code. Corrigido, com um teste para cada:
+
+- **Descrição das imagens** (texto alternativo) não era anonimizada: nomes e CPF nela passavam
+  intactos. Agora só o endereço da imagem é protegido; o texto é anonimizado como o resto.
+- **“Nome Completo: Fulano”** escondia a palavra “Completo” e deixava o nome à vista; agora o nome
+  depois dos dois-pontos é o escondido.
+- Número na lista de palavras quebrava o link de imagens (marcador interno trocado por um que
+  nenhuma regra alcança).
+- Fotos JPEG em CMYK podiam mudar de cor ao tirar os dados escondidos (o segmento “Adobe”, que diz
+  como ler as cores, agora é mantido).
+- Intervalo de anos (“2019-2020”) deixou de ser confundido com telefone; lista de nomes salva como
+  “UTF-8 com BOM” passou a funcionar no terminal; a janela de anonimizar não trava mais a cada letra.
+
 ## Rotina antes de cada versão
 
 1. `pip install pip-audit` e `pip-audit -r requirements-padrao.txt` (e as outras edições).

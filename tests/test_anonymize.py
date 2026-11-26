@@ -122,3 +122,63 @@ def test_disclaimer_is_documented():
     assert "não se responsabiliza" in DISCLAIMER and "não se responsabiliza" in " ".join(TEXT.split())
     rtf = (Path(__file__).resolve().parents[1] / "packaging" / "windows" / "termos.rtf").read_text("ascii")
     assert "responsabiliza" in rtf
+
+
+# --- revisão de código de 26/11/2026 ---------------------------------------------------------------
+def test_image_alt_text_is_anonymized_but_link_kept():
+    out, _ = anonymize("![Crachá de João da Silva, CPF 529.982.247-25](a_assets/imagem_001.png)",
+                       AnonOptions(words="João da Silva"))
+    assert "João" not in out and "529.982" not in out and out.endswith("](a_assets/imagem_001.png)")
+    out, _ = anonymize('<img alt="João da Silva" src="a/x.png">', AnonOptions(words="João da Silva"))
+    assert "João" not in out and 'src="a/x.png"' in out
+
+
+def test_numeric_word_does_not_break_image_links():
+    md = "\n".join(f"![f{i}](d_assets/imagem_{i:03d}.png)" for i in range(15)) + "\nMatrícula 12."
+    out, _ = anonymize(md, AnonOptions(kinds=[], words="12"))
+    assert all(f"](d_assets/imagem_{i:03d}.png)" in out for i in range(15))
+    assert "Matrícula [NOME 1]." in out and "" not in out
+
+
+def test_mailto_links_are_still_anonymized():
+    out, _ = anonymize("[contato](mailto:joao@exemplo.com)", AnonOptions())
+    assert "joao@" not in out
+
+
+def test_label_before_colon_is_not_taken_as_name():
+    out, _ = anonymize("Nome Completo: João da Silva", AnonOptions(kinds=["nomes"]))
+    assert "João" not in out and "Completo" in out
+
+
+def test_year_ranges_are_not_phones():
+    out, rep = anonymize("Tabela 12 2019-2020; ligue (21) 3333-4444 ou 11 98765-4321.",
+                         AnonOptions(kinds=["telefone"]))
+    assert "2019-2020" in out and rep.counts["telefone"] == 2
+
+
+def test_cmyk_jpeg_keeps_adobe_segment():
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("CMYK", (8, 8), (0, 255, 255, 0)).save(buf, "JPEG")
+    data = buf.getvalue()
+    assert b"Adobe" in data
+    clean = strip_image_metadata(data)
+    assert b"Adobe" in clean
+    a = Image.open(io.BytesIO(data)).convert("RGB").getpixel((4, 4))
+    b = Image.open(io.BytesIO(clean)).convert("RGB").getpixel((4, 4))
+    assert a == b
+
+
+def test_cli_word_list_with_bom(tmp_path, monkeypatch, capsys):
+    import shutil
+
+    from markinho.__main__ import cli
+
+    monkeypatch.chdir(tmp_path)
+    src = tmp_path / "r.docx"
+    shutil.copy(Path(__file__).resolve().parent.parent / "exemplos" / "relatorio.docx", src)
+    lista = tmp_path / "nomes.txt"
+    lista.write_bytes("﻿Relatório\n".encode("utf-8"))
+    assert cli([str(src), "-o", str(tmp_path / "a.md"), "--anonimizar-lista", str(lista)]) == 0
+    assert "relatório" not in (tmp_path / "a.md").read_text(encoding="utf-8").lower()

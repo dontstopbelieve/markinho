@@ -170,7 +170,7 @@ def cli(argv: list[str]) -> int:
     if args.anonimizar or args.anonimizar_lista:
         from .anonymize import AnonOptions
 
-        words = Path(args.anonimizar_lista).read_text(encoding="utf-8") if args.anonimizar_lista else ""
+        words = Path(args.anonimizar_lista).read_text(encoding="utf-8-sig") if args.anonimizar_lista else ""
         output.anon = AnonOptions(words=words)
         from .anonymize import DISCLAIMER
 

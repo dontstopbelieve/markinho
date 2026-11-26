@@ -156,6 +156,12 @@ def valid_luhn(s: str) -> bool:
     return total % 10 == 0
 
 
+def _year_range(v: str) -> bool:
+    """'2019-2020' no fim do número: é intervalo de anos, não telefone."""
+    m = re.search(r"(\d{4})-(\d{4})$", v)
+    return bool(m) and all(1900 <= int(x) <= 2100 for x in m.groups()) and not v.lstrip("(+").startswith("9")
+
+
 # --------------------------------------------------------------------------- #
 # Padrões (todos com tamanho limitado)
 # --------------------------------------------------------------------------- #
@@ -177,7 +183,7 @@ _PATTERNS: list[tuple[str, re.Pattern, Callable[[str], bool] | None]] = [
     ("telefone", re.compile(r"(?<![\w+(])(?:\+55[ \t]?\(?\d{2}\)?[ \t]?9?\d{4}[- \t]?\d{4}"
                             r"|\(\d{2}\)[ \t]?9?\d{4}[- \t]?\d{4}"
                             r"|\d{2}[ \t]9?\d{4}-\d{4}"
-                            r"|9\d{4}-\d{4})(?![\d-])"), None),
+                            r"|9\d{4}-\d{4})(?![\d-])"), lambda v: not _year_range(v)),
     ("cep", re.compile(r"(?<![\d.-])\d{2}\.?\d{3}-\d{3}(?![\d-])|\bCEP[: \t]{1,3}(?P<v>\d{8})(?!\d)"), None),
     ("oab", re.compile(r"\bOAB[ \t]?/?[ \t]?[A-Z]{2}[ \t]?(?:n[º°o.]{1,2}[ \t]?)?\d{1,3}\.?\d{3}(?:-?[A-Z])?(?!\d)"
                        r"|\b\d{1,3}\.?\d{3}[ \t]?(?:-[ \t]?)?OAB[ \t]?/[ \t]?[A-Z]{2}\b"), None),
@@ -199,7 +205,14 @@ _STOP = {"de", "da", "do", "das", "dos", "e", "o", "a", "os", "as", "que", "em",
          "ministério", "estado", "município", "união", "fazenda", "justiça", "tribunal", "público", "pública"}
 
 # imagens e caminhos não podem ser alterados (o link quebraria)
-_PROTECT = re.compile(r"!\[[^\]\n]{0,500}\]\([^)\n]{0,2000}\)|<img\b[^>\n]{0,2000}>|data:[\w/+.-]{1,40};base64,[A-Za-z0-9+/=]+")
+# só o ENDEREÇO das imagens é protegido; o texto alternativo (descrição) também é anonimizado
+_PROTECT = re.compile(r"(?P<alt>!\[[^\]\n]{0,500}\])\([^)\n]{0,2000}\)|\bsrc[ \t]*=[ \t]*\"[^\"\n]{0,2000}\"|\bsrc[ \t]*=[ \t]*'[^'\n]{0,2000}'"
+                      r"|data:[\w/+.-]{1,40};base64,[A-Za-z0-9+/=]+")
+# marcador que nenhuma regra consegue encontrar (caracteres de uso privado do Unicode, sem dígitos)
+_MARK_OPEN, _MARK_CLOSE, _MARK_DIGIT0 = "\ue000", "\ue001", 0xE100
+_MARK_RE = re.compile("\ue000([\ue100-\ue109]+)\ue001")
+# depois de uma pista, um rótulo seguido de dois-pontos ("Nome Completo: João") não é o nome
+_NAME_AFTER_COLON = re.compile(rf"[ \t]{{0,3}}:[ \t]{{0,3}}(?P<name>{_NAME})")
 
 
 def _fold(s: str) -> str:
@@ -282,8 +295,10 @@ def anonymize(md: str, opts: AnonOptions) -> tuple[str, AnonReport]:
     kept: list[str] = []
 
     def keep(m: re.Match) -> str:
-        kept.append(m.group(0))
-        return f"\x00{len(kept) - 1}\x00"
+        alt = m.group("alt") or ""              # o texto da imagem continua visível (e é anonimizado)
+        kept.append(m.group(0)[len(alt):])
+        n = "".join(chr(_MARK_DIGIT0 + int(d)) for d in str(len(kept) - 1))
+        return f"{alt}{_MARK_OPEN}{n}{_MARK_CLOSE}"
 
     text = _PROTECT.sub(keep, md)
 
@@ -319,7 +334,8 @@ def anonymize(md: str, opts: AnonOptions) -> tuple[str, AnonReport]:
         names += list(signed)
     if "nomes" in kinds:
         for m in _NAMED.finditer(text):
-            words = m.group("name").split()
+            label = _NAME_AFTER_COLON.match(text, m.end())
+            words = (label or m).group("name").split()
             while words and words[-1].lower() in _STOP:
                 words.pop()
             if words and words[0].lower() not in _STOP and (len(words) >= 2 or len(words[0]) >= 4):
@@ -334,7 +350,7 @@ def anonymize(md: str, opts: AnonOptions) -> tuple[str, AnonReport]:
         kind = "assinatura" if name in signed else "nomes"
         text = _term_re(name).sub(lambda m, kind=kind: rep.token(kind, m.group(0), "PESSOA"), text)
 
-    text = re.sub("\x00(\\d+)\x00", lambda m: kept[int(m.group(1))], text)
+    text = _MARK_RE.sub(lambda m: kept[int("".join(str(ord(c) - _MARK_DIGIT0) for c in m.group(1)))], text)
     return text, rep.report
 
 
@@ -368,7 +384,9 @@ def _strip_jpeg(data: bytes) -> bytes:
         size = int.from_bytes(data[i + 2:i + 4], "big")
         seg = data[i:i + 2 + size]
         # APP1 (EXIF/XMP), APP2..APP15 exceto ICC (APP2 "ICC_PROFILE"), COM (comentário)
-        drop = marker == 0xFE or (0xE1 <= marker <= 0xEF and not seg[4:15] == b"ICC_PROFILE")
+        # APP14 "Adobe" é mantido: diz como ler as cores (sem ele, JPEG CMYK sai com cores trocadas)
+        keep_seg = seg[4:15] == b"ICC_PROFILE" or (marker == 0xEE and seg[4:9] == b"Adobe")
+        drop = marker == 0xFE or (0xE1 <= marker <= 0xEF and not keep_seg)
         if not drop:
             out += seg
         i += 2 + size

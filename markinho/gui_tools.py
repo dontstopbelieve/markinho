@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QSettings, Qt
+from PySide6.QtCore import QSettings, Qt, QTimer
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QButtonGroup, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout, QGroupBox,
@@ -640,8 +640,13 @@ class AnonDialog(QDialog):
             b_prev.clicked.connect(self._preview)
             bb.addButton("Salvar cópia anonimizada…", QDialogButtonBox.AcceptRole)
             bb.addButton(QDialogButtonBox.Cancel)
+            # recontagem só depois de uma pausa na digitação (documentos grandes travariam a janela)
+            self._recount = QTimer(self)
+            self._recount.setSingleShot(True)
+            self._recount.setInterval(400)
+            self._recount.timeout.connect(self._count)
             for w in list(self.kind_boxes.values()) + [self.words] + self.modes.buttons():
-                (w.textChanged if w is self.words else w.toggled).connect(self._count)
+                (w.textChanged if w is self.words else w.toggled).connect(lambda *_: self._recount.start())
             self._count()
         else:
             bb.addButton(QDialogButtonBox.Ok)

@@ -364,3 +364,24 @@ def test_anon_warning_is_visible_and_needs_ack(win, monkeypatch):
     assert "responsabiliza" in win.panel.anon_warn.text()
     win.panel.anon.setChecked(False)
     assert win.panel.anon_warn.isHidden()
+
+
+def test_anon_dialog_recounts_after_pause(win):
+    from PySide6.QtCore import QSettings
+
+    from markinho.gui_tools import AnonDialog
+
+    app, w = win
+    d = AnonDialog(w, QSettings(), "Fulano Beltrano e Fulano Beltrano", None)
+    calls = []
+    d._recount.timeout.connect(lambda: calls.append(1))
+    for ch in "Fulano":
+        d.words.insertPlainText(ch)                 # cada letra só reinicia o relógio
+    assert not calls and d._recount.isActive()
+    import time
+
+    end = time.time() + 3
+    while not calls and time.time() < end:
+        app.processEvents()
+        time.sleep(0.05)
+    assert calls == [1] and "Sua lista" in d.found.text()
