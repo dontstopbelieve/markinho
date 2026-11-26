@@ -19,8 +19,8 @@ import re
 from pathlib import Path
 from typing import Sequence
 
-IMAGE_MODES = [("folder", "Pasta <nome>_assets/ ao lado do .md"),
-               ("base64", "Embutidas no .md (base64)"),
+IMAGE_MODES = [("folder", "Numa pasta ao lado do .md"),
+               ("base64", "Dentro do próprio .md (arquivo maior)"),
                ("none", "Não incluir imagens")]
 
 _IMG_RE = re.compile(r"!\[([^\]]*)\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)")

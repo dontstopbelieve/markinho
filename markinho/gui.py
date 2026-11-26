@@ -483,7 +483,7 @@ class SettingsPanel(QWidget):
         # ---- modo: desempenho × qualidade ----
         from .presets import PRESETS
 
-        mbox = QGroupBox("Modo")
+        mbox = QGroupBox("Principal")
         mf = QFormLayout(mbox)
         self.mode = QComboBox()
         for pid, pr in PRESETS.items():
@@ -493,7 +493,9 @@ class SettingsPanel(QWidget):
         self.mode.setItemData(self.mode.count() - 1, "Ajustes feitos à mão no motor e nas opções abaixo.",
                               Qt.ToolTipRole)
         self.mode.setCurrentIndex(max(0, self.mode.findData(self.settings.value("mode", "equilibrado"))))
-        mf.addRow("Desempenho × qualidade:", self.mode)
+        self.mode.setToolTip("Rápido: lotes grandes de arquivos digitais. Equilibrado: o melhor para a maioria. "
+                             "Máxima qualidade: PDFs difíceis e escaneados (mais lento).")
+        mf.addRow("Velocidade:", self.mode)
         self.mode_info = QLabel()
         self.mode_info.setWordWrap(True)
         self.mode_info.setStyleSheet("color: palette(window-text); font-size: 12px;")
@@ -507,9 +509,37 @@ class SettingsPanel(QWidget):
                                 "processador; mais = termina lotes mais rápido. A IA de layout sempre usa 1.")
         self.threads.valueChanged.connect(lambda v: (self.settings.setValue("queue/threads", v),
                                                      self.threads_changed.emit(v)))
-        mf.addRow("Conversões ao mesmo tempo:", self.threads)
         self._mode_form = mf
         lay.addWidget(mbox)
+
+        # ---- opções avançadas (abre e fecha; fica fechado de início) ----
+        from PySide6.QtWidgets import QToolButton as _QTB
+
+        self.adv_toggle = _QTB()
+        self.adv_toggle.setText("Opções avançadas")
+        self.adv_toggle.setCheckable(True)
+        self.adv_toggle.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.adv_toggle.setStyleSheet("QToolButton { border: none; font-weight: bold; padding: 4px 0; }")
+        self.adv_toggle.setToolTip("Motor de conversão, correção de caracteres, formato do Markdown, "
+                                   "metadados, descrição de imagens, aparência")
+        lay.addWidget(self.adv_toggle)
+        self.advanced = QWidget()
+        adv = QVBoxLayout(self.advanced)
+        adv.setContentsMargins(0, 0, 0, 0)
+        lay.addWidget(self.advanced)
+        perf = QGroupBox("Desempenho")
+        pf = QFormLayout(perf)
+        pf.addRow("Conversões ao mesmo tempo:", self.threads)
+        self._perf_form = pf
+        adv.addWidget(perf)
+
+        def _adv(on: bool) -> None:
+            self.advanced.setVisible(on)
+            self.adv_toggle.setArrowType(Qt.DownArrow if on else Qt.RightArrow)
+            self.settings.setValue("ui/advanced", on)
+        self.adv_toggle.toggled.connect(_adv)
+        self.adv_toggle.setChecked(self.settings.value("ui/advanced", False, type=bool))
+        _adv(self.adv_toggle.isChecked())
 
         # ---- motor ----
         box = QGroupBox("Motor de conversão")
@@ -532,14 +562,32 @@ class SettingsPanel(QWidget):
         self.opt_form = QFormLayout()
         self.opt_form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         bl.addLayout(self.opt_form)
-        lay.addWidget(box)
+        adv.addWidget(box)
 
         # ---- correção de caracteres ----
         self.fix_box = QGroupBox("Correção de caracteres")
         self.fix_box.setCheckable(True)
         self.fix_box.setToolTip("Corrige caracteres perdidos ou trocados na extração "
                                 "(codificação errada, acentos soltos, ligaduras…).")
-        fl = QVBoxLayout(self.fix_box)
+        fl_outer = QVBoxLayout(self.fix_box)
+        frow = QHBoxLayout()
+        self.fix_summary = QLabel()
+        self.fix_summary.setStyleSheet("color: palette(window-text); font-size: 12px;")
+        self.fix_more = _QTB()
+        self.fix_more.setText("Escolher quais")
+        self.fix_more.setCheckable(True)
+        self.fix_more.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.fix_more.setArrowType(Qt.RightArrow)
+        frow.addWidget(self.fix_summary, 1)
+        frow.addWidget(self.fix_more)
+        fl_outer.addLayout(frow)
+        self.fix_details = QWidget()
+        fl = QVBoxLayout(self.fix_details)
+        fl.setContentsMargins(0, 0, 0, 0)
+        fl_outer.addWidget(self.fix_details)
+        self.fix_details.setVisible(False)
+        self.fix_more.toggled.connect(lambda on: (self.fix_details.setVisible(on),
+                                                  self.fix_more.setArrowType(Qt.DownArrow if on else Qt.RightArrow)))
         self.fix_checks: dict[str, QCheckBox] = {}
         defaults = FixOptions()
         for key in FixOptions.keys():
@@ -561,10 +609,13 @@ class SettingsPanel(QWidget):
         fl.addLayout(row)
         self.fix_box.setChecked(self.settings.value("fix/enabled", True, type=bool))
         self.fix_box.toggled.connect(self._fix_toggled)
-        lay.addWidget(self.fix_box)
+        for cb in self.fix_checks.values():
+            cb.toggled.connect(self._update_fix_summary)
+        self._update_fix_summary()
+        adv.addWidget(self.fix_box)
 
         # ---- saída ----
-        obox = QGroupBox("Saída")
+        obox = QGroupBox("Formato e extras")
         of = QFormLayout(obox)
         of.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         self.images = QComboBox()
@@ -572,14 +623,14 @@ class SettingsPanel(QWidget):
             self.images.addItem(lbl, val)
         self.images.setCurrentIndex(max(0, self.images.findData(self.settings.value("out/images", "folder"))))
         self.images.setToolTip("Imagens extraídas dos documentos. A pasta é gravada ao lado do .md ao salvar.")
-        of.addRow("Imagens:", self.images)
+        mf.addRow("Imagens:", self.images)
         self.profile = QComboBox()
         for val, lbl in PROFILES:
             self.profile.addItem(lbl, val)
         self.profile.setCurrentIndex(max(0, self.profile.findData(self.settings.value("out/profile", "gfm"))))
         self.profile.setToolTip("Dialeto do Markdown final: cada programa (GitHub, Obsidian, IAs) "
                                 "entende o Markdown de um jeito um pouco diferente.")
-        of.addRow("Perfil:", self.profile)
+        of.addRow("Formato do Markdown:", self.profile)
         self.frontmatter = QCheckBox("Metadados no topo (frontmatter YAML)")
         self.frontmatter.setToolTip("Título, autor, datas e arquivo de origem em um bloco --- no início do .md.")
         self.frontmatter.setChecked(self.settings.value("out/frontmatter", False, type=bool))
@@ -596,7 +647,7 @@ class SettingsPanel(QWidget):
         b_anon.clicked.connect(self._anon_dialog)
         arow.addWidget(self.anon, 1)
         arow.addWidget(b_anon)
-        of.addRow(arow)
+        mf.addRow(arow)
         from .gui_tools import anon_warning
 
         self.anon_warn = anon_warning("Revise sempre o arquivo anonimizado antes de usar: o Markinho não se "
@@ -604,7 +655,7 @@ class SettingsPanel(QWidget):
                                       "lista, maiúsculas e acentos não importam, mas cada variação do nome "
                                       "precisa ser escrita.")
         self.anon_warn.setVisible(self.anon.isChecked())
-        of.addRow(self.anon_warn)
+        mf.addRow(self.anon_warn)
         self.anon.toggled.connect(self._anon_toggled)
         self.anon.toggled.connect(self._output_toggled)
         self.describe = QCheckBox("Descrever imagens com IA local (Ollama)")
@@ -656,7 +707,7 @@ class SettingsPanel(QWidget):
         cb.addWidget(self.conflict_label)
         cb.addWidget(self.conflict_fix)
         self.conflict_box.setVisible(False)
-        of.addRow(self.conflict_box)
+        mf.addRow(self.conflict_box)
         for w in (self.images, self.profile):
             w.currentIndexChanged.connect(self._output_toggled)
         self.frontmatter.toggled.connect(self._output_toggled)
@@ -664,7 +715,7 @@ class SettingsPanel(QWidget):
         self.ollama_model.currentTextChanged.connect(self._output_toggled)
         for w in (self.ollama_model, self.ollama_refresh_btn, self.ollama_label):
             w.setEnabled(self.describe.isChecked())
-        lay.addWidget(obox)
+        adv.addWidget(obox)
 
         # ---- aparência ----
         abox = QGroupBox("Aparência")
@@ -677,7 +728,7 @@ class SettingsPanel(QWidget):
             lambda _i: (self.settings.setValue("theme", self.theme.currentData()),
                         self.theme_changed.emit(self.theme.currentData())))
         af.addRow("Tema:", self.theme)
-        lay.addWidget(abox)
+        adv.addWidget(abox)
 
         # ---- reconverter ----
         rl = QHBoxLayout()
@@ -687,13 +738,13 @@ class SettingsPanel(QWidget):
         b_allc.clicked.connect(lambda: self.reconvert.emit(True))
         rl.addWidget(b_sel)
         rl.addWidget(b_allc)
-        lay.addLayout(rl)
+        adv.addLayout(rl)
         hint = QLabel("Mudanças no motor valem para os próximos arquivos; use “Reconverter” para "
                       "aplicá-las aos que já estão na lista. Correções, perfil, metadados e o modo das "
                       "imagens são aplicados na hora.")
         hint.setWordWrap(True)
         hint.setStyleSheet("color: palette(window-text); font-size: 12px;")
-        lay.addWidget(hint)
+        adv.addWidget(hint)
         lay.addStretch()
 
         saved = self.settings.value("engine", AUTO)
@@ -811,13 +862,15 @@ class SettingsPanel(QWidget):
             self._opt_widgets[opt.key] = w
 
     def set_simple(self, on: bool) -> None:
-        """Modo simples: esconde o motor, a correção detalhada e o número de conversões simultâneas."""
+        """Modo simples: só a parte Principal; as opções avançadas ficam escondidas."""
         self.engine_box.setVisible(not on)
         self.fix_box.setVisible(not on)
-        try:
-            self._mode_form.setRowVisible(self.threads, not on)
-        except AttributeError:          # Qt antigo
-            self.threads.setVisible(not on)
+        self.adv_toggle.setVisible(not on)
+        self.advanced.setVisible(not on and self.adv_toggle.isChecked())
+
+    def _update_fix_summary(self, *_):
+        on = sum(cb.isChecked() for cb in self.fix_checks.values())
+        self.fix_summary.setText(f"{on} de {len(self.fix_checks)} correções ligadas")
 
     def reload_output(self) -> None:
         """Relê as opções de saída salvas (ex.: depois do assistente inicial)."""
@@ -1795,11 +1848,26 @@ class MainWindow(QMainWindow):
             tb.addAction(a)
             return a
 
-        action("Adicionar", QStyle.SP_FileIcon, self.add_files_dialog, QKeySequence.Open,
-               tip="Adicionar arquivos à fila (também dá para arrastá-los para a janela)")
-        action("Pasta", QStyle.SP_DirIcon, self.add_folder_dialog, tip="Adicionar todos os arquivos de uma pasta")
-        action("Novo .md", QStyle.SP_FileDialogNewFolder, self.new_document, QKeySequence.New,
-               tip="Escrever ou colar Markdown para exportar a outro formato")
+        self.act_add = action("Adicionar", QStyle.SP_FileIcon, self.add_files_dialog, QKeySequence.Open,
+                              tip="Adicionar arquivos à fila (Ctrl+O) — também dá para arrastá-los para a janela. "
+                                  "A setinha ao lado tem: adicionar uma pasta inteira e escrever do zero.")
+        self.act_folder = QAction(st.standardIcon(QStyle.SP_DirIcon), "Adicionar pasta…", self)
+        self.act_folder.triggered.connect(self.add_folder_dialog)
+        self.act_new = QAction(draw_icon("write"), "Escrever do zero (novo .md)", self)
+        self.act_new.setShortcut(QKeySequence.New)
+        self.act_new.setToolTip("Escrever ou colar Markdown para exportar a outro formato")
+        self.act_new.triggered.connect(self.new_document)
+        self.addAction(self.act_new)
+        from PySide6.QtWidgets import QMenu as _QMenu, QToolButton as _QToolButton
+
+        add_menu = _QMenu(self)
+        add_menu.addAction(st.standardIcon(QStyle.SP_FileIcon), "Adicionar arquivos…", self.add_files_dialog)
+        add_menu.addAction(self.act_folder)
+        add_menu.addAction(self.act_new)
+        add_btn_tb = tb.widgetForAction(self.act_add)
+        if isinstance(add_btn_tb, _QToolButton):
+            add_btn_tb.setMenu(add_menu)
+            add_btn_tb.setPopupMode(_QToolButton.MenuButtonPopup)
         self.act_paste = action("Colar", QStyle.SP_DialogOpenButton, self.paste_as_markdown, "Ctrl+Shift+V",
                                 tip="Colar e converter (Ctrl+Shift+V): texto de uma página da web, do Word ou de um "
                                     "e-mail vira Markdown; uma imagem copiada passa pelo OCR")
@@ -1834,19 +1902,35 @@ class MainWindow(QMainWindow):
         self.act_remove = menu_action("Remover da lista", QStyle.SP_TrashIcon, self.remove_selected,
                                       QKeySequence.Delete)
         self.act_clear = menu_action("Limpar a lista", QStyle.SP_DialogResetButton, self.clear_all)
-        self.act_copy = action("Copiar", QStyle.SP_DialogApplyButton, self.copy_current, "Ctrl+Shift+C")
+        self.act_copy = action("Copiar", QStyle.SP_DialogApplyButton, self.copy_current, "Ctrl+Shift+C",
+                               tip="Copiar o Markdown do documento aberto (Ctrl+Shift+C)")
+        self.act_copy.setIcon(draw_icon("copy"))
         self.act_ai = action("Para IA", QStyle.SP_MessageBoxQuestion, self.copy_for_ai, "Ctrl+Alt+C",
                              tip="Copiar para IA: texto enxuto, contagem de tokens e divisão em partes para "
                                  "ChatGPT, Claude, Gemini…")
-        self.act_save = action("Salvar .md", QStyle.SP_DialogSaveButton, self.save_current, QKeySequence.Save)
+        self.act_ai.setIcon(draw_icon("ai"))
+        self.act_save = action("Salvar .md", QStyle.SP_DialogSaveButton, self.save_current, QKeySequence.Save,
+                               tip="Salvar o documento aberto como .md (Ctrl+S)")
         self.act_save_all = action("Salvar todos", QStyle.SP_DriveHDIcon, self.save_all, "Ctrl+Shift+S",
                                    tip="Salvar um .md para cada documento numa pasta")
         self.act_merge = menu_action("Juntar todos em um .md…", QStyle.SP_FileDialogDetailedView,
                                      self.save_merged, tip="Juntar todos em um único .md")
         tb.addSeparator()
         self.act_export = action("Exportar…", QStyle.SP_ArrowRight, self.export_dialog, "Ctrl+E",
-                                 tip="Converter o Markdown para DOCX, PDF, HTML, ODT, EPUB, LaTeX…")
-        tb.addSeparator()
+                                 tip="Converter o Markdown para Word, PDF, HTML, ODT, EPUB, LaTeX… (Ctrl+E)")
+        self.act_export.setIcon(draw_icon("export"))
+        self.act_convert.setIcon(draw_icon("convert"))
+        self._toolbar = tb
+        # botões principais em destaque (azul): “Converter” e, depois de converter, “Salvar”
+        for a in (self.act_convert, self.act_save):
+            w_ = tb.widgetForAction(a)
+            if w_ is not None:
+                w_.setObjectName("primaryButton")
+        tb.setStyleSheet(
+            "QToolButton#primaryButton:enabled { background: #1565C0; color: white; border-radius: 6px;"
+            " padding: 3px 10px; font-weight: bold; }"
+            "QToolButton#primaryButton:enabled:hover { background: #0D47A1; }")
+        self._secondary = [self.act_paste, self.act_cancel, self.act_copy, self.act_ai, self.act_save_all]
         from PySide6.QtWidgets import QMenu, QToolButton
 
         tools = QMenu(self)
@@ -1902,21 +1986,39 @@ class MainWindow(QMainWindow):
         tool_menu.addAction("Motores de conversão…", lambda: EnginesDialog(self).exec())
         tool_menu.addAction("Assistentes de IA (MCP)…", lambda: McpDialog(self).exec())
         tool_menu.addSeparator()
-        tool_menu.addAction(self.act_merge)
         tool_menu.addAction("Anonimizar um arquivo Markdown…", self.anonymize_file)
         for text, slot in extra:
             tool_menu.addAction(text, slot)
-        tool_menu.addAction(self.act_simple)
+        tool_menu.addSeparator()
         tool_menu.addAction(self.act_shell)
         tool_menu.addAction("Assistente inicial…", self.first_run)
         self.menuBar().insertMenu(help_menu.menuAction(), tool_menu)
-        tbtn = QToolButton(self)
-        tbtn.setText("Ferramentas")
-        tbtn.setIcon(st.standardIcon(QStyle.SP_FileDialogContentsView))
-        tbtn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        tbtn.setPopupMode(QToolButton.InstantPopup)
-        tbtn.setMenu(tools)
-        tb.addWidget(tbtn)
+        # menus Arquivo e Exibir (Arquivo é o primeiro, como em todo programa)
+        file_menu = QMenu("Arquivo", self)
+        a_addf = QAction(st.standardIcon(QStyle.SP_FileIcon), "Adicionar arquivos…", self)
+        a_addf.triggered.connect(self.add_files_dialog)
+        file_menu.addAction(a_addf)
+        file_menu.addAction(self.act_folder)
+        file_menu.addAction(self.act_new)
+        file_menu.addAction(self.act_paste)
+        file_menu.addSeparator()
+        file_menu.addAction(self.act_convert)
+        file_menu.addAction(conv_sel)
+        file_menu.addAction(self.act_cancel)
+        file_menu.addSeparator()
+        file_menu.addAction(self.act_save)
+        file_menu.addAction(self.act_save_all)
+        file_menu.addAction(self.act_merge)
+        file_menu.addAction(self.act_export)
+        file_menu.addSeparator()
+        a_quit = QAction("Sair", self)
+        a_quit.setShortcut(QKeySequence.Quit)
+        a_quit.triggered.connect(self.close)
+        a_quit.setMenuRole(QAction.QuitRole)
+        file_menu.addAction(a_quit)
+        self.menuBar().insertMenu(edit_menu.menuAction(), file_menu)
+        self._view_menu = QMenu("Exibir", self)
+        self.menuBar().insertMenu(tool_menu.menuAction(), self._view_menu)
 
         # ---- esquerda: arquivos ----
         self.list = FileList()
@@ -1947,7 +2049,9 @@ class MainWindow(QMainWindow):
         add_btn.clicked.connect(self.add_files_dialog)
         lv.addWidget(add_btn)
         lv.addWidget(self.act_auto)
-        fmt = QLabel(f"{len(all_input_extensions())} formatos de entrada. Veja “Motores”.")
+        fmt = QLabel(f"Lê {len(all_input_extensions())} tipos de arquivo: PDF, Word, Excel, PowerPoint, "
+                     "páginas da web, e-books, fotos e escaneados…")
+        fmt.setWordWrap(True)
         fmt.setStyleSheet("color: palette(window-text); font-size: 12px;")
         lv.addWidget(fmt)
 
@@ -1956,7 +2060,9 @@ class MainWindow(QMainWindow):
         mono.setStyleHint(QFont.Monospace)
         self.editor = QPlainTextEdit()
         self.editor.setFont(mono)
-        self.editor.setPlaceholderText("O Markdown convertido aparece aqui. Você pode editá-lo antes de salvar ou exportar.")
+        self.editor.setPlaceholderText("Para começar: arraste documentos para a janela ou clique em “Adicionar”. "
+                                       "Depois clique em “Converter” — o texto aparece aqui, pronto para "
+                                       "salvar, copiar ou exportar (você pode editá-lo antes).")
         self.editor.textChanged.connect(self._editor_changed)
         self.editor.setAcceptDrops(False)       # arquivos soltos aqui vão para a fila, não para o texto
         self.preview = PreviewBrowser()
@@ -2089,14 +2195,43 @@ class MainWindow(QMainWindow):
         scroll.setWidget(self.panel)
         scroll.setWidgetResizable(True)
         scroll.setMinimumWidth(240)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)   # o painel acompanha a largura da coluna
+        for combo in self.panel.findChildren(QComboBox):             # listas encolhem em vez de alargar o painel
+            combo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+            combo.setMinimumContentsLength(8)
         dock = QDockWidget("Configurações", self)
         self._dock = dock
         dock.setWidget(scroll)
         dock.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         view_toggle = dock.toggleViewAction()
-        view_toggle.setText("Mostrar painel de configurações")
-        self._tools_menu.insertAction(self._tools_menu.actions()[-1], view_toggle)
+        view_toggle.setText("Painel de configurações")
+        view_toggle.setShortcut("F9")
+        vm = self._view_menu
+        vm.addAction(view_toggle)
+        a_cmp = QAction("Ver original ao lado", self, checkable=True)
+        a_cmp.toggled.connect(self.compare_btn.setChecked)
+        self.compare_btn.toggled.connect(a_cmp.setChecked)
+        vm.addAction(a_cmp)
+        vm.addSeparator()
+        for text, step, key in (("Aumentar o texto", 1, "Ctrl++"), ("Diminuir o texto", -1, "Ctrl+-"),
+                                ("Tamanho normal do texto", 0, "Ctrl+0")):
+            a_z = QAction(text, self)
+            a_z.triggered.connect(lambda _c=False, st_=step: self.text_zoom(st_))
+            a_z.setShortcut(key)
+            a_z.setShortcutContext(Qt.WidgetShortcut)      # o atalho de verdade já existe na janela
+            vm.addAction(a_z)
+        vm.addSeparator()
+        vm.addAction(self.act_simple)
+        # painel aberto/fechado é lembrado; em telas pequenas começa fechado (o texto fica com o espaço)
+        saved_panel = self.settings.value("ui/panel", None)
+        if saved_panel is None:
+            scr = QGuiApplication.primaryScreen()
+            small = scr is not None and scr.availableGeometry().width() < 1280
+            dock.setVisible(not small)
+        else:
+            dock.setVisible(saved_panel in (True, "true", "1"))
+        dock.visibilityChanged.connect(lambda v: self.settings.setValue("ui/panel", v) if self.isVisible() else None)
 
         self.progress = QProgressBar()
         self.progress.setMaximumWidth(200)
@@ -2320,7 +2455,8 @@ class MainWindow(QMainWindow):
             warn = (rep is not None and bool(rep.warnings())) or any(is_alert(w) for w in e.result.warnings) \
                 or bool(e.result.review_pages)
             item.setIcon(st.standardIcon(QStyle.SP_MessageBoxWarning if warn else QStyle.SP_DialogApplyButton))
-            tip = f"{e.path}\n\n{e.result.converter} • {len(e.text):,} caracteres • {e.result.seconds:.2f}s"
+            secs = f"{e.result.seconds:.2f}".replace(".", ",")
+            tip = f"{e.path}\n\n{e.result.converter} • {num_br(len(e.text))} caracteres • {secs} s"
             if rep is not None:
                 tip += f"\n{rep.total} correção(ões) de caracteres"
                 if warn:
@@ -2573,6 +2709,7 @@ class MainWindow(QMainWindow):
         if e is None:
             self.editor.clear()
             self.info.setText("Nenhum arquivo selecionado")
+            self.info.setToolTip("")
         elif e.queued and not e.busy:
             self.editor.clear()
             self.info.setText(f"Na fila: <b>{html.escape(Path(e.path).name)}</b>. Clique em "
@@ -2585,9 +2722,10 @@ class MainWindow(QMainWindow):
             self.info.setText(f"<span style='color:#c0392b'>⚠ {html.escape(e.error)}</span>")
         else:
             self.editor.setPlainText(e.text)
-            where = e.path if not e.path.startswith("<") else "Documento novo (não salvo)"
-            self.info.setText(f"{html.escape(where)}  •  <b>{html.escape(e.result.converter)}</b>  •  "
-                              f"{len(e.text):,} caracteres" + ("  •  ✎ editado" if e.edited else ""))
+            where = Path(e.path).name if not e.path.startswith("<") else "Documento novo (não salvo)"
+            self.info.setText(f"<b>{html.escape(where)}</b>  •  {html.escape(e.result.converter)}  •  "
+                              f"{num_br(len(e.text))} caracteres" + ("  •  ✎ editado" if e.edited else ""))
+            self.info.setToolTip(e.path if not e.path.startswith("<") else "")
         self.editor.setReadOnly(e is None or e.busy or e.queued or bool(e.error))
         self._update_review(e)
         self._loading = False
@@ -2682,6 +2820,28 @@ class MainWindow(QMainWindow):
                        and x.result is not None and not x.busy for it in self.list.selectedItems())
         self.act_convert.setEnabled(any((x.queued or x.error) and not x.busy for x in entries) or sel_done)
         self.act_cancel.setEnabled(any(x.busy for x in entries))
+        # destaque azul no próximo passo: “Converter” se há fila; senão “Salvar”
+        pending = any(x.queued and not x.busy for x in entries)
+        self._set_primary(self.act_convert, pending)
+        self._set_primary(self.act_save, not pending and self.act_save.isEnabled())
+
+    def _set_primary(self, act, on: bool) -> None:
+        w_ = self._toolbar.widgetForAction(act) if hasattr(self, "_toolbar") else None
+        if w_ is None or (w_.objectName() == "primaryButton") == on:
+            return
+        w_.setObjectName("primaryButton" if on else "")
+        w_.style().unpolish(w_)
+        w_.style().polish(w_)
+
+    def resizeEvent(self, ev) -> None:
+        """Janela estreita: botões secundários só com ícone (nenhum botão some atrás do “»”)."""
+        super().resizeEvent(ev)
+        if hasattr(self, "_toolbar"):
+            narrow = self.width() < 1250
+            for act in self._secondary:
+                w_ = self._toolbar.widgetForAction(act)
+                if w_ is not None:
+                    w_.setToolButtonStyle(Qt.ToolButtonIconOnly if narrow else Qt.ToolButtonTextBesideIcon)
 
     def _done_entries(self) -> list[Entry]:
         out = []
@@ -3168,6 +3328,65 @@ def _visible(s: str) -> str:
         else:
             out.append(html.escape(c))
     return "".join(out)
+
+
+def num_br(n: int) -> str:
+    """1023 → “1.023” (separador de milhar brasileiro)."""
+    return f"{n:,}".replace(",", ".")
+
+
+def draw_icon(kind: str) -> QIcon:
+    """Ícones simples desenhados no próprio programa (iguais em todos os sistemas)."""
+    from PySide6.QtCore import QPointF, QRectF
+    from PySide6.QtGui import QBrush, QPainter, QPainterPath, QPen, QPixmap
+
+    pm = QPixmap(64, 64)
+    pm.fill(Qt.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.Antialiasing)
+    blue, green, dark = QColor("#1565C0"), QColor("#1DBF4E"), QColor("#37474F")
+    if kind == "convert":                       # círculo azul com “play”
+        p.setPen(Qt.NoPen)
+        p.setBrush(blue)
+        p.drawEllipse(QRectF(4, 4, 56, 56))
+        tri = QPainterPath(QPointF(25, 18))
+        tri.lineTo(46, 32)
+        tri.lineTo(25, 46)
+        tri.closeSubpath()
+        p.setBrush(Qt.white)
+        p.drawPath(tri)
+    elif kind == "export":                      # folha com seta saindo
+        p.setPen(QPen(dark, 5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        p.setBrush(Qt.NoBrush)
+        p.drawPolyline([QPointF(30, 10), QPointF(12, 10), QPointF(12, 54), QPointF(46, 54), QPointF(46, 36)])
+        p.setPen(QPen(green, 6, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        p.drawLine(QPointF(28, 36), QPointF(54, 10))
+        p.drawPolyline([QPointF(38, 10), QPointF(54, 10), QPointF(54, 26)])
+    elif kind == "copy":                        # duas folhas
+        p.setPen(QPen(dark, 5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        p.setBrush(Qt.white)
+        p.drawRoundedRect(QRectF(8, 8, 32, 38), 5, 5)
+        p.drawRoundedRect(QRectF(24, 20, 32, 38), 5, 5)
+    elif kind == "ai":                          # brilho (estrela de 4 pontas) — “IA”
+        def star(cx, cy, r):
+            path = QPainterPath(QPointF(cx, cy - r))
+            for x, y in ((cx + r * .22, cy - r * .22), (cx + r, cy), (cx + r * .22, cy + r * .22), (cx, cy + r),
+                         (cx - r * .22, cy + r * .22), (cx - r, cy), (cx - r * .22, cy - r * .22)):
+                path.lineTo(x, y)
+            path.closeSubpath()
+            return path
+        p.setPen(Qt.NoPen)
+        p.setBrush(QBrush(QColor("#7E57C2")))
+        p.drawPath(star(28, 34, 24))
+        p.setBrush(QBrush(QColor("#FFB300")))
+        p.drawPath(star(50, 13, 10))
+    elif kind == "write":                       # folha com lápis
+        p.setPen(QPen(dark, 5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        p.drawPolyline([QPointF(34, 54), QPointF(10, 54), QPointF(10, 10), QPointF(40, 10), QPointF(40, 22)])
+        p.setPen(QPen(blue, 8, Qt.SolidLine, Qt.RoundCap))
+        p.drawLine(QPointF(30, 48), QPointF(54, 24))
+    p.end()
+    return QIcon(pm)
 
 
 def icon_path() -> Path | None:

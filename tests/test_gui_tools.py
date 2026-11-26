@@ -385,3 +385,31 @@ def test_anon_dialog_recounts_after_pause(win):
         app.processEvents()
         time.sleep(0.05)
     assert calls == [1] and "Sua lista" in d.found.text()
+
+
+def test_ux_menus_panel_and_header(win):
+    from markinho.gui import num_br
+
+    app, w = win
+    titles = [a.text() for a in w.menuBar().actions()]
+    assert titles[:5] == ["Arquivo", "Editar", "Exibir", "Ferramentas", "Ajuda"]
+    # opções avançadas abrem e fecham; o estado é lembrado
+    w.panel.adv_toggle.setChecked(False)
+    assert w.panel.advanced.isHidden()
+    w.panel.adv_toggle.setChecked(True)
+    assert not w.panel.advanced.isHidden() and w.settings.value("ui/advanced", type=bool)
+    # correção de caracteres resumida
+    assert w.panel.fix_details.isHidden() and "correções ligadas" in w.panel.fix_summary.text()
+    # números no formato brasileiro
+    assert num_br(1023) == "1.023" and num_br(1234567) == "1.234.567"
+    # janela estreita: botões secundários só com ícone
+    from PySide6.QtCore import Qt
+
+    w.show()
+    w.resize(1000, 700)
+    app.processEvents()
+    assert w._toolbar.widgetForAction(w.act_copy).toolButtonStyle() == Qt.ToolButtonIconOnly
+    w.resize(1400, 800)
+    app.processEvents()
+    assert w._toolbar.widgetForAction(w.act_copy).toolButtonStyle() == Qt.ToolButtonTextBesideIcon
+    w.panel.adv_toggle.setChecked(False)

@@ -27,19 +27,20 @@ class Preset:
 
 
 PRESETS: dict[str, Preset] = {p.id: p for p in (
-    Preset("rapido", "Rápido", "Sem OCR, sem análise de layout e sem imagens: em PDFs sai texto corrido, sem títulos. "
-           "Para lotes grandes de arquivos digitais.",
+    Preset("rapido", "Rápido", "O mais rápido, para muitos arquivos digitais. Não lê escaneados e não traz "
+           "imagens; em PDFs sai texto corrido, sem títulos.",
            "auto",
            {"native": {"ocr": "off", "pdf_layout": False, "pdf_columns": False, "pdf_strip_headers": True,
                        "tables_html": True}},
            images="none"),
-    Preset("equilibrado", "Equilibrado (padrão)", "Layout do PDF, colunas, imagens e OCR só onde não há texto.",
+    Preset("equilibrado", "Equilibrado (padrão)", "Bom para a maioria dos documentos: títulos, colunas, tabelas, "
+           "imagens e leitura de páginas escaneadas.",
            "auto",
            {"native": {"ocr": "auto", "pdf_layout": True, "pdf_columns": True, "pdf_strip_headers": True,
                        "tables_html": True}},
            images="folder"),
-    Preset("qualidade", "Máxima qualidade", "IA de layout (Docling) com tabelas precisas, fórmulas e código. "
-           "Sem o Docling, OCR mais preciso nas páginas escaneadas. Mais lento.",
+    Preset("qualidade", "Máxima qualidade", "Mais lento, para PDFs difíceis: tabelas complicadas, fórmulas e "
+           "escaneados ruins (usa IA de layout na edição COMPLETA).",
            "docling",
            {"docling": {"ocr": True, "tables": True, "table_accurate": True, "formulas": True, "code": True},
             # sem o Docling: OCR só nas páginas sem texto, com os modelos mais precisos. Forçar OCR em PDF

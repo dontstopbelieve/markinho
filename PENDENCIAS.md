@@ -134,6 +134,12 @@ AGPL-3.0 e o ícone novo — falta o teste no Windows.
 
 ## Mais tarde
 
+- [x] **UX níveis A e B** (26/11/2026): menus Arquivo/Exibir, barra enxuta (Adicionar com menu, Converter e
+      Salvar em destaque azul, ícones próprios, botões secundários só com ícone em janela estreita),
+      cabeçalho só com o nome do arquivo e números em pt-BR, painel em “Principal” + “Opções avançadas”
+      (fechadas), correção de caracteres resumida, painel começa fechado em telas < 1280 px, textos sem jargão.
+- [ ] **UX nível C** (versão 3.1): tela vazia acolhedora com área grande para soltar arquivos, barra de etapas
+      (Adicionar → Converter → Salvar), aba Visualização como inicial no modo simples.
 - [ ] **Testes de regressão com réplicas falsas** (plano de 16/11): tabela que quebra entre páginas,
       DOCX com caixas de texto/notas/comentários, XLSX com várias abas e células mescladas, PPTX com
       tabelas, página escaneada torta/invertida gerada no teste. Regra: defeito corrigido = teste novo
