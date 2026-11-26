@@ -134,6 +134,10 @@ AGPL-3.0 e o ícone novo — falta o teste no Windows.
 
 ## Mais tarde
 
+- [x] **Espaço de arquivos do GitHub esgotado** (26/11/2026): em repositório privado são 500 MB para os
+      instaladores gerados (“Artifact storage quota has been hit”). Arquivos agora ficam guardados só 2 dias.
+      Se acontecer de novo: apagar artefatos antigos (Actions > execução > Artifacts > lixeira; o GitHub
+      leva algumas horas para recalcular) ou tornar o repositório público (sem esse limite).
 - [x] **UX níveis A e B** (26/11/2026): menus Arquivo/Exibir, barra enxuta (Adicionar com menu, Converter e
       Salvar em destaque azul, ícones próprios, botões secundários só com ícone em janela estreita),
       cabeçalho só com o nome do arquivo e números em pt-BR, painel em “Principal” + “Opções avançadas”
