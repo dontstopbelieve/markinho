@@ -63,7 +63,10 @@ AGPL-3.0 e o ícone novo — falta o teste no Windows.
       de ícone e um nome de usuário de teste) foi guardado pelo dono fora do GitHub
       (`markinho-historico-ate-2026-11-16.bundle`). Execuções antigas do GitHub Actions apagadas
       pelo dono (16/11/2026).
-- [ ] **Antes de tornar público**: avisar que pull requests não são aceitos, modelo de issue simples.
+- [x] **Aviso de contribuições** (26/11/2026): CONTRIBUTING.md, modelo de pull request com aviso,
+      modelos de issue (problema e sugestão) e link para relato privado de segurança.
+- [ ] **Depois de público**: ligar o relato privado de falhas (Settings > Security > Private
+      vulnerability reporting > Enable) — só existe em repositório público.
 - [ ] **Depois de público**: ligar os alertas do Dependabot (Settings > Code security > Dependabot
       alerts) — avisam sozinhos quando uma biblioteca ganha falha conhecida. Rodar `pip-audit` antes de
       cada release (`pip install pip-audit` e `pip-audit -r requirements-padrao.txt`).

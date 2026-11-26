@@ -387,7 +387,8 @@ sob a mesma licença. Para uso em produto de código fechado, peça uma licença
 
 É fornecido **“como está”, sem garantia de qualquer tipo**. É um **projeto pessoal**: não há
 garantia de atualizações, correções ou suporte. **Relatos de problema** (issues) são bem-vindos;
-**contribuições de código não são aceitas**.
+**contribuições de código não são aceitas** (pull requests são fechados sem revisão; motivo em
+[CONTRIBUTING.md](CONTRIBUTING.md)).
 
 Copyright © 2026 dontstopbelieve.
 

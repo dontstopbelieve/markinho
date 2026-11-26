@@ -1,0 +1,36 @@
+name: Relatar um problema
+description: Algo não funcionou como esperado
+labels: ["problema"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por relatar! **Não cole conteúdo de documentos pessoais ou confidenciais.**
+        Lembre que contribuições de código não são aceitas (veja CONTRIBUTING.md).
+  - type: input
+    id: versao
+    attributes:
+      label: "Versão e edição"
+      description: "Em Ajuda > Sobre o Markinho (ex.: 3.0.0 · PADRÃO)"
+    validations:
+      required: true
+  - type: dropdown
+    id: sistema
+    attributes:
+      label: "Sistema"
+      options: [Windows 11, Windows 10, Linux, macOS, Outro]
+    validations:
+      required: true
+  - type: textarea
+    id: oque
+    attributes:
+      label: "O que aconteceu"
+      description: "O que você fez, o que esperava e o que aconteceu de verdade."
+    validations:
+      required: true
+  - type: textarea
+    id: relatorio
+    attributes:
+      label: "Relatório de erro (opcional)"
+      description: "Cole o texto de Ajuda > Gerar relatório de erro… (confira antes; ele não tem o conteúdo dos documentos)."
+      render: text

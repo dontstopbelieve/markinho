@@ -1,0 +1,11 @@
+name: Sugerir uma função
+description: Uma ideia para melhorar o Markinho
+labels: ["sugestão"]
+body:
+  - type: textarea
+    id: ideia
+    attributes:
+      label: "Sua ideia"
+      description: "O que você gostaria que o Markinho fizesse e em que situação isso ajudaria."
+    validations:
+      required: true
