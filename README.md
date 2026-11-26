@@ -1,5 +1,8 @@
 # Markinho — Conversor Markdown
 
+> **Versão em preparação:** ainda não há instaladores publicados. Quando a primeira versão sair, os
+> instaladores estarão na página **Releases** deste repositório.
+
 Converte documentos **para Markdown** e de **Markdown para outros formatos**, com
 interface gráfica e linha de comando. **Tudo roda no seu computador**: nenhum documento
 é enviado para a internet.

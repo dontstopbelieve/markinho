@@ -97,6 +97,7 @@ AGPL-3.0 e o ícone novo — falta o teste no Windows.
       Em repositório **público**, o Actions é gratuito e sem esse limite.
 - [x] **Conferir os testes automáticos** (Actions > Testes; verdes em 14/11). Para economizar a cota, agora rodam só
       no Linux e só quando o código muda; o Windows é opcional (Run workflow > marcar “windows”).
+- [ ] **Ao lançar:** tirar do topo do README o aviso “Versão em preparação”.
 - [ ] **Publicar a versão** (tag `v3.0.0` → Releases; a release já sai com `SHA256SUMS.txt`): depois de testar os instaladores e
       decidir a licença.
 - [x] **Auditoria de segurança focada + verificação das bibliotecas** (14/11/2026): pip-audit sem falhas
