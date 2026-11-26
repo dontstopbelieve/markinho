@@ -131,10 +131,10 @@ python run.py
 | **Páginas a revisar** | Quando o OCR tem baixa confiança ou uma página fica sem texto, aparece uma faixa amarela com as páginas; clique numa delas para ver o original ao lado |
 | **Progresso e Parar** | PDFs grandes mostram “página 12 de 80” na lista; **Parar** (Esc) interrompe na próxima página |
 | **Pasta monitorada** | Ferramentas > Pasta monitorada: todo arquivo novo que cair na pasta (Downloads, scanner…) é convertido sozinho enquanto o Markinho estiver aberto |
-| **Juntar e dividir** | Ferramentas > Juntar todos em um .md; Ferramentas > Dividir por títulos (um arquivo por capítulo) |
+| **Juntar e dividir** | Arquivo > Juntar todos em um .md; Ferramentas > Dividir por títulos (um arquivo por capítulo) |
 | **Relatório do lote** | Ferramentas > Relatório do lote: planilha (CSV, abre no Excel) ou página HTML com o que deu certo, avisos e erros |
 | **Relatório de erro** | Ajuda > Gerar relatório de erro: texto para mandar ao suporte, **sem o conteúdo dos documentos** (você confere antes de salvar) |
-| **Assistente inicial e modo simples** | Na primeira abertura, o Markinho pergunta para que você vai usá-lo (IA, Obsidian, documentação) e ajusta as opções. O **modo simples** esconde motores e opções avançadas (Ferramentas > Modo simples) |
+| **Assistente inicial e modo simples** | Na primeira abertura, o Markinho pergunta para que você vai usá-lo (IA, Obsidian, documentação) e ajusta as opções. O **modo simples** esconde motores e opções avançadas (Exibir > Modo simples) |
 
 **Atualizar ou trocar de edição:** basta rodar o instalador novo. Ele substitui a versão instalada no
 mesmo lugar (não fica um programa duplicado), apaga antes os arquivos internos da versão anterior e
