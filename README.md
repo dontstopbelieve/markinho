@@ -132,6 +132,7 @@ python run.py
 | **Código colorido** | Blocos de código aparecem coloridos na Visualização e no HTML exportado |
 | **Colar e converter** | Copie um trecho de uma página da web, do Word ou de um e-mail e use **Colar** (Ctrl+Shift+V): vira Markdown na hora. Uma imagem copiada (print de tela) passa pelo OCR |
 | **Copiar para IA** | Botão **Para IA** (Ctrl+Alt+C): texto enxuto (sem imagens e comentários), contagem de *tokens* e divisão em partes que cabem no ChatGPT, Claude ou Gemini — cada parte avisa o assistente para esperar a última |
+| **Só as tabelas → Excel** | **Exportar** > “Excel — só as tabelas” (ou CSV): tira todas as tabelas do documento (PDF, Word, página da web…) para uma planilha — uma aba por tabela e uma aba **Índice** com o título (a legenda “Tabela 3 – …” ou o título da seção) e a página. Números viram números de verdade (“1.234,56”, “12,5%”, “R$ 10,00”), códigos com zero à esquerda ficam como texto, células mescladas continuam mescladas. No terminal: `markinho relatorio.pdf -t xlsx -o tabelas.xlsx` |
 | **Word no padrão ABNT** | **Exportar** > DOCX > Modelo do Word: **ABNT** — Times New Roman 12, margens 3/2 cm, espaçamento 1,5, recuo de parágrafo, citações longas recuadas, seções numeradas e número de página |
 | **PDFs de tribunais e órgãos públicos** | Remove a faixa vertical “Assinado eletronicamente por…”, códigos verificadores e endereços de conferência do PJe, SEI, eproc, e-SAJ (também a faixa lateral dos artigos do arXiv). Pode ser desligado nas opções do motor Nativo |
 | **Páginas a revisar** | Quando o OCR tem baixa confiança ou uma página fica sem texto, aparece uma faixa amarela com as páginas; clique numa delas para ver o original ao lado |
@@ -328,7 +329,8 @@ variável `MARKINHO_MCP_FOLDERS` substitui as pastas configuradas.
 ## Exportação (Markdown →)
 
 Word, PDF, HTML, ODT, EPUB, PowerPoint, RTF, LaTeX, Typst, reStructuredText, AsciiDoc,
-MediaWiki, Org, Textile, Jira, DocBook, Jupyter, texto puro e outros dialetos de Markdown,
+MediaWiki, Org, Textile, Jira, DocBook, Jupyter, texto puro, outros dialetos de Markdown e **só as tabelas em
+Excel ou CSV**,
 com título, sumário, numeração de seções e **modelo de estilos** (.docx/.odt/.pptx). As
 imagens extraídas vão junto. Sem Pandoc, os exportadores nativos geram DOCX, PDF (sem
 precisar de LaTeX), HTML e TXT.
@@ -467,6 +469,7 @@ markinho/
   textfix.py      correção de caracteres
   chunker.py      pedaços para RAG (JSON/JSONL)
   batch.py        lotes que retomam de onde pararam (--retomar)
+  tables.py       só as tabelas → Excel (uma aba por tabela + índice) ou CSV
   aitools.py      Copiar para IA: tokens e divisão em partes
   skillpack.py    Exportar como skill para IA (SKILL.md + capítulos)
   anonymize.py    anonimização de dados pessoais

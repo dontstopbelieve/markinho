@@ -67,6 +67,7 @@ markinho/
   paste.py         colar e converter (HTML/texto/imagem da área de transferência)
   aitools.py       Copiar para IA: tokens e divisão em partes
   skillpack.py     Exportar como skill para IA (SKILL.md + chapters/; pasta, .zip ou ~/.claude/skills; --skill)
+  tables.py        só as tabelas → Excel/CSV (formatos "xlsx"/"csv" do exportador; números, mesclagens, sem fórmulas)
   abnt.py          modelo de Word ABNT (exportação DOCX, nativo e Pandoc)
   splitter.py      dividir Markdown por títulos
   report.py        relatório do lote (CSV/HTML)

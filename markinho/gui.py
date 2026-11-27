@@ -1415,13 +1415,14 @@ class ExportDialog(QDialog):
         abnt = is_docx and self.template.currentData() == "abnt"
         self.numbers.setEnabled(pandoc or abnt)
         is_chunks = fid.startswith("chunks_")
+        is_tables = fid in ("xlsx", "csv")
         if hasattr(self, "naming"):
             self.naming.setVisible(self.scope.checkedId() == 1)
             self.naming.set_target(None, FORMATS_BY_ID[fid].ext)
         self.chunk_box.setVisible(is_chunks)
-        self.title.setEnabled(not is_chunks)
-        self.toc.setEnabled(not is_chunks)
-        if is_chunks:
+        self.title.setEnabled(not is_chunks and not is_tables)
+        self.toc.setEnabled(not is_chunks and not is_tables)
+        if is_chunks or is_tables:
             self.numbers.setEnabled(False)
         notes = {
             ("chunks_jsonl", "native"): tr("Um pedaço por linha (JSON Lines), com títulos, página e origem — "
@@ -1429,6 +1430,11 @@ class ExportDialog(QDialog):
             ("chunks_json", "native"): tr("Um único JSON com os metadados do documento e a lista de pedaços."),
             ("pdf", "native"): tr("PDF gerado pelo motor de texto do Qt — não precisa de LaTeX."),
             ("pptx", "pandoc"): tr("Cada título de nível 1/2 vira um slide."),
+            ("xlsx", "native"): tr("Só as tabelas do documento: uma aba por tabela e uma aba “Índice” com o título e a "
+                                "página de cada uma. Números viram números (dá para somar); células mescladas continuam "
+                                "mescladas."),
+            ("csv", "native"): tr("Só as tabelas do documento, separadas por “;” (abre direto no Excel). Com várias "
+                               "tabelas, elas vêm uma depois da outra, cada uma com o seu título."),
         }
         self.note.setText(notes.get((fid, be), ""))
 

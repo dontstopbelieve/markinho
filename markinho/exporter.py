@@ -54,6 +54,8 @@ FORMATS: list[ExportFormat] = [
     ExportFormat("plain", "Texto puro (.txt)", ".txt", "plain", native=True),
     ExportFormat("chunks_jsonl", tr("Pedaços para RAG / IA (.jsonl)"), ".jsonl", None, native=True),
     ExportFormat("chunks_json", tr("Pedaços para RAG / IA (.json)"), ".json", None, native=True),
+    ExportFormat("xlsx", tr("Excel — só as tabelas (.xlsx)"), ".xlsx", None, native=True, binary=True),
+    ExportFormat("csv", tr("CSV — só as tabelas (.csv)"), ".csv", None, native=True),
 ]
 FORMATS_BY_ID = {f.id: f for f in FORMATS}
 
@@ -485,6 +487,15 @@ def _native_chunks(md: str, target: Path, opts: dict, fmt: str) -> None:
     target.write_text(text, encoding="utf-8")
 
 
+def _native_tables(md: str, target: Path, opts: dict, kind: str) -> None:
+    """Só as tabelas do documento: Excel (uma aba por tabela + índice) ou CSV."""
+    from .tables import export_tables
+
+    export_tables(md, target, kind, str(opts.get("source", "")))
+
+
 _NATIVE = {"html": _native_html, "docx": _native_docx, "pdf": _native_pdf, "plain": _native_plain,
            "chunks_jsonl": lambda md, t, o: _native_chunks(md, t, o, "jsonl"),
-           "chunks_json": lambda md, t, o: _native_chunks(md, t, o, "json")}
+           "chunks_json": lambda md, t, o: _native_chunks(md, t, o, "json"),
+           "xlsx": lambda md, t, o: _native_tables(md, t, o, "xlsx"),
+           "csv": lambda md, t, o: _native_tables(md, t, o, "csv")}

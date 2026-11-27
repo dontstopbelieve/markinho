@@ -149,6 +149,14 @@ Revisão do pacote inteiro com a ferramenta de revisão do Claude Code. Corrigid
   temporário largado. Testes em `tests/test_batch.py` (inclusive “computador desligou no 2º arquivo”).
 - Página só com tabela não passa mais pelo OCR (antes o texto da tabela era repetido como texto solto).
 
+### 27/11/2026 — Só as tabelas → Excel/CSV
+
+- **Injeção de fórmula:** célula vinda de documento que começa com `=`, `+`, `-` ou `@` nunca vira fórmula —
+  no Excel é gravada como texto (`data_type = "s"`); no CSV ganha um apóstrofo na frente (números negativos
+  de verdade não). Teste: `test_excel` e `test_csv_com_varias_tabelas_e_protecao`.
+- Tabela HTML com `rowspan`/`colspan` absurdos (documento preparado) é limitada (1.000 por célula, 200 mil
+  células) e não trava o programa.
+
 ## Rotina antes de cada versão
 
 1. `pip install pip-audit` e `pip-audit -r requirements-padrao.txt` (e as outras edições).
