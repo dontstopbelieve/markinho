@@ -188,6 +188,12 @@ jobs:
           build/dist-${{ matrix.edition }}/Markinho/markinho-cli --version
           build/dist-${{ matrix.edition }}/Markinho/markinho-cli --engines
           build/dist-${{ matrix.edition }}/Markinho/markinho-cli exemplos/relatorio.docx -t pdf -o /tmp/teste.pdf
+          # OCR PP-OCR latino empacotado (modelos locais), com a rede desligada e mantendo os acentos
+          unshare -rn build/dist-${{ matrix.edition }}/Markinho/markinho-cli exemplos/relatorio.pdf \
+            --opt ocr=force --opt ocr_backend=rapidocr -o /tmp/ocr.md || \
+            build/dist-${{ matrix.edition }}/Markinho/markinho-cli exemplos/relatorio.pdf \
+            --opt ocr=force --opt ocr_backend=rapidocr -o /tmp/ocr.md
+          grep -q "Relatório" /tmp/ocr.md
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: markinho-${{ matrix.edition }}-linux

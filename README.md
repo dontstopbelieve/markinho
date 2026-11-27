@@ -64,7 +64,7 @@ já vem com soluções para os problemas mais comuns de conversão.
 | Descrição de imagens com IA local (se o Ollama estiver instalado) | ✔ | ✔ |
 | **IA de layout (Docling)**, com modelos incluídos para funcionar **sem internet** | | ✔ |
 | MarkItDown e RapidOCR | | ✔ |
-| Tamanho aproximado do instalador | ~100–150 MB | ~1–1,5 GB |
+| Tamanho aproximado do instalador | ~150–200 MB | ~1–1,5 GB |
 | **Pacote extra Idiomas do OCR** (espanhol, francês, alemão, russo, chinês, árabe), opcional | ✔ | ✔ |
 | **Pacote extra Fórmulas e código** (LaTeX), opcional | | ✔ |
 
