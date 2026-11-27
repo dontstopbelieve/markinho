@@ -139,6 +139,7 @@ python run.py
 | **Páginas a revisar** | Quando o OCR tem baixa confiança ou uma página fica sem texto, aparece uma faixa amarela com as páginas; clique numa delas para ver o original ao lado |
 | **Progresso e Parar** | PDFs grandes mostram “página 12 de 80” na lista; **Parar** (Esc) interrompe na próxima página |
 | **Pasta monitorada** | Ferramentas > Pasta monitorada: todo arquivo novo que cair na pasta (Downloads, scanner…) é convertido sozinho enquanto o Markinho estiver aberto |
+| **Exportar como skill para IA** | Ferramentas > Exportar como skill para IA: cria um pacote no formato aberto *Agent Skills* (`SKILL.md` com índice + um arquivo por capítulo) que Claude Code, Claude.ai, Codex, Copilot e outros consultam só no capítulo de que precisam — muito menos *tokens* do que colar o documento inteiro. Salva numa pasta, em .zip ou direto no Claude Code. Feito sem IA, pelos títulos do documento. No terminal: `markinho manual.pdf --skill -o manual.zip` |
 | **Juntar e dividir** | Arquivo > Juntar todos em um .md; Ferramentas > Dividir por títulos (um arquivo por capítulo) |
 | **Relatório do lote** | Ferramentas > Relatório do lote: planilha (CSV, abre no Excel) ou página HTML com o que deu certo, avisos e erros |
 | **Relatório de erro** | Ajuda > Gerar relatório de erro: texto para mandar ao suporte, **sem o conteúdo dos documentos** (você confere antes de salvar) |

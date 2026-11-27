@@ -92,6 +92,8 @@ INSPIRED_BY: tuple[Credit, ...] = (
     Credit(tr("AnyDoc"), tr("Firecrawl"), "MIT", "https://github.com/firecrawl/anydoc", tr("Modelo único de documento")),
     Credit("file2markdown", tr("file2markdown.ai"), "—", "https://www.file2markdown.ai",
            tr("Uso por assistentes de IA via MCP — aqui, 100% local")),
+    Credit("book-to-skill", "virgiliojr94", "MIT", "https://github.com/virgiliojr94/book-to-skill",
+           tr("Exportar um documento como skill para IA (índice + um arquivo por capítulo) — implementação própria, sem IA")),
 )
 
 DISCLAIMER = (

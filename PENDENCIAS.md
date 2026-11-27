@@ -191,6 +191,11 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
         PJe, SEI e ABNT continuam (são do Brasil).
       - Instaladores em inglês (termos de uso, mensagens do Inno/WiX): depois.
 - [x] `CLAUDE.md` criado: memória do projeto lida em toda sessão nova.
+- [x] **Exportar como skill para IA** (27/11/2026; ideia do book-to-skill, código próprio): `skillpack.py`,
+      Ferramentas > Exportar como skill para IA e `--skill` no terminal. Capítulos pelos títulos (nível 1, senão
+      2/3), capítulos grandes redivididos (~6 mil tokens), trechos minúsculos juntados ao vizinho; SKILL.md com
+      nome/descrição (formato Agent Skills), instruções e índice; pasta, .zip ou ~/.claude/skills.
+      Depois, se pedirem: ferramenta no servidor MCP; glossário/resumo por capítulo com o Ollama local (opcional).
 
 ## Limitações conhecidas
 

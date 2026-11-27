@@ -437,3 +437,45 @@ def test_support_milestones_and_dialog(tmp_path):
     d = SupportDialog(None, 100, s2)
     assert "100 documentos" in d.findChildren(type(d.layout().itemAt(0).widget()))[0].text()
     assert d.key_label.text() == PIX_KEY                       # chave por extenso, inteira
+
+
+def test_skill_dialog(win, tmp_path, monkeypatch):
+    from PySide6.QtWidgets import QMessageBox
+
+    from markinho import skillpack
+    from markinho.gui_tools import SkillDialog
+
+    app, w = win
+    monkeypatch.setattr(QMessageBox, "information", staticmethod(lambda *a, **k: None))
+    monkeypatch.setattr(QMessageBox, "question", staticmethod(lambda *a, **k: QMessageBox.Yes))
+    monkeypatch.setattr(skillpack, "claude_code_dir", lambda: tmp_path / "claude" / "skills")
+    docs = [("Manual", "# Um\n\na\n\n# Dois\n\nb\n"), ("Outro", "# X\n\ny\n")]
+    d = SkillDialog(w, docs[0], docs, w.settings, str(tmp_path))
+    assert d.name.text() == "manual" and "Manual" in d.desc.toPlainText()
+    d.name.setText("Meu Manual")
+    d._name_edited = True
+    d._save()
+    assert (tmp_path / "meu-manual" / "SKILL.md").is_file()
+    d = SkillDialog(w, docs[0], docs, w.settings, str(tmp_path))
+    d.scope.setCurrentIndex(1)                       # todos os documentos
+    assert d.pack is not None and len(d.pack.chapters) == 2
+    d.dest.button(SkillDialog.DEST_ZIP).setChecked(True)
+    assert d.target().suffix == ".zip"
+    d._save()
+    assert d.target().is_file()
+    d = SkillDialog(w, None, docs, w.settings, str(tmp_path))
+    d.dest.button(SkillDialog.DEST_CLAUDE).setChecked(True)
+    assert not d.folder.isEnabled()
+    d._save()
+    assert any((tmp_path / "claude" / "skills").iterdir())
+    d._save()                                        # já existe: pergunta e substitui
+
+
+def test_skill_export_sem_documentos(win, monkeypatch):
+    from PySide6.QtWidgets import QMessageBox
+
+    app, w = win
+    seen = []
+    monkeypatch.setattr(QMessageBox, "information", staticmethod(lambda *a, **k: seen.append(a)))
+    w.skill_export()
+    assert seen

@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright (C) 2026 dontstopbelieve — Markinho
-"""Janelas das ferramentas: Copiar para IA, Dividir por títulos, Pasta monitorada, Relatório de erro e
-Primeira abertura."""
+"""Janelas das ferramentas: Copiar para IA, Exportar como skill, Dividir por títulos, Pasta monitorada,
+Relatório de erro e Primeira abertura."""
 from __future__ import annotations
-
-from .i18n import tr
 
 from .i18n import num, tr
 
@@ -131,6 +129,180 @@ class AiCopyDialog(QDialog):
         self.status.setText(tr("✓ {0}. Cole no assistente com Ctrl+V.").format(what))
         if k + 1 < len(self.parts):
             self.parts_list.setCurrentRow(k + 1)
+
+
+# --------------------------------------------------------------------------- #
+# Exportar como skill para IA
+# --------------------------------------------------------------------------- #
+class SkillDialog(QDialog):
+    """Pacote “skill” (SKILL.md + capítulos) para assistentes consultarem o documento sob demanda."""
+
+    DEST_FOLDER, DEST_ZIP, DEST_CLAUDE = 0, 1, 2
+
+    def __init__(self, parent, current: tuple[str, str] | None, all_docs: list[tuple[str, str]],
+                 settings: QSettings, start_dir: str):
+        super().__init__(parent)
+        self.setWindowTitle(tr("Exportar como skill para IA"))
+        self.resize(640, 560)
+        self.current, self.all_docs, self.settings = current, all_docs, settings
+        self.pack = None
+        self._name_edited = self._desc_edited = False
+        lay = QVBoxLayout(self)
+        lay.addWidget(QLabel(tr("<b>Transformar o documento numa skill que o assistente de IA consulta quando precisa</b>")))
+        lay.addWidget(_hint(tr("Cria um índice (SKILL.md) e um arquivo por capítulo. O assistente (Claude Code, "
+                               "Claude.ai, Codex, Copilot…) lê o índice e abre só o capítulo de que precisa, em vez de "
+                               "carregar o documento inteiro — gasta bem menos tokens e responde pelo texto real. "
+                               "Feito aqui, sem IA e sem internet: os capítulos vêm dos títulos do documento.")))
+        form = QFormLayout()
+        self.scope = QComboBox()
+        if current is not None:
+            self.scope.addItem(tr("Documento atual"), "current")
+        if len(all_docs) > 1:
+            self.scope.addItem(tr("Todos os documentos convertidos ({0}) numa skill só").format(len(all_docs)), "all")
+        form.addRow(tr("O que exportar"), self.scope)
+        self.name = QLineEdit()
+        self.name.setToolTip(tr("Letras minúsculas sem acento, números e hífens. Vira o comando no assistente (ex.: /manual-do-produto)."))
+        self.name.textEdited.connect(lambda _t: setattr(self, "_name_edited", True))
+        form.addRow(tr("Nome da skill:"), self.name)
+        self.desc = QPlainTextEdit()
+        self.desc.setFixedHeight(70)
+        self.desc.setToolTip(tr("O assistente lê esta frase para decidir quando usar a skill: diga do que o documento trata."))
+        self.desc.textChanged.connect(self._desc_changed)
+        form.addRow(tr("Descrição:"), self.desc)
+        lay.addLayout(form)
+        self.preview = _hint("")
+        lay.addWidget(self.preview)
+        box = QGroupBox(tr("Onde salvar"))
+        bl = QVBoxLayout(box)
+        self.dest = QButtonGroup(self)
+        opts = [(self.DEST_FOLDER, tr("Numa pasta (para copiar para a pasta de skills do seu assistente)")),
+                (self.DEST_ZIP, tr("Arquivo .zip (para enviar nas configurações do Claude.ai, na parte de Skills)")),
+                (self.DEST_CLAUDE, tr("Instalar direto no Claude Code deste computador ({0})").format(
+                    self._claude_dir_label()))]
+        for val, text in opts:
+            rb = QRadioButton(text)
+            self.dest.addButton(rb, val)
+            bl.addWidget(rb)
+        saved = int(settings.value("skill/dest", self.DEST_FOLDER) or 0)
+        (self.dest.button(saved) or self.dest.button(self.DEST_FOLDER)).setChecked(True)
+        row = QHBoxLayout()
+        self.folder = QLineEdit(start_dir)
+        b = QPushButton("…")
+        b.setFixedWidth(32)
+        b.clicked.connect(self._pick)
+        row.addWidget(self.folder)
+        row.addWidget(b)
+        bl.addLayout(row)
+        lay.addWidget(box)
+        self.dest.idToggled.connect(lambda _i, _on: self._dest_changed())
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.ok = bb.button(QDialogButtonBox.Ok)
+        self.ok.setText(tr("Criar skill"))
+        bb.accepted.connect(self._save)
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+        self.scope.currentIndexChanged.connect(lambda _i: self._rebuild(reset=True))
+        self._dest_changed()
+        self._rebuild(reset=True)
+
+    @staticmethod
+    def _claude_dir_label() -> str:
+        from .skillpack import claude_code_dir
+
+        p = claude_code_dir()
+        try:
+            return "~/" + p.relative_to(Path.home()).as_posix()
+        except ValueError:
+            return str(p)
+
+    def _docs(self) -> list[tuple[str, str]]:
+        if self.scope.currentData() == "current" and self.current is not None:
+            return [self.current]
+        return self.all_docs
+
+    def _desc_changed(self) -> None:
+        if not getattr(self, "_filling", False):
+            self._desc_edited = True
+
+    def _rebuild(self, reset: bool = False) -> None:
+        from .skillpack import build_skill, summary
+
+        if reset:
+            self._name_edited = self._desc_edited = False
+        try:
+            self.pack = build_skill(self._docs(), self.name.text() if self._name_edited else "",
+                                    description=self.desc.toPlainText() if self._desc_edited else "")
+        except ValueError as exc:
+            self.pack = None
+            self.preview.setText(str(exc))
+            self.ok.setEnabled(False)
+            return
+        self.ok.setEnabled(True)
+        if not self._name_edited:
+            self.name.setText(self.pack.name)
+        if not self._desc_edited:
+            self._filling = True
+            self.desc.setPlainText(self.pack.description)
+            self._filling = False
+        self.preview.setText(summary(self.pack))
+
+    def _dest_changed(self) -> None:
+        self.folder.setEnabled(self.dest.checkedId() != self.DEST_CLAUDE)
+
+    def _pick(self) -> None:
+        d = QFileDialog.getExistingDirectory(self, tr("Pasta de destino"), self.folder.text())
+        if d:
+            from .gui import remember_dir
+
+            remember_dir(self.settings, d, "save")
+            self.folder.setText(d)
+
+    def target(self) -> Path:
+        """Pasta da skill (ou arquivo .zip) que será gravado."""
+        from .skillpack import claude_code_dir, skill_name
+
+        name = skill_name(self.name.text())
+        dest = self.dest.checkedId()
+        if dest == self.DEST_CLAUDE:
+            return claude_code_dir() / name
+        if dest == self.DEST_ZIP:
+            return Path(self.folder.text()) / f"{name}.zip"
+        return Path(self.folder.text()) / name
+
+    def _save(self) -> None:
+        from .skillpack import to_zip, write_folder
+
+        self._rebuild()                       # pega o nome e a descrição como estão agora
+        if self.pack is None:
+            return
+        target = self.target()
+        if target.exists():
+            ask = QMessageBox.question(self, tr("Exportar como skill para IA"),
+                                       tr("{0} já existe. Substituir os arquivos da skill?").format(target))
+            if ask != QMessageBox.Yes:
+                return
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if self.dest.checkedId() == self.DEST_ZIP:
+                target.write_bytes(to_zip(self.pack))
+            else:
+                if target.exists():           # substitui só a skill antiga (capítulos que sumiram não ficam)
+                    import shutil
+
+                    shutil.rmtree(target / "chapters", ignore_errors=True)
+                write_folder(self.pack, target.parent)
+        except OSError as exc:
+            QMessageBox.critical(self, tr("Exportar como skill para IA"), tr("Não foi possível salvar:\n{0}").format(exc))
+            return
+        self.settings.setValue("skill/dest", self.dest.checkedId())
+        how = {self.DEST_FOLDER: tr("Copie a pasta para a pasta de skills do seu assistente (no Claude Code: "
+                                    "~/.claude/skills; em outros: veja a documentação dele)."),
+               self.DEST_ZIP: tr("No Claude.ai, envie o .zip nas configurações, na parte de Skills."),
+               self.DEST_CLAUDE: tr("Abra o Claude Code de novo e peça, por exemplo: “/{0} do que trata o capítulo 2?”").format(
+                   self.pack.name)}[self.dest.checkedId()]
+        QMessageBox.information(self, tr("Exportar como skill para IA"),
+                                tr("Skill criada em:\n{0}\n\n{1}").format(target, how))
+        self.accept()
 
 
 # --------------------------------------------------------------------------- #

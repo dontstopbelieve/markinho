@@ -35,7 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
                "  markinho notas.md -t docx -o notas.docx\n"
                "  markinho *.pdf -o saida/ --profile llm\n"
                "  markinho manual.pdf --chunks -o manual.jsonl --chunk-size 1000\n"
-               "  markinho *.pdf -o saida/ --nome \"{n}_{nome}\" --nome-seguro\n"))
+               "  markinho *.pdf -o saida/ --nome \"{n}_{nome}\" --nome-seguro\n  markinho manual.pdf --skill -o manual.zip\n"))
     ap.add_argument("arquivos", nargs="*", help=tr("arquivos a converter"))
     ap.add_argument("-o", "--output", help=tr("arquivo de saída (1 entrada) ou pasta (várias)"))
     ap.add_argument("-e", "--engine", default=AUTO, choices=[AUTO, *ENGINES], help=tr("motor de conversão (padrão: auto)"))
@@ -62,6 +62,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help=tr("exporta o resultado para outro formato: ") + ", ".join(FORMATS_BY_ID))
     ap.add_argument("--chunks", nargs="?", const="jsonl", choices=["jsonl", "json"],
                     help=tr("gera pedaços para RAG/IA (padrão: jsonl) em vez de Markdown"))
+    ap.add_argument("--skill", nargs="?", const="", default=None, metavar="NOME",
+                    help=tr("cria uma skill para assistentes de IA (SKILL.md + capítulos) com todos os arquivos; "
+                            "-o pasta ou -o arquivo.zip"))
     ap.add_argument("--chunk-size", type=int, default=1500, metavar="N", help=tr("tamanho máximo do pedaço (caracteres)"))
     ap.add_argument("--chunk-overlap", type=int, default=150, metavar="N", help=tr("sobreposição entre pedaços"))
     ap.add_argument("--chunk-by", default="title", choices=["title", "page", "basic"],
@@ -178,6 +181,8 @@ def cli(argv: list[str]) -> int:
 
         print(tr("Anonimização: ") + DISCLAIMER, file=sys.stderr)
 
+    if args.skill is not None and (args.chunks or args.to):
+        ap.error(tr("use --skill sozinho (sem --chunks ou --to)"))
     if args.chunks:
         if args.to:
             ap.error(tr("use --chunks ou --to, não os dois"))
@@ -195,6 +200,9 @@ def cli(argv: list[str]) -> int:
     multi = len(args.arquivos) > 1 or (out is not None and (out.is_dir() or str(args.output).endswith(("/", "\\"))))
     if args.to and out is None and not args.chunks:
         multi, out = True, Path(".")
+    skill_docs: list[tuple[str, str]] = []
+    if args.skill is not None:
+        multi = False
     if multi and out:
         out.mkdir(parents=True, exist_ok=True)
     for index, f in enumerate(args.arquivos):
@@ -221,6 +229,9 @@ def cli(argv: list[str]) -> int:
             print(tr('aviso: {0}').format(w), file=sys.stderr)
         if args.report and res.fix_report is not None:
             print(f"--- {f} ({res.converter})\n{res.fix_report.to_markdown()}\n", file=sys.stderr)
+        if args.skill is not None:
+            skill_docs.append((res.metadata.get("title") or res.title or Path(f).stem, res.markdown))
+            continue
         if out is None and args.chunks:      # pedaços direto na tela
             from .chunker import chunk_markdown, to_json, to_jsonl
 
@@ -269,7 +280,28 @@ def cli(argv: list[str]) -> int:
             n = write_assets(md, files, target.parent)
             extra = tr(', {0} imagem(ns)').format(n) if n else ""
             print(f"{f} -> {target} ({res.converter}{extra})", file=sys.stderr)
+    if args.skill is not None and skill_docs:
+        status = max(status, _write_skill(skill_docs, args.skill, out))
     return status
+
+
+def _write_skill(docs: list[tuple[str, str]], name: str, out: Path | None) -> int:
+    """--skill: grava a skill numa pasta (ou .zip) e diz onde ficou."""
+    from .skillpack import build_skill, summary, to_zip, write_folder
+
+    try:
+        pack = build_skill(docs, name)
+        if out is not None and out.suffix.lower() == ".zip":
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_bytes(to_zip(pack))
+            target = out
+        else:
+            target = write_folder(pack, out or Path("."))
+    except (OSError, ValueError) as exc:
+        print(tr("erro: {0}").format(exc), file=sys.stderr)
+        return 1
+    print(tr("skill “{0}” criada em {1} — {2}").format(pack.name, target, summary(pack)), file=sys.stderr)
+    return 0
 
 
 QUICK_FLAG = "--converter-aqui"          # botão direito > Converter para Markdown aqui (sem perguntar)

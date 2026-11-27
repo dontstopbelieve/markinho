@@ -1938,6 +1938,7 @@ class MainWindow(QMainWindow):
         a_mcp.setToolTip(tr("Deixar Claude Desktop, Cursor ou VS Code converterem arquivos pelo Markinho"))
         tools.addSeparator()
         extra = [(tr("Pasta monitorada…"), self.watch_dialog), (tr("Dividir por títulos…"), self.split_current),
+                 (tr("Exportar como skill para IA…"), self.skill_export),
                  (tr("Relatório do lote…"), self.batch_report)]
         tools.addAction(self.act_merge)
         for text, slot in extra:
@@ -3344,6 +3345,21 @@ class MainWindow(QMainWindow):
             return
         start = str(Path(self._src_dir(e)) / tr('{0}_partes').format(self._stem(e)))
         SplitDialog(self, e.text, e.result.assets, self.settings, start).exec()
+
+    def skill_export(self) -> None:
+        from .gui_tools import SkillDialog
+
+        def doc(e) -> tuple[str, str]:
+            return (e.result.metadata.get("title") or e.result.title or self._stem(e), e.text)
+
+        entries = self._done_entries()
+        cur = self._current()
+        current = doc(cur) if cur is not None and cur in entries else None
+        if current is None and not entries:
+            QMessageBox.information(self, tr("Exportar como skill para IA"), tr("Adicione e converta arquivos primeiro."))
+            return
+        start = self._src_dir(cur if current else entries[0])
+        SkillDialog(self, current, [doc(e) for e in entries], self.settings, start).exec()
 
     def batch_report(self) -> None:
         from . import report
