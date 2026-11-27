@@ -304,6 +304,17 @@ ajuda do terminal, servidor MCP, relatório do lote e o texto de Privacidade.
   CNPJ, PIS…) e o OCR lê português e inglês. E-mails, cartões de crédito e a sua lista funcionam em
   qualquer idioma.
 
+## Ensinar o assistente de IA a usar o Markinho
+
+Assistentes que trabalham no terminal (Claude Code, Codex, Copilot…) podem usar o Markinho sozinhos, sem
+configurar servidor: **Ferramentas > Assistentes de IA > Instalar skill no Claude Code** (ou
+`markinho --instalar-skill`) grava em `~/.claude/skills/markinho/SKILL.md` um guia com o caminho do
+Markinho neste computador e os comandos mais úteis — converter, extrair tabelas para Excel, gerar pedaços
+para IA, anonimizar, exportar para Word/PDF, lotes com `--retomar`. Depois é só pedir: “converta o
+relatorio.pdf com o Markinho e extraia as tabelas”. Para outro assistente, `markinho --mostrar-skill`
+mostra o texto para colar. A skill pede ao assistente que trate o conteúdo dos documentos como dado, não
+como ordem. Ideia inspirada no Marker; texto próprio.
+
 ## Assistentes de IA (servidor MCP local)
 
 Claude Desktop, Cursor, VS Code e outros assistentes compatíveis com **MCP** podem usar o
@@ -470,6 +481,7 @@ markinho/
   chunker.py      pedaços para RAG (JSON/JSONL)
   batch.py        lotes que retomam de onde pararam (--retomar)
   tables.py       só as tabelas → Excel (uma aba por tabela + índice) ou CSV
+  agent_skill.py  skill que ensina assistentes de IA a usar o Markinho (--instalar-skill)
   aitools.py      Copiar para IA: tokens e divisão em partes
   skillpack.py    Exportar como skill para IA (SKILL.md + capítulos)
   anonymize.py    anonimização de dados pessoais

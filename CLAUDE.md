@@ -66,6 +66,7 @@ markinho/
   safety.py        proteções: ZIP-bomba, partes grandes, páginas de PDF gigantes
   paste.py         colar e converter (HTML/texto/imagem da área de transferência)
   aitools.py       Copiar para IA: tokens e divisão em partes
+  agent_skill.py   skill “markinho” para Claude Code & cia. usarem o CLI (--instalar-skill/--mostrar-skill; botão no MCP)
   skillpack.py     Exportar como skill para IA (SKILL.md + chapters/; pasta, .zip ou ~/.claude/skills; --skill)
   tables.py        só as tabelas → Excel/CSV (formatos "xlsx"/"csv" do exportador; números, mesclagens, sem fórmulas)
   abnt.py          modelo de Word ABNT (exportação DOCX, nativo e Pandoc)

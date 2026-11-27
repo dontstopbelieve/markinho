@@ -1667,7 +1667,12 @@ class McpDialog(QDialog):
         b_copy.clicked.connect(lambda: self._copy("claude"))
         b_vscode = QPushButton(tr("Copiar configuração (VS Code)"))
         b_vscode.clicked.connect(lambda: self._copy("vscode"))
-        for b in (b_claude, b_copy, b_vscode):
+        b_skill = QPushButton(tr("Instalar skill no Claude Code (usar o Markinho pelo terminal)"))
+        b_skill.setToolTip(tr("Ensina o Claude Code (e outros assistentes que leem skills) a chamar o Markinho "
+                              "sozinho: converter, extrair tabelas, gerar pedaços para IA, anonimizar. Não precisa "
+                              "configurar servidor."))
+        b_skill.clicked.connect(self._install_skill)
+        for b in (b_claude, b_copy, b_vscode, b_skill):
             cl.addWidget(b)
         cmd, args = ms.server_command()
         how = QLabel(tr('Comando do servidor: <code>{0} {1}</code><br>No Cursor, cole a configuração em <code>.cursor/mcp.json</code>; no VS Code, em <code>.vscode/mcp.json</code>. Depois de configurar, reinicie o assistente.').format(html.escape(cmd), html.escape(' '.join(args))))
@@ -1691,6 +1696,17 @@ class McpDialog(QDialog):
         except ImportError:
             self.msg.setText(tr("⚠ O pacote do MCP não está instalado (pip install mcp). A configuração é salva, "
                              "mas o servidor não vai iniciar."))
+
+    def _install_skill(self) -> None:
+        from .agent_skill import install
+
+        try:
+            path = install()
+        except OSError as exc:
+            self.msg.setText(tr("Não foi possível salvar:\n{0}").format(exc))
+            return
+        self.msg.setText(tr("✔ Skill instalada em {0}. <b>Abra o Claude Code de novo</b> e peça, por exemplo: "
+                            "“converta o relatorio.pdf com o Markinho e extraia as tabelas”.").format(html.escape(str(path))))
 
     def _add(self):
         f = QFileDialog.getExistingDirectory(self, tr("Pasta que o assistente pode usar"),

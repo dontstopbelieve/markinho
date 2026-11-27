@@ -90,6 +90,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help=tr("inicia o servidor MCP local (para Claude Desktop, Cursor, VS Code…)"))
     ap.add_argument("--mcp-config", choices=["claude", "cursor", "vscode", "install-claude"],
                     help=tr("mostra a configuração MCP para o assistente (ou instala no Claude Desktop)"))
+    ap.add_argument("--instalar-skill", nargs="?", const="", default=None, metavar="PASTA",
+                    help=tr("ensina assistentes de IA (Claude Code…) a usar o Markinho: grava a skill em "
+                            "PASTA/markinho/SKILL.md (padrão: ~/.claude/skills)"))
+    ap.add_argument("--mostrar-skill", action="store_true",
+                    help=tr("mostra o texto dessa skill (para colar em outro assistente)"))
     ap.add_argument("--version", action="store_true", help=tr("mostra a versão"))
     return ap
 
@@ -115,6 +120,22 @@ def cli(argv: list[str]) -> int:
 
     if args.version:
         print(f"Markinho {__version__}")
+        return 0
+    if args.mostrar_skill:
+        from .agent_skill import skill_text
+
+        sys.stdout.write(skill_text())
+        return 0
+    if args.instalar_skill is not None:
+        from .agent_skill import install
+
+        try:
+            path = install(args.instalar_skill or None)
+        except OSError as exc:
+            print(tr("erro: {0}").format(exc), file=sys.stderr)
+            return 1
+        print(tr("Skill instalada em {0}. Abra o assistente de novo e peça, por exemplo: “converta o "
+                 "relatorio.pdf com o Markinho”.").format(path))
         return 0
     if args.mcp:
         from .mcp_server import run

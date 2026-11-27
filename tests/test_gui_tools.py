@@ -479,3 +479,16 @@ def test_skill_export_sem_documentos(win, monkeypatch):
     monkeypatch.setattr(QMessageBox, "information", staticmethod(lambda *a, **k: seen.append(a)))
     w.skill_export()
     assert seen
+
+
+def test_botao_instalar_skill(win, tmp_path, monkeypatch):
+    from pathlib import Path
+
+    from markinho.gui import McpDialog
+
+    app, w = win
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    d = McpDialog(w)
+    d._install_skill()
+    assert (tmp_path / ".claude" / "skills" / "markinho" / "SKILL.md").is_file()
+    assert "Skill instalada" in d.msg.text()
