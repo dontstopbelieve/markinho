@@ -733,7 +733,7 @@ class SupportDialog(QDialog):
         super().__init__(parent)
         self.settings = settings
         self.setWindowTitle("Apoie o Markinho")
-        self.setMinimumWidth(480)
+        self.setMinimumWidth(520)
         lay = QVBoxLayout(self)
         if milestone:
             head = QLabel(f"<h3>🎉 Você já converteu {milestone:,} documentos com o Markinho!</h3>".replace(",", "."))
@@ -750,19 +750,23 @@ class SupportDialog(QDialog):
             qr.setPixmap(QPixmap(str(img)).scaledToWidth(200, Qt.SmoothTransformation))
             qr.setAlignment(Qt.AlignCenter)
             lay.addWidget(qr)
+        lay.addWidget(QLabel("<b>Chave Pix (aleatória):</b>"))
+        key = QLabel(PIX_KEY)                  # por extenso, inteira e fácil de selecionar
+        key.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+        key.setAlignment(Qt.AlignCenter)
+        key.setStyleSheet("QLabel { font-family: Consolas, Menlo, monospace; font-size: 14px; padding: 6px;"
+                          " border: 1px solid palette(mid); border-radius: 4px; background: palette(base); }")
+        lay.addWidget(key)
+        self.key_label = key
         row = QHBoxLayout()
-        key = QLineEdit(PIX_KEY)
-        key.setReadOnly(True)
         b_key = QPushButton("Copiar chave")
-        b_key.clicked.connect(lambda: (QGuiApplication.clipboard().setText(PIX_KEY), b_key.setText("Copiada ✓")))
-        row.addWidget(QLabel("Chave Pix:"))
-        row.addWidget(key, 1)
+        b_key.clicked.connect(lambda: (QGuiApplication.clipboard().setText(PIX_KEY), b_key.setText("Chave copiada ✓")))
         row.addWidget(b_key)
-        lay.addLayout(row)
         b_cc = QPushButton("Copiar “Pix copia e cola”")
         b_cc.clicked.connect(lambda: (QGuiApplication.clipboard().setText(PIX_PAYLOAD),
                                       b_cc.setText("Pix copia e cola copiado ✓")))
-        lay.addWidget(b_cc)
+        row.addWidget(b_cc)
+        lay.addLayout(row)
         lay.addWidget(_hint("No aplicativo do banco aparece o nome do mantenedor como recebedor (padrão do Pix). "
                             "Outras formas de ajudar: relatar problemas e sugerir funções no GitHub, e indicar o "
                             "Markinho a quem precisa."))

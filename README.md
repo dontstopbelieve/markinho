@@ -405,12 +405,17 @@ de suporte, correções ou novas versões — o projeto continua “como está�
 
 <img src="markinho/resources/apoie-pix.png" alt="QR Code do Pix para apoiar o Markinho" width="200">
 
-- **Chave Pix (aleatória):** `1487d3bd-979f-482e-a83a-026329e0b143`
-- **Pix copia e cola:**
+**Chave Pix (aleatória), por extenso:**
 
-  ```
-  00020126580014br.gov.bcb.pix01361487d3bd-979f-482e-a83a-026329e0b1435204000053039865802BR5908MARKINHO6006BRASIL62070503***63047522
-  ```
+```
+1487d3bd-979f-482e-a83a-026329e0b143
+```
+
+**Pix copia e cola** (para colar no app do banco):
+
+```
+00020126580014br.gov.bcb.pix01361487d3bd-979f-482e-a83a-026329e0b1435204000053039865802BR5908MARKINHO6006BRASIL62070503***63047522
+```
 
 No aplicativo do banco aparece o nome do mantenedor como recebedor — é o padrão do Pix.
 No programa: **Ajuda > Apoie o Markinho**.

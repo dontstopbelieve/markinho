@@ -436,3 +436,4 @@ def test_support_milestones_and_dialog(tmp_path):
     assert not any(count_conversion(s2) for _ in range(150))   # “não mostrar de novo” vale para sempre
     d = SupportDialog(None, 100, s2)
     assert "100 documentos" in d.findChildren(type(d.layout().itemAt(0).widget()))[0].text()
+    assert d.key_label.text() == PIX_KEY                       # chave por extenso, inteira
