@@ -65,7 +65,7 @@ já vem com soluções para os problemas mais comuns de conversão.
 | **IA de layout (Docling)**, com modelos incluídos para funcionar **sem internet** | | ✔ |
 | MarkItDown e RapidOCR | | ✔ |
 | Tamanho aproximado do instalador | ~100–150 MB | ~1–1,5 GB |
-| Formatos de download | todos (abaixo) | Windows: instalador `.exe` e `.zip` portátil · Linux: AppImage · macOS: `.dmg` |
+| **Pacotes extras** opcionais (ex.: Fórmulas e código), instalados uma vez e usados sem internet | | ✔ |
 
 ### Qual edição escolher?
 
@@ -224,8 +224,31 @@ mantém as suas configurações. Vale para atualizar (3.0 → 3.1) e para subir 
 | **PyMuPDF4LLM** | PDF muito rápido em CPU | **AGPL-3.0** | não incluído (o usuário pode instalar) |
 
 **Uso offline:** a edição COMPLETA já traz os modelos do Docling de layout e de tabelas e funciona sem
-internet. O modelo de **fórmulas** (~600 MB) não vem junto, para o instalador caber no limite do GitHub:
-quem precisa baixa uma vez em *Motores* > **Baixar modelos do Docling**.
+internet.
+
+### Pacotes extras (COMPLETA)
+
+Recursos de IA que poucas pessoas usam vêm **à parte**, para o instalador ficar menor (o GitHub aceita
+no máximo 2 GB por arquivo). Instale só se for usar; depois de instalado, o pacote fica no computador e
+funciona sem internet.
+
+| Pacote | Tamanho | Para que serve | Vale a pena para | Dispensável para |
+|---|---|---|---|---|
+| **Fórmulas e código** (`Markinho-Pacote-Formulas-….zip`) | ~600 MB | Converte equações em texto editável (LaTeX) e reconhece código de programação | Artigos científicos, teses, apostilas de exatas, documentação técnica | Contratos, processos, relatórios, documentos de escritório |
+
+Como instalar:
+
+- **No instalador do Windows** (`…-setup.exe`): na tela “Selecionar componentes”, marque o pacote. O
+  instalador baixa o pacote das Releases e confere a assinatura SHA-256. **Sem internet?** Coloque o `.zip`
+  na mesma pasta do instalador: ele é usado direto.
+- **Depois, em qualquer sistema**: baixe o `.zip` na página de
+  [Releases](https://github.com/dontstopbelieve/markinho/releases) e use *Ferramentas* > **Pacotes extras** >
+  *Instalar de um arquivo…* (ou `markinho --instalar-pacote Markinho-Pacote-Formulas-….zip`;
+  `markinho --pacotes` mostra o que está instalado).
+
+O Markinho **não baixa nada sozinho**: quem baixa é o navegador ou o instalador, e só o pacote. Ao instalar,
+o Markinho confere cada arquivo (SHA-256 e tamanho) e recusa pacotes danificados ou adulterados. Sem o
+pacote, as fórmulas saem como texto simples ou imagem, e o Markinho avisa qual pacote resolve.
 Rodando pelo código-fonte, use *Motores* > **Baixar modelos** (ou
 `markinho --download-models docling`) uma vez, num computador com internet.
 

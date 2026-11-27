@@ -100,6 +100,9 @@ jobs:
         if: matrix.edition != 'completa'
         continue-on-error: true
         run: python packaging/build.py --edition ${{ matrix.edition }} onefile
+      - name: Pacotes extras (COMPLETA; o instalador oferece baixar)
+        if: matrix.edition == 'completa'
+        run: python packaging/build.py --edition completa pacotes
       - name: Instalador .exe (Inno Setup)
         continue-on-error: true
         shell: pwsh
@@ -109,7 +112,6 @@ jobs:
           }
           python packaging/build.py --edition ${{ matrix.edition }} inno
       - name: Instalador .msi (WiX)
-        if: matrix.edition != 'completa'      # COMPLETA: só .exe e .zip (arquivos grandes; menos formatos)
         continue-on-error: true
         shell: pwsh
         run: |
@@ -174,8 +176,8 @@ jobs:
         run: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
       - name: Dependências da edição
         run: pip install -r requirements-${{ matrix.edition }}.txt pyinstaller
-      - name: "Programa, tar.gz e .deb (na COMPLETA, só o AppImage)"
-        run: python packaging/build.py --edition ${{ matrix.edition }} ${{ matrix.edition == 'completa' && 'app' || 'app zip deb' }}
+      - name: Programa, tar.gz e .deb
+        run: python packaging/build.py --edition ${{ matrix.edition }} app zip deb
       - name: AppImage
         continue-on-error: true
         run: |
@@ -246,7 +248,8 @@ jobs:
             Todas as edições: interface em português, inglês e espanhol. Tudo roda no seu computador: nenhum documento é enviado para a internet.
 
             Para mudar de edição, instale a outra por cima: as configurações são mantidas.
-            A COMPLETA é publicada só como instalador .exe e .zip portátil (Windows) e AppImage (Linux), por ser grande.
+            **Pacotes extras (opcionais, COMPLETA):** `Markinho-Pacote-Formulas-….zip` reconhece fórmulas (LaTeX) e código.
+            O instalador do Windows oferece baixá-lo; nos outros casos, baixe o .zip e use Ferramentas › Pacotes extras.
 
             ## Escolha o arquivo
 

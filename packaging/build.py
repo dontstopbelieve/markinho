@@ -17,6 +17,7 @@ Alvos:
   appimage   AppImage para qualquer Linux               -> release/…-x86_64.AppImage
   tessdata   baixa os idiomas do OCR da edição para packaging/vendor/tesseract/tessdata
   models     baixa os modelos do Docling (usado pela edição completa)
+  pacotes    gera os pacotes extras (.zip com modelos opcionais, ex.: Fórmulas)
   wheel      pacote Python (pip/pipx; a edição é escolhida pelos extras)
   all        tudo o que dá para gerar neste sistema para a edição
 """
@@ -214,6 +215,53 @@ def build_models() -> Path:
     return target
 
 
+def build_packs() -> list[Path]:
+    """Pacotes extras (ex.: Fórmulas) em .zip, para as Releases e para o instalador do Windows baixar."""
+    sys.path.insert(0, str(ROOT))
+    from markinho.packs import PACKS, build_pack
+
+    src = BUILD / "models" / "extras"
+    if not (src.is_dir() and any(src.iterdir())):
+        src.mkdir(parents=True, exist_ok=True)
+        print(f"Baixando modelos dos pacotes extras para {src} …", flush=True)
+        from docling.utils.model_downloader import download_models
+
+        download_models(output_dir=src, progress=False, with_layout=False, with_tableformer=False,
+                        with_code_formula=True, with_picture_classifier=False, with_rapidocr=False)
+    RELEASE.mkdir(exist_ok=True)
+    out = []
+    for pk in PACKS:
+        target = build_pack(pk, src, RELEASE, VERSION)
+        print(f"→ {target} ({target.stat().st_size / 1e6:.0f} MB)")
+        out.append(target)
+    return out
+
+
+def _pack_defines() -> list[str]:
+    """Para o Inno Setup: nome, endereço e SHA-256 de cada pacote gerado (só na COMPLETA)."""
+    if EDITION != "completa":
+        return []
+    sys.path.insert(0, str(ROOT))
+    import hashlib
+
+    from markinho.packs import PACKS
+
+    out = []
+    for pk in PACKS:
+        f = RELEASE / pk.file_name(VERSION)
+        if not f.is_file():
+            print(f"aviso: {f.name} não foi gerado; o instalador sai sem a opção de pacote extra")
+            continue
+        h = hashlib.sha256()
+        with f.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b""):
+                h.update(chunk)
+        key = pk.file_title
+        out += [f"/DPack{key}File={f.name}", f"/DPack{key}Url={pk.url(VERSION)}", f"/DPack{key}Sha={h.hexdigest()}",
+                f"/DPack{key}Size={pk.size_mb}"]
+    return out
+
+
 def embed_models() -> None:
     """COMPLETA: coloca os modelos ao lado do executável, para funcionar sem internet."""
     if os.environ.get("MARKINHO_SKIP_MODELS") == "1":       # só para testes locais sem internet
@@ -309,7 +357,7 @@ def build_inno() -> Path:
     out_name = f"{base_name()}-setup"
     run([_find_iscc(), f"/DAppVersion={VERSION}", f"/DEdition={EDITION_TITLE[EDITION]}", f"/DSourceDir={app_dir()}",
          f"/DOutputDir={RELEASE}", f"/DOutputName={out_name}", f"/DIconFile={PKG / 'icons' / 'markinho.ico'}",
-         PKG / "windows" / "markinho.iss"])
+         *_pack_defines(), PKG / "windows" / "markinho.iss"])
     target = RELEASE / f"{out_name}.exe"
     print("→", target)
     return target
@@ -452,7 +500,7 @@ def build_wheel() -> list[Path]:
 TARGETS = {
     "app": build_app, "onefile": build_onefile, "zip": build_zip, "inno": build_inno, "msi": build_msi,
     "dmg": build_dmg, "deb": build_deb, "appimage": build_appimage, "wheel": build_wheel,
-    "tessdata": build_tessdata, "models": build_models,
+    "tessdata": build_tessdata, "models": build_models, "pacotes": build_packs,
 }
 
 

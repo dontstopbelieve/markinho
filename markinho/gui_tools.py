@@ -365,6 +365,124 @@ class UpdateDialog(QDialog):
 
 
 # --------------------------------------------------------------------------- #
+# Pacotes extras (modelos opcionais)
+# --------------------------------------------------------------------------- #
+class PacksDialog(QDialog):
+    """Ferramentas > Pacotes extras: o que cada um faz, para quem serve e instalar a partir do .zip."""
+
+    def __init__(self, parent):
+        from . import __version__
+        from .packs import PACKS, docling_available
+
+        super().__init__(parent)
+        self.setWindowTitle(tr("Pacotes extras"))
+        self.resize(600, 420)
+        self.version = __version__
+        lay = QVBoxLayout(self)
+        lay.addWidget(QLabel(tr("<h3>Pacotes extras</h3>")))
+        lay.addWidget(_hint(tr("Recursos de IA que poucas pessoas usam vêm à parte, para o instalador ficar menor. "
+                               "Instale só se precisar: <b>baixe o arquivo .zip uma vez</b> na página de versões "
+                               "(pelo navegador) e escolha “Instalar de um arquivo…”. Depois ele fica no "
+                               "computador e funciona sem internet. O Markinho não baixa nada sozinho.")))
+        if not docling_available():
+            lay.addWidget(anon_warning(tr("Os pacotes extras são para a edição COMPLETA (motor Docling, IA de "
+                                          "layout). Nesta edição eles não têm efeito.")))
+        self.status: dict[str, QLabel] = {}
+        self.remove_btn: dict[str, QPushButton] = {}
+        for pk in PACKS:
+            box = QGroupBox(tr("{0} (~{1} MB)").format(pk.name, num(pk.size_mb)))
+            bl = QVBoxLayout(box)
+            st = QLabel()
+            self.status[pk.id] = st
+            bl.addWidget(st)
+            for text in (pk.what, pk.who, pk.skip):
+                bl.addWidget(_hint(text))
+            row = QHBoxLayout()
+            b_inst = QPushButton(tr("Instalar de um arquivo…"))
+            b_inst.setEnabled(docling_available())
+            b_inst.clicked.connect(lambda _c=False, p=pk: self.install(p))
+            b_get = QPushButton(tr("Abrir a página de download"))
+            b_get.clicked.connect(lambda _c=False, p=pk: self.open_page(p))
+            b_rm = QPushButton(tr("Remover"))
+            b_rm.clicked.connect(lambda _c=False, p=pk: self.remove(p))
+            self.remove_btn[pk.id] = b_rm
+            row.addWidget(b_inst)
+            row.addWidget(b_get)
+            row.addStretch(1)
+            row.addWidget(b_rm)
+            bl.addLayout(row)
+            lay.addWidget(box)
+        lay.addStretch(1)
+        bb = QDialogButtonBox(QDialogButtonBox.Close)
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+        self.refresh()
+
+    def refresh(self) -> None:
+        from .packs import PACKS, installed, user_docling_dir
+
+        for pk in PACKS:
+            ok = installed(pk)
+            self.status[pk.id].setText(tr("✔ <b>Instalado</b>") if ok else tr("Não instalado"))
+            self.remove_btn[pk.id].setEnabled(any((user_docling_dir() / f).is_dir() for f in pk.folders))
+
+    def open_page(self, pk) -> None:
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+
+        from .packs import RELEASES
+
+        QDesktopServices.openUrl(QUrl(f"{RELEASES}/tag/v{self.version}"))     # o navegador baixa, não o Markinho
+
+    def install(self, pk, path: str | None = None) -> bool:
+        from PySide6.QtWidgets import QApplication, QProgressDialog
+
+        from .packs import PackError, install_from_zip
+
+        if path is None:
+            path, _f = QFileDialog.getOpenFileName(self, tr("Escolha o arquivo do pacote"), str(Path.home()),
+                                                   tr("Pacote do Markinho (*.zip)"))
+            if not path:
+                return False
+        prog = QProgressDialog(tr("Conferindo e instalando o pacote…"), "", 0, 1000, self)
+        prog.setCancelButton(None)
+        prog.setWindowModality(Qt.WindowModal)
+        prog.setMinimumDuration(0)
+        last = [-1]
+
+        def step(done: int, total: int) -> None:
+            v = int(done * 1000 / max(total, 1))
+            if v != last[0]:
+                last[0] = v
+                prog.setValue(v)
+                QApplication.processEvents()
+
+        try:
+            got = install_from_zip(path, step)
+        except (PackError, OSError) as exc:
+            prog.close()
+            QMessageBox.warning(self, tr("Pacotes extras"), tr("Não foi possível instalar: {0}").format(exc))
+            return False
+        prog.close()
+        self.refresh()
+        msg = tr("Pacote “{0}” instalado. Ele fica no computador e funciona sem internet.").format(got.name)
+        if got.id != pk.id:
+            msg += "\n" + tr("(O arquivo escolhido era de outro pacote.)")
+        QMessageBox.information(self, tr("Pacotes extras"), msg)
+        return True
+
+    def remove(self, pk) -> None:
+        from .packs import uninstall
+
+        if QMessageBox.question(self, tr("Pacotes extras"),
+                                tr("Remover o pacote “{0}”? Para usá-lo de novo, será preciso instalar o .zip "
+                                   "outra vez.").format(pk.name)) != QMessageBox.Yes:
+            return
+        uninstall(pk)
+        self.refresh()
+
+
+# --------------------------------------------------------------------------- #
 # Dividir por títulos
 # --------------------------------------------------------------------------- #
 class SplitDialog(QDialog):

@@ -46,13 +46,10 @@ def models_dir() -> Path:
 
 
 def docling_artifacts() -> Path | None:
-    """Pasta com os modelos do Docling já baixados (embutidos ou do usuário), se houver."""
-    for base in (bundled_models_dir(), models_dir()):
-        if base is not None:
-            p = base / "docling"
-            if p.is_dir() and any(p.iterdir()):
-                return p
-    return None
+    """Pasta com os modelos do Docling (embutidos, baixados ou de pacotes extras), se houver."""
+    from .packs import merged_docling_dir
+
+    return merged_docling_dir()
 
 
 def setup_environment() -> None:

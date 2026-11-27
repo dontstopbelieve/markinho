@@ -95,6 +95,9 @@ def build_parser() -> argparse.ArgumentParser:
                             "PASTA/markinho/SKILL.md (padrão: ~/.claude/skills)"))
     ap.add_argument("--mostrar-skill", action="store_true",
                     help=tr("mostra o texto dessa skill (para colar em outro assistente)"))
+    ap.add_argument("--instalar-pacote", metavar="ARQUIVO.zip",
+                    help=tr("instala um pacote extra (ex.: Fórmulas) a partir do .zip baixado das Releases"))
+    ap.add_argument("--pacotes", action="store_true", help=tr("lista os pacotes extras e se estão instalados"))
     ap.add_argument("--version", action="store_true", help=tr("mostra a versão"))
     return ap
 
@@ -124,6 +127,28 @@ def cli(argv: list[str]) -> int:
         built = build_date()
         print(f"Markinho {__version__}" + (f" ({built.isoformat()})" if built else ""))
         print(tr("O Markinho não acessa a internet. Para ver se há versão nova: {0}").format(RELEASES_URL))
+        return 0
+    if args.pacotes:
+        from . import __version__ as _v
+        from .packs import PACKS, installed
+
+        for pk in PACKS:
+            state = tr("Instalado") if installed(pk) else tr("Não instalado")
+            print(f"{pk.name} (~{pk.size_mb} MB): {state}")
+            print("  " + pk.what)
+            print("  " + pk.who)
+            print("  " + pk.skip)
+            print("  " + tr("Baixar: {0}").format(pk.url(_v)))
+        return 0
+    if args.instalar_pacote:
+        from .packs import PackError, install_from_zip
+
+        try:
+            pk = install_from_zip(args.instalar_pacote)
+        except (PackError, OSError) as exc:
+            print(tr("erro: {0}").format(exc), file=sys.stderr)
+            return 1
+        print(tr("Pacote “{0}” instalado. Ele fica no computador e funciona sem internet.").format(pk.name))
         return 0
     if args.mostrar_skill:
         from .agent_skill import skill_text

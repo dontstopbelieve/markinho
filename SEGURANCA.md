@@ -166,6 +166,16 @@ Revisão do pacote inteiro com a ferramenta de revisão do Claude Code. Corrigid
 - No GitHub (workflow Testes), o mesmo arquivo roda com `unshare -rn`: a máquina fica sem rede nenhuma, o que
   cobre também os programas externos (Pandoc, Tesseract).
 
+### 27/11/2026 — Pacotes extras (modelos opcionais em .zip)
+
+- O .zip traz `markinho-pacote.json` com SHA-256 e tamanho de cada arquivo. Recusa: arquivo fora da lista,
+  arquivo faltando, conteúdo diferente, arquivo maior que o declarado (lido aos poucos, parando no limite —
+  os modelos têm centenas de MB e não cabem em `safety.read_zip_member`), nomes com `..`, `\`, `:` ou
+  absolutos, pastas fora das do pacote, pacote desconhecido, formato novo, total acima de 6 GB.
+- Instala numa pasta temporária e só troca no fim (pacote ruim não deixa nada pela metade).
+- O instalador do Windows confere o SHA-256 do .zip (baixado ou ao lado do instalador) antes de usá-lo.
+- O Markinho não baixa nada: o teste de sigilo continua valendo. Testes em `tests/test_packs.py`.
+
 ## Rotina antes de cada versão
 
 1. `pip install pip-audit` e `pip-audit -r requirements-padrao.txt` (e as outras edições).

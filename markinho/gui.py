@@ -2014,6 +2014,7 @@ class MainWindow(QMainWindow):
         tool_menu = self.menuBar().addMenu(tr("Ferramentas"))
         tool_menu.addAction(tr("Motores de conversão…"), lambda: EnginesDialog(self).exec())
         tool_menu.addAction(tr("Assistentes de IA (MCP)…"), lambda: McpDialog(self).exec())
+        tool_menu.addAction(tr("Pacotes extras…"), self.open_packs)
         tool_menu.addSeparator()
         tool_menu.addAction(tr("Anonimizar um arquivo Markdown…"), self.anonymize_file)
         tool_menu.addAction(tr("Comparar duas versões…"), self.compare_versions)
@@ -3443,6 +3444,11 @@ class MainWindow(QMainWindow):
             return
         start = str(Path(self._src_dir(e)) / tr('{0}_partes').format(self._stem(e)))
         SplitDialog(self, e.text, e.result.assets, self.settings, start).exec()
+
+    def open_packs(self) -> None:
+        from .gui_tools import PacksDialog
+
+        PacksDialog(self).exec()
 
     def skill_export(self) -> None:
         from .gui_tools import SkillDialog
