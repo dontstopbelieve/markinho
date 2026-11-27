@@ -45,7 +45,8 @@ markinho/
   converters.py    conversores nativos (DOCX com sdt/caixas de texto, XLSX/XLS, PPTX, HTML, EPUB, ZIP…)
   pdf.py           PDF nativo: layout, colunas, código, imagens, OCR, cabeçalhos/rodapés
   anydoc_engine.py AnyDoc: modelo do documento → Markdown (imagens, tabelas mescladas, notas)
-  ocr.py           Tesseract (principal, mantém acentos) / RapidOCR
+  ocr.py           Tesseract (principal) / PP-OCR latino (RapidOCR, modelos locais em ppocr/; letra miúda limpa no
+                   modo auto: prefer_ppocr) · idioma "auto" (OSD + palavras típicas) · nunca deixar o RapidOCR baixar nada
   assets.py        imagens (pasta <nome>_assets / base64 / nenhuma), tabelas HTML
   postprocess.py   frontmatter YAML, perfis (gfm, mdformat, obsidian, llm)
   textfix.py       correção de caracteres (mojibake, acentos, ligaduras…) com relatório

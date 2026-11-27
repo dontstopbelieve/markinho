@@ -70,11 +70,18 @@ INCLUDED: tuple[Credit, ...] = (
            tr("Carregamento dos modelos"), "transformers"),
     Credit(tr("MarkItDown"), tr("Microsoft"), "MIT", "https://github.com/microsoft/markitdown", tr("Motor de conversão extra"),
            "markitdown"),
-    Credit(tr("RapidOCR / ONNX Runtime"), tr("RapidAI; Microsoft"), tr("Apache-2.0 / MIT"), "https://github.com/RapidAI/RapidOCR",
-           tr("OCR de reserva do Docling"), "rapidocr_onnxruntime"),
+    Credit(tr("RapidOCR, PP-OCR (PaddleOCR), ONNX Runtime e OpenCV"), tr("RapidAI; Baidu PaddlePaddle; Microsoft; OpenCV"),
+           tr("Apache-2.0 / Apache-2.0 / MIT / Apache-2.0"), "https://github.com/RapidAI/RapidOCR",
+           tr("OCR de letra miúda (PP-OCR latino, mantém acentos)"), "rapidocr"),
 )
 
 INSPIRED_BY: tuple[Credit, ...] = (
+    Credit(tr("OCRia-nano-1 / LiteParse"), tr("LlamaIndex"), "—", "https://huggingface.co/llamaindex/OCRia-nano-1",
+           tr("Ideias: escolher o reconhecimento por escrita da linha (idioma automático do OCR) e usar o PP-OCR "
+              "em vez do Tesseract onde ele lê melhor (nada do código ou dos modelos deles)")),
+    Credit(tr("dots.ocr"), tr("rednote-hilab"), "—", "https://github.com/rednote-hilab/dots.ocr",
+           tr("Comparação no olmOCR-bench que mostrou onde melhorar: cabeçalhos/rodapés por faixa e colunas pelos "
+              "corredores entre as palavras (nada do código ou do modelo deles)")),
     Credit(tr("SoMark / OXR"), tr("SoMark (Shanghai Shoukou Technology)"), "—", "https://github.com/SoMarkAI",
            tr("Ideias de uso: selo de “nada saiu do computador”, sumário clicável, texto aparecendo enquanto "
            "converte, ler imagem como tabela/código e comparar versões (nada do código ou do modelo deles)")),

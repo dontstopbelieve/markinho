@@ -33,7 +33,14 @@ class OcrTimeout(RuntimeError):
 
 
 OCR_BACKENDS = [("auto", "Automático"), ("tesseract", tr("Tesseract (mantém acentos)")),
-                ("rapidocr", tr("RapidOCR (sem instalação, perde acentos)"))]
+                ("rapidocr", tr("PP-OCR latino (ótimo em letra miúda, mantém acentos)"))]
+
+# PP-OCR (PaddleOCR, Apache-2.0) pelo RapidOCR: detector do próprio RapidOCR + reconhecedor de escrita latina
+# (português, espanhol, francês, alemão… com acentos), baixado do Hugging Face no build (~8 MB)
+PPOCR_REC = "latin_PP-OCRv5_mobile_rec.onnx"
+PPOCR_DICT = "latin_PP-OCRv5_dict.txt"
+PPOCR_DET = "PP-OCRv6_det_small.onnx"
+PPOCR_URL = "https://huggingface.co/PaddlePaddle/latin_PP-OCRv5_mobile_rec_onnx/resolve/main/"
 
 
 def _bundle_dirs() -> list[Path]:
@@ -133,7 +140,7 @@ def cjk_join(text: str) -> str:
 
 def refresh() -> None:
     """Depois de instalar ou remover um pacote de idiomas: procura os idiomas de novo."""
-    for f in (tesseract_cmd, tessdata_best_dir, tesseract_languages, _has_osd, base_tessdata):
+    for f in (tesseract_cmd, tessdata_best_dir, tesseract_languages, _has_osd, base_tessdata, _rapid):
         f.cache_clear()
 
 
@@ -193,7 +200,8 @@ def available_backends() -> list[str]:
     out = []
     if tesseract_cmd() and _has_module("pytesseract"):
         out.append("tesseract")
-    if _has_module("rapidocr_onnxruntime") or _has_module("rapidocr"):
+    # PP-OCR só com os modelos no computador (sem eles, o RapidOCR novo tentaria baixar da internet)
+    if ppocr_ready() or _has_module("rapidocr_onnxruntime"):
         out.append("rapidocr")
     return out
 
@@ -231,13 +239,76 @@ def _tess_lang(lang: str) -> str:
     return "+".join(ok) or "eng"
 
 
+def ppocr_dir() -> Path | None:
+    """Pasta com o reconhecedor latino do PP-OCR (embutido no programa ou baixado pelo usuário)."""
+    from .models import models_dir
+
+    env = os.environ.get("MARKINHO_PPOCR")
+    cands = ([Path(env)] if env else []) + [d / "ppocr" for d in _bundle_dirs()] + [models_dir() / "ppocr"]
+    for c in cands:
+        if (c / PPOCR_REC).is_file() and (c / PPOCR_DICT).is_file():
+            return c
+    return None
+
+
+def _ppocr_det() -> Path | None:
+    d = ppocr_dir()
+    if d is not None and (d / PPOCR_DET).is_file():
+        return d / PPOCR_DET
+    try:
+        import rapidocr
+
+        p = Path(rapidocr.__file__).parent / "models" / PPOCR_DET
+        return p if p.is_file() else None
+    except ImportError:
+        return None
+
+
+def ppocr_ready() -> bool:
+    """PP-OCR latino pronto: RapidOCR 3 + onnxruntime instalados e os dois modelos no computador."""
+    return _has_module("rapidocr") and _has_module("onnxruntime") and ppocr_dir() is not None \
+        and _ppocr_det() is not None
+
+
 @lru_cache(maxsize=1)
 def _rapid():
-    try:
-        from rapidocr_onnxruntime import RapidOCR
-    except ImportError:
+    """RapidOCR pronto para usar. Com o modelo latino, mantém acentos; os modelos sempre vêm de arquivos locais
+    (nada é baixado da internet)."""
+    if ppocr_ready():
+        import logging
+
         from rapidocr import RapidOCR  # type: ignore
+
+        logging.getLogger("RapidOCR").setLevel(logging.ERROR)
+        d = ppocr_dir()
+        return RapidOCR(params={"Det.model_path": str(_ppocr_det()), "Rec.model_path": str(d / PPOCR_REC),
+                                "Rec.rec_keys_path": str(d / PPOCR_DICT), "Global.use_cls": False,
+                                "Global.log_level": "error"})
+    from rapidocr_onnxruntime import RapidOCR      # pacote antigo: modelos dentro dele, sem internet
+
     return RapidOCR()
+
+
+def download_ppocr(target: Path) -> Path:
+    """Baixa o reconhecedor latino do PP-OCR (Hugging Face, Apache-2.0) e grava a lista de caracteres."""
+    import urllib.request
+
+    import yaml
+
+    target.mkdir(parents=True, exist_ok=True)
+    rec = target / PPOCR_REC
+    if not rec.is_file():
+        urllib.request.urlretrieve(PPOCR_URL + "inference.onnx", target / (PPOCR_REC + ".part"))
+        os.replace(target / (PPOCR_REC + ".part"), rec)
+    if not (target / PPOCR_DICT).is_file():
+        with urllib.request.urlopen(PPOCR_URL + "inference.yml", timeout=120) as r:
+            conf = yaml.safe_load(r.read().decode("utf-8"))
+        chars = conf["PostProcess"]["character_dict"]
+        (target / PPOCR_DICT).write_text("\n".join(chars), encoding="utf-8")
+    det = _ppocr_det()
+    if det is not None and det.parent != target and not (target / PPOCR_DET).is_file():
+        shutil.copy2(det, target / PPOCR_DET)
+    return target
 
 
 def skew_angle(gray, limit: float = 5.0, step: float = 0.5) -> float:
@@ -468,7 +539,34 @@ def ocr_lines(img, backend: str = "auto", lang: str = "por+eng", enhance_img: bo
             lines.append({"text": cjk_join(" ".join(data["text"][i] for i in idxs)), "x0": x0, "x1": x1,
                           "top": top, "bottom": bottom, "height": heights[len(heights) // 2],
                           "conf": sum(confs) / len(confs), "chars": sum(len(data["text"][i]) for i in idxs)})
+        # automático: página limpa com letra miúda → o PP-OCR latino lê melhor (medido no olmOCR-bench)
+        if backend == "auto" and not tl.startswith(("rus", "ara", "chi")) and prefer_ppocr(lines, img.height) \
+                and ppocr_ready():
+            try:
+                pp = _rapid_lines(img)
+            except Exception:  # noqa: BLE001 — se o PP-OCR falhar, fica a leitura do Tesseract
+                pp = []
+            if sum(ln["chars"] for ln in pp) >= 0.7 * sum(ln["chars"] for ln in lines):
+                return pp
         return lines
+    return _rapid_lines(img)
+
+
+def prefer_ppocr(lines: list[dict], image_height: int) -> bool:
+    """Regra do OCR automático, tirada do olmOCR-bench (121 páginas escaneadas): o PP-OCR ganha em página
+    limpa (Tesseract já confiante, ≥ 75%) com letra pequena (altura típica < 2,4% da página). Em papel velho
+    e manchado o Tesseract é melhor ou igual — fica com ele."""
+    useful = [ln for ln in lines if ln["chars"] >= 3]
+    if len(useful) < 3 or image_height <= 0:
+        return False
+    import statistics
+
+    conf = statistics.mean(ln["conf"] for ln in useful)
+    height = statistics.median(ln["height"] for ln in useful)
+    return conf >= 75 and 0 < height / image_height < 0.024
+
+
+def _rapid_lines(img) -> list[dict]:
     import numpy as np
 
     result = _rapid()(np.array(img.convert("RGB")))

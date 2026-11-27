@@ -101,4 +101,11 @@ def download_models(which: str, progress=print) -> Path:
         create_model_dict()
         progress(tr("Modelos do Marker prontos."))
         return target
+    if which == "ppocr":
+        from .ocr import download_ppocr
+
+        progress(tr("Baixando o OCR PP-OCR latino para {0} …").format(root / "ppocr"))
+        target = download_ppocr(root / "ppocr")
+        progress(tr("OCR PP-OCR latino pronto."))
+        return target
     raise ValueError(tr('Modelo desconhecido: {0}').format(which))

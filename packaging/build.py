@@ -18,6 +18,7 @@ Alvos:
   tessdata   baixa os idiomas do OCR da edição para packaging/vendor/tesseract/tessdata
   models     baixa os modelos do Docling (usado pela edição completa)
   pacotes    gera os pacotes extras (.zip com modelos opcionais, ex.: Fórmulas)
+  ppocr      baixa o OCR PP-OCR latino (embutido nas duas edições)
   wheel      pacote Python (pip/pipx; a edição é escolhida pelos extras)
   all        tudo o que dá para gerar neste sistema para a edição
 """
@@ -182,6 +183,8 @@ def collect_licenses() -> Path:
 
 def build_app(onefile: bool = False) -> Path:
     collect_licenses()
+    if not (PKG / "vendor" / "ppocr").is_dir():         # OCR PP-OCR latino (as duas edições)
+        build_ppocr()
     env = dict(os.environ, MARKINHO_VERSION=VERSION, MARKINHO_EDITION=EDITION)
     if onefile:
         env["MARKINHO_ONEFILE"] = "1"
@@ -236,6 +239,16 @@ def _pack_sources() -> Path:
                 print("baixando", url, flush=True)
                 urllib.request.urlretrieve(url, dest)
     return src
+
+
+def build_ppocr() -> Path:
+    """OCR PP-OCR latino (Apache-2.0): reconhecedor do Hugging Face + detector do RapidOCR, embutidos no programa."""
+    from markinho.ocr import download_ppocr
+
+    target = PKG / "vendor" / "ppocr"
+    download_ppocr(target)
+    print("PP-OCR latino:", sorted(f.name for f in target.iterdir()))
+    return target
 
 
 def build_packs() -> list[Path]:
@@ -536,7 +549,7 @@ def build_wheel() -> list[Path]:
 TARGETS = {
     "app": build_app, "onefile": build_onefile, "zip": build_zip, "inno": build_inno, "msi": build_msi,
     "dmg": build_dmg, "deb": build_deb, "appimage": build_appimage, "wheel": build_wheel,
-    "tessdata": build_tessdata, "models": build_models, "pacotes": build_packs,
+    "tessdata": build_tessdata, "models": build_models, "pacotes": build_packs, "ppocr": build_ppocr,
 }
 
 

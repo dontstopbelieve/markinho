@@ -49,6 +49,12 @@ inspiraram ideias (markitdown, Marker, PyMuPDF4LLM, Unstructured, file2markdown)
 | pypandoc | MIT | https://github.com/JessicaTegner/pypandoc |
 | Tesseract OCR | Apache-2.0 | https://github.com/tesseract-ocr/tesseract (incluído no instalador do Windows) |
 | Dados de idioma do Tesseract (tessdata_fast e tessdata_best) | Apache-2.0 | https://github.com/tesseract-ocr/tessdata_fast · https://github.com/tesseract-ocr/tessdata_best |
+| RapidOCR (OCR PP-OCR; usa só modelos locais) | Apache-2.0 | https://github.com/RapidAI/RapidOCR |
+| Modelos PP-OCR: detector `PP-OCRv6_det_small` e reconhecedor latino `latin_PP-OCRv5_mobile_rec` | Apache-2.0 | https://github.com/PaddlePaddle/PaddleOCR · https://huggingface.co/PaddlePaddle/latin_PP-OCRv5_mobile_rec_onnx |
+| ONNX Runtime | MIT | https://github.com/microsoft/onnxruntime |
+| OpenCV (`opencv-python-headless`; inclui FFmpeg, LGPL, como biblioteca separada) | Apache-2.0 | https://opencv.org |
+| NumPy | BSD-3-Clause | https://numpy.org |
+| Shapely, pyclipper, OmegaConf, ANTLR4 runtime, colorlog, PyYAML, six, tqdm | BSD-3 / MIT (Boost no Clipper) / BSD-3 / BSD-3 / MIT / MIT / MIT / MPL-2.0·MIT | dependências do RapidOCR |
 | pytesseract | Apache-2.0 | https://github.com/madmaze/pytesseract |
 
 ## Somente COMPLETA
@@ -60,7 +66,6 @@ inspiraram ideias (markitdown, Marker, PyMuPDF4LLM, Unstructured, file2markdown)
 | Modelos de tabela `docling-models` (TableFormer) | CDLA-Permissive-2.0 / Apache-2.0 | https://huggingface.co/docling-project/docling-models — texto da CDLA em `licenses/CDLA-Permissive-2.0.txt` |
 | Modelo de código e fórmulas `CodeFormulaV2` | CDLA-Permissive-2.0 | https://huggingface.co/docling-project/CodeFormulaV2 |
 | Classificador de figuras `DocumentFigureClassifier-v2.5` | MIT (base: EfficientNet-B0, Apache-2.0) | https://huggingface.co/docling-project/DocumentFigureClassifier-v2.5 |
-| Modelos do RapidOCR (OCR reserva do Docling) | Apache-2.0 | https://github.com/RapidAI/RapidOCR |
 
 Licenças conferidas na API do Hugging Face em 13/11/2026. Cada pasta de modelo inclui o README
 (cartão do modelo) com a licença; a CDLA-Permissive-2.0 exige que o seu texto acompanhe os modelos
@@ -69,9 +74,6 @@ redistribuídos, o que é feito pelo arquivo em `licenses/`.
 | Transformers, Tokenizers, Safetensors, huggingface_hub | Apache-2.0 | https://github.com/huggingface |
 | MarkItDown | MIT | https://github.com/microsoft/markitdown |
 | Magika | Apache-2.0 | https://github.com/google/magika |
-| RapidOCR (e modelos PaddleOCR) | Apache-2.0 | https://github.com/RapidAI/RapidOCR |
-| ONNX Runtime | MIT | https://github.com/microsoft/onnxruntime |
-| OpenCV | Apache-2.0 | https://opencv.org |
 | NumPy, SciPy, pandas | BSD-3-Clause | https://numpy.org · https://scipy.org · https://pandas.pydata.org |
 
 ## Não incluídos (por causa da licença)

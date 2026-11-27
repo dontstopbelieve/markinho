@@ -855,7 +855,10 @@ def _ocr_settings():
     from . import ocr
 
     mode = option("ocr", "auto")
-    backend = ocr.pick_backend(option("ocr_backend", "auto")) if mode != "off" else None
+    choice = option("ocr_backend", "auto")
+    backend = ocr.pick_backend(choice) if mode != "off" else None
+    if backend is not None and choice == "auto":
+        backend = "auto"                  # o OCR escolhe por página (Tesseract ou PP-OCR para letra miúda)
     return mode, backend, option("ocr_lang", "auto")
 
 

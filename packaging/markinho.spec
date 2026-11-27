@@ -63,8 +63,17 @@ excludes = ["marker", "surya", "pymupdf", "fitz", "pymupdf4llm", "tkinter", "IPy
             # (QtPdf/QtPdfWidgets ficam: são o visualizador de PDF do "Comparar com o original")
             "PySide6.Qt3DCore", "PySide6.QtMultimedia", "PySide6.QtCharts", "PySide6.QtDataVisualization"]
 AI_STACK = ["torch", "torchvision", "transformers", "docling", "docling_core", "docling_ibm_models", "docling_parse",
-            "easyocr", "scipy", "pandas", "markitdown", "magika", "rapidocr_onnxruntime", "rapidocr", "onnxruntime",
-            "cv2", "shapely", "pyclipper", "cuda", "accelerate", "safetensors", "tokenizers", "huggingface_hub"]
+            "easyocr", "scipy", "pandas", "markitdown", "magika", "rapidocr_onnxruntime",
+            "cuda", "accelerate", "safetensors", "tokenizers", "huggingface_hub"]
+# OCR PP-OCR latino (as duas edições): RapidOCR + ONNX Runtime + OpenCV; modelos em packaging/vendor/ppocr
+ppocr = ROOT / "packaging" / "vendor" / "ppocr"
+if ppocr.is_dir():
+    datas.append((str(ppocr), "ppocr"))
+_d, _b, _h = collect_all("rapidocr")
+# os modelos que vêm no pacote (chinês, ~21 MB) não são usados: o Markinho usa os de packaging/vendor/ppocr
+datas += [d for d in _d if not d[0].endswith((".onnx",))]
+binaries += _b
+hidden += _h + ["onnxruntime", "cv2", "pyclipper", "shapely"]
 
 datas += collect_data_files("pypandoc")          # executável do Pandoc (pypandoc_binary)
 hidden += ["pypandoc", "pytesseract"]
@@ -72,10 +81,10 @@ tess = ROOT / "packaging" / "vendor" / "tesseract"   # Tesseract embutido (o CI 
 if tess.is_dir():
     datas.append((str(tess), "tesseract"))
 if EDITION == "padrao":
-    excludes += AI_STACK + ["numpy"]
+    excludes += AI_STACK
 else:  # completa: IA de layout e motores extras
     for pkg in ("docling", "docling_core", "docling_parse", "docling_ibm_models", "markitdown", "magika",
-                "rapidocr_onnxruntime", "rapidocr", "transformers", "tokenizers", "safetensors", "huggingface_hub"):
+                "transformers", "tokenizers", "safetensors", "huggingface_hub"):
         try:
             d, b, h = collect_all(pkg)
         except Exception as exc:  # noqa: BLE001

@@ -83,7 +83,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--se-existir", default="suffix", choices=["suffix", "overwrite", "skip"],
                     help=tr("arquivo já existe: suffix (acrescenta _2), overwrite (substitui) ou skip (pula)"))
     ap.add_argument("--engines", action="store_true", help=tr("lista motores, OCR e formatos disponíveis"))
-    ap.add_argument("--download-models", choices=["docling", "marker"],
+    ap.add_argument("--download-models", choices=["docling", "marker", "ppocr"],
                     help=tr("baixa os modelos de IA para uso offline"))
     ap.add_argument("--gui", action="store_true", help=tr("abre a interface gráfica"))
     ap.add_argument("--mcp", action="store_true",

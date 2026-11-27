@@ -137,8 +137,11 @@ paga). O Windows não deixa programas se fixarem sozinhos na barra de tarefas: a
 botão direito no ícone dele na barra e escolha **Fixar na barra de tarefas**.
 
 No **Windows**, o OCR (Tesseract) já vem dentro do instalador. No **Linux**, o `.deb` instala o Tesseract do sistema automaticamente. No
-**macOS** (e no AppImage/tar.gz), instale o Tesseract à parte para ter OCR com acentos (a
-COMPLETA também traz o RapidOCR, que funciona sem instalar nada, mas perde acentos):
+**macOS** (e no AppImage/tar.gz), instale o Tesseract à parte. As duas edições trazem também o **PP-OCR latino**
+(PaddleOCR pelo RapidOCR, Apache-2.0), que funciona sem instalar nada, mantém acentos e lê melhor **letra
+miúda**: no modo automático do OCR, o Markinho usa o Tesseract e troca para o PP-OCR em páginas limpas com letra
+pequena (medido no olmOCR-bench). Pelo código-fonte, baixe o modelo uma vez com
+`markinho --download-models ppocr`. Para o Tesseract no Mac:
 
 ```bash
 brew install tesseract tesseract-lang

@@ -113,3 +113,24 @@ def test_o_bloqueio_funciona(sem_internet):
         urllib.request.urlopen("http://exemplo.invalid/", timeout=2)
     assert sem_internet
     sem_internet.clear()            # foi de propósito
+
+
+def test_pp_ocr_sem_internet(tmp_path):
+    """O PP-OCR usa só os modelos do computador (o RapidOCR nunca baixa nada)."""
+    from markinho import ocr
+
+    if not ocr.ppocr_ready():
+        pytest.skip("modelos do PP-OCR não instalados")
+    from PIL import Image, ImageDraw, ImageFont
+
+    img = Image.new("RGB", (1240, 300), "white")
+    try:
+        font = ImageFont.truetype("DejaVuSans.ttf", 44)
+    except OSError:
+        font = ImageFont.load_default()
+    ImageDraw.Draw(img).text((60, 120), "Relatório sigiloso de teste", fill="black", font=font)
+    pdf = tmp_path / "escaneado_pp.pdf"
+    img.save(pdf, resolution=150)
+    ocr.refresh()
+    res = convert(pdf, "native", {"ocr": "force", "ocr_backend": "rapidocr"})
+    assert "sigiloso" in res.markdown.lower()
