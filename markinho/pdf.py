@@ -117,12 +117,10 @@ def word_gutter(words: list[dict], width: float) -> float | None:
     return None
 
 
-def words_to_segments(words: list[dict], split_x: float | None = None, gap: float | None = None) -> list[dict]:
-    """Agrupa palavras em linhas e quebra a linha onde há um vão grande (colunas). `split_x`: corredor entre
-    colunas (de `word_gutter`) — a linha é quebrada ali mesmo que o vão seja estreito."""
-    words = sorted(words, key=lambda w: (round(w["top"]), w["x0"]))
+def _word_rows(words: list[dict]) -> list[list[dict]]:
+    """Palavras agrupadas por linha (mesma altura), cada linha da esquerda para a direita."""
     rows: list[list[dict]] = []
-    for w in words:
+    for w in sorted(words, key=lambda w: (round(w["top"]), w["x0"])):
         size = w.get("size", 10) or 10
         for row in reversed(rows[-4:]):
             ref = row[0]
@@ -132,13 +130,129 @@ def words_to_segments(words: list[dict], split_x: float | None = None, gap: floa
                 break
         else:
             rows.append([w])
-    segs = []
     for row in rows:
         row.sort(key=lambda w: w["x0"])
+    return rows
+
+
+def column_rivers(words: list[dict], width: float, min_rows: int = 6,
+                  min_words: int = 3) -> list[tuple[float, float, float]]:
+    """Corredores entre colunas achados pelas palavras: posições x que caem num vão entre palavras em pelo
+    menos `min_rows` linhas seguidas (sem nenhuma palavra por cima). Acha 2, 3 ou mais colunas e corredores
+    que só existem em parte da página (título ou figura atravessando). Devolve (x, topo, base) de cada um.
+    Vãos de texto justificado não formam corredor: mudam de lugar de uma linha para outra."""
+    body = [w for w in words if w.get("upright", True) and (w["x1"] - w["x0"]) < width * 0.4]
+    if len(body) < (30 if min_words > 1 else 12) or width <= 0:
+        return []
+    rows = _word_rows(body)
+    if len(rows) < min_rows:
+        return []
+    W = int(width) + 2
+    # 0 = palavra (ou espaço comum entre palavras), 1 = vão largo entre palavras, 2 = fora da linha
+    grid = []
+    for row in rows:
+        st = bytearray([2]) * W
+        size = statistics.median(w.get("size", 10) or 10 for w in row)
+        need = max(3.0, 0.45 * size)
+        x_first, x_last = int(row[0]["x0"]), int(max(w["x1"] for w in row)) + 1
+        for x in range(max(0, x_first), min(W, x_last)):
+            st[x] = 0
+        for a, b in zip(row, row[1:]):
+            if b["x0"] - a["x1"] >= need:
+                for x in range(max(0, int(a["x1"]) + 1), min(W, int(b["x0"]))):
+                    st[x] = 1
+        grid.append(st)
+    found: list[tuple[int, int, int, int]] = []          # (x, linha inicial, linha final, linhas com vão)
+    for x in range(int(width * 0.08), int(width * 0.92)):
+        start, count, last_gap = None, 0, None
+        for r in range(len(rows) + 1):
+            v = grid[r][x] if r < len(rows) else 0
+            if v == 0:
+                if start is not None and count >= min_rows:
+                    found.append((x, start, r - 1, count))     # até o fim da faixa vazia (coluna mais longa)
+                start, count, last_gap = None, 0, None
+            else:
+                if start is None:
+                    start = r
+                if v == 1:
+                    count += 1
+                    last_gap = r
+    if not found:
+        return []
+    # junta posições vizinhas do mesmo corredor (x a 1 pt e linhas em comum); fica a do meio
+    groups: list[list[tuple[int, int, int, int]]] = []
+    for f in sorted(found):
+        for g in groups:
+            if any(abs(f[0] - h[0]) <= 1 and not (f[2] < h[1] or f[1] > h[2]) for h in g[-3:]):
+                g.append(f)
+                break
+        else:
+            groups.append([f])
+
+    def pieces(row: list[dict]) -> list[list[dict]]:
+        """A linha cortada em todos os vãos largos: cada pedaço é um trecho de texto corrido."""
+        size = statistics.median(w.get("size", 10) or 10 for w in row)
+        need = max(3.0, 0.45 * size)
+        out = [[row[0]]]
+        for a, b in zip(row, row[1:]):
+            if b["x0"] - a["x1"] >= need:
+                out.append([b])
+            else:
+                out[-1].append(b)
+        return out
+
+    rivers = []
+    for g in groups:
+        best = max(c for *_, c in g)
+        xs = sorted((f for f in g if f[3] >= best * 0.8), key=lambda f: f[0])
+        x, r0, r1 = xs[len(xs) // 2][0], min(f[1] for f in xs), max(f[2] for f in xs)
+        # dos dois lados, logo junto do corredor, precisa haver texto corrido (colunas) — não um número de
+        # referência “[36]”, um horário ou um rótulo
+        lefts, rights = [], []
+        for row in rows[r0:r1 + 1]:
+            ps = pieces(row)
+            lp = [pc for pc in ps if pc[-1]["x1"] <= x]
+            rp = [pc for pc in ps if pc[0]["x0"] >= x]
+            if lp and rp:
+                lefts.append((len(lp[-1]), lp[-1][-1]["x1"] - lp[-1][0]["x0"]))
+                rights.append((len(rp[0]), rp[0][-1]["x1"] - rp[0][0]["x0"]))
+        if len(lefts) < min_rows:
+            continue
+        ln = statistics.median(n for n, _ in lefts)
+        rn = statistics.median(n for n, _ in rights)
+        lwid = statistics.median(v for _, v in lefts)
+        rwid = statistics.median(v for _, v in rights)
+        # largura mínima de coluna: 8% da página e uns 12 caracteres (guia de TV, dicionário em letra miúda)
+        size = statistics.median(w.get("size", 10) or 10 for row in rows[r0:r1 + 1] for w in row)
+        need_w = max(width * 0.08, 12 * size * 0.5 * 2)
+        if ln >= min_words and rn >= min_words and lwid >= need_w and rwid >= need_w:
+            rivers.append((float(x) + 0.5, rows[r0][0]["top"] - 1, max(w["bottom"] for w in rows[r1]) + 1))
+    # o mesmo corredor um pouco deslocado (recuo de parágrafo ou de referência): fica o mais comprido
+    rivers.sort(key=lambda r: r[2] - r[1], reverse=True)
+    kept: list[tuple[float, float, float]] = []
+    for r in rivers:
+        if not any(abs(r[0] - k[0]) < 20 and not (r[2] < k[1] or r[1] > k[2]) for k in kept):
+            kept.append(r)
+    rivers = sorted(kept)
+    return rivers
+
+
+def words_to_segments(words: list[dict], split_x: float | None = None, gap: float | None = None,
+                      rivers: list[tuple[float, float, float]] | None = None) -> list[dict]:
+    """Agrupa palavras em linhas e quebra a linha onde há um vão grande (colunas). `split_x`: corredor entre
+    colunas (de `word_gutter`) — a linha é quebrada ali mesmo que o vão seja estreito. `rivers`: corredores de
+    `column_rivers` (x, topo, base), que valem só na altura em que existem."""
+    rows = _word_rows(words)
+    segs = []
+    for row in rows:
+        top = row[0]["top"]
+        cuts = [x for x, t, b in (rivers or ()) if t <= top <= b]
+        if split_x is not None:
+            cuts.append(split_x)
         cur = [row[0]]
         for w in row[1:]:
             size = statistics.median([c.get("size", 10) or 10 for c in cur])
-            crosses = split_x is not None and cur[-1]["x1"] <= split_x + 1 and w["x0"] >= split_x - 1
+            crosses = any(cur[-1]["x1"] <= x + 1 and w["x0"] >= x - 1 for x in cuts)
             limit = gap * size if gap else max(1.8 * size, 14)     # `gap`: separação mais fina (tabelas)
             if crosses or w["x0"] - cur[-1]["x1"] > limit:
                 segs.append(_make_seg(cur))
@@ -195,13 +309,18 @@ def find_gutter(blocks: list[dict], width: float) -> float | None:
 
 # número de página sozinho: “12”, “- 12 -”, “xii”, “Página 3 de 10”, “page 64”, “3 / 15”
 _PAGE_NO = re.compile(r"^(?:[-–—\s]*\d{1,4}[-–—\s]*|[ivxlcdm]{1,6}|p(?:á|a)g(?:ina)?\.?\s*\d+(?:\s*(?:de|of|/)\s*\d+)?|"
-                      r"page\s+\d+(?:\s+of\s+\d+)?|\d{1,4}\s*/\s*\d{1,4})$", re.I)
+                      r"page\s+\d+(?:\s+of\s+\d+)?|\d{1,4}\s*/\s*\d{1,4}|\d{1,4}\s+(?:of|de|von|di)\s+\d{1,4})$", re.I)
 # cara de cabeçalho/rodapé: site, DOI, ISSN/ISBN, volume/número de revista, ©, avisos de citação e impressão
 _FURNITURE = re.compile(
     r"www\.|https?://|\bdoi\b|\bissn\b|\bisbn\b|\bvol(?:ume)?\.?\s*\d|\bissue\s*\d|\bno\.\s*\d|©|"
     r"\(\d+pp\)|\b\d+\s*[:(]\s*\d+[-–]\d+|\d{4};\s*\d+\(|all rights reserved|todos os direitos|"
     r"please cite|cite this article|downloaded from|terms of use|printed:|impresso em|\bet al\.\s*:|"
-    r"\bjournal\b|\brevista\b|\bproceedings\b|data de (?:edição|publicação)", re.I)
+    r"\bjournal\b|\brevista\b|\bproceedings\b|data de (?:edição|publicação)|"
+    # citação da revista: “Microorganisms 2021, 9, 1042”, “24, 1–9”, “7(2):126–134”
+    r"\b(?:19|20)\d\d\s*,\s*\d+\s*,\s*\d+|\b\d+\s*,\s*\d+\s*[-–]\s*\d+\s*,|\(\d+\)\s*:?\s*\d+\s*[-–]\s*\d+", re.I)
+_MONTH_DATE = re.compile(r"\b(?:jan|feb|fev|mar|apr|abr|may|mai|jun|jul|aug|ago|sep|set|oct|out|nov|dec|dez)[a-zç]*\.?"
+                         r"\s+\d{1,2},?\s+(?:19|20)\d\d\b|\b\d{1,2}\s+(?:de\s+)?(?:jan|fev|feb|mar|abr|apr|mai|may|jun|"
+                         r"jul|ago|aug|set|sep|out|oct|nov|dez|dec)[a-zç]*\.?\s+(?:de\s+)?(?:19|20)\d\d\b", re.I)
 
 
 def _flat_cell(text) -> str | None:
@@ -213,37 +332,93 @@ def _flat_cell(text) -> str | None:
     return re.sub(r"\s*\n\s*", " ", text).strip()
 
 
+_CAPTION = re.compile(r"^(?:table|tabela|tabla|tableau|figure|figura|fig\.|quadro|gráfico|chart|exhibit)\s*[\dIVX]",
+                      re.I)
+
+
+def _rows(lines: list[dict]) -> list[list[dict]]:
+    """Agrupa as linhas que estão na mesma altura (ex.: “13816” à esquerda e “Boletín Oficial…” à direita)."""
+    rows: list[list[dict]] = []
+    for b in sorted(lines, key=lambda b: b["top"]):
+        if rows:
+            r = rows[-1]
+            top, bottom = min(x["top"] for x in r), max(x["bottom"] for x in r)
+            overlap = min(bottom, b["bottom"]) - max(top, b["top"])
+            if overlap >= 0.5 * min(bottom - top, b["bottom"] - b["top"]):
+                r.append(b)
+                continue
+        rows.append([b])
+    return rows
+
+
 def strip_page_furniture(blocks: list[dict], height: float) -> list[dict]:
     """Cabeçalho e rodapé de UMA página (sem precisar que se repitam): a partir de cada beira (10% de cima e de
-    baixo), até 4 linhas seguidas que sejam número de página, tenham cara de rodapé (site, DOI, “Vol. 19”,
-    “Please cite…”), letra menor que a do texto ou sejam o título corrido bem separado do texto. Para na primeira
-    linha que é texto de verdade. Título (letra grande), nota de rodapé (“1 Ver…”) e o corpo ficam."""
+    baixo; 12% para a primeira faixa), até 4 faixas seguidas que sejam número de página, tenham cara de rodapé
+    (site, DOI, “Vol. 19”, “Please cite…”), letra menor que a do texto ou sejam o título corrido bem separado do
+    texto. Linhas na mesma altura contam juntas (cabeçalho com partes à esquerda e à direita). Para na primeira
+    faixa que é texto de verdade. Título (letra grande), nota de rodapé (“1 Ver…”) e o corpo ficam."""
     lines = [b for b in blocks if b["kind"] == "line"]
-    if len(lines) < 6:
+    if len(lines) < 2:
         return blocks
     body = statistics.median(b["size"] for b in lines)
+    rows = _rows(lines)
     drop: set[int] = set()
+
+    def strong(row: list[dict]) -> bool:
+        """Faixa que é rodapé sem dúvida: número de página ou cara de rodapé (site, DOI, citação da revista)."""
+        pieces = [b["text"].strip() for b in row]
+        text = " ".join(pieces)
+        if _CAPTION.match(text) or not text:
+            return False
+        if all(_PAGE_NO.match(t) for t in pieces):
+            return True
+        size = max((b["size"] for b in row if not _PAGE_NO.match(b["text"].strip())), default=body)
+        return ((bool(_FURNITURE.search(text)) and len(text) <= 200) or
+                (bool(_MONTH_DATE.search(text)) and len(text) <= 90)) and size <= body * 1.4
+
     for edge in ("top", "bottom"):
-        ordered = sorted(lines, key=lambda b: b["top"], reverse=(edge == "bottom"))
-        for k, b in enumerate(ordered[:4]):
-            mid = (b["top"] + b["bottom"]) / 2
-            if not (mid < height * 0.1 if edge == "top" else mid > height * 0.9):
+        ordered = rows if edge == "top" else rows[::-1]
+        for k, row in enumerate(ordered[:4]):
+            top, bottom = min(b["top"] for b in row), max(b["bottom"] for b in row)
+            mid = (top + bottom) / 2
+            band = 0.12 if k == 0 else 0.1
+            if not (mid < height * band if edge == "top" else mid > height * (1 - band)):
                 break
-            text = b["text"].strip()
-            nxt = ordered[k + 1] if k + 1 < len(ordered) else None
-            gap = ((nxt["top"] - b["bottom"]) if edge == "top" else (b["top"] - nxt["bottom"])) if nxt else 99
-            if _PAGE_NO.match(text):
-                drop.add(id(b))                       # número de página: qualquer tamanho
+            pieces = [b["text"].strip() for b in sorted(row, key=lambda b: b["x0"])]
+            text = " ".join(pieces)
+            if _CAPTION.match(text):
+                break                                     # legenda de tabela/figura é conteúdo
+            # o número de página ao lado (às vezes em letra grande) não conta no tamanho
+            size = max((b["size"] for b in row if not _PAGE_NO.match(b["text"].strip())), default=body)
+            # folga até a próxima faixa que não seja rodapé óbvio (“CERN/DG/RB…” seguido de “Page 10”)
+            nxt = next((r for r in ordered[k + 1:] if not strong(r)), None)
+            if nxt:
+                gap = (min(b["top"] for b in nxt) - bottom) if edge == "top" else (top - max(b["bottom"] for b in nxt))
+            else:
+                gap = 99
+            if strong(row):
+                drop.update(id(b) for b in row)
                 continue
-            looks = bool(_FURNITURE.search(text)) and len(text) <= 200 and b["size"] <= body * 1.4
-            small = b["size"] <= body * 0.92 and not b.get("bold") and len(text) <= 160
+            small = (size <= body * 0.92 and not any(b.get("bold") for b in row) and len(text) <= 160
+                     and (k == 0 or gap >= size))
             footnote = edge == "bottom" and bool(re.match(r"^[\d*†‡¹²³⁴⁵⁶⁷⁸⁹]{1,2}\s*\S", text)) and len(text) > 30
-            running = (k == 0 and len(text) <= 80 and b["size"] <= body * 1.1 and gap >= b["size"] * 1.2)
-            if looks or (running and not footnote) or (small and not footnote and gap >= b["size"] * 0.3):
-                drop.add(id(b))
+            # título corrido: curto, letra de texto e bem afastado; com partes dos dois lados ou número de
+            # página junto, pode ser um pouco maior
+            split = len(row) > 1 or any(_PAGE_NO.match(t) for t in pieces)
+            running = (k == 0 and len(text) <= (120 if split else 80) and size <= body * 1.1
+                       and gap >= size * (0.8 if split else 1.2))
+            if (running and not footnote) or (small and not footnote and gap >= size * 0.3):
+                drop.update(id(b) for b in row)
             else:
                 break
-    if len(drop) > max(2, len(lines) // 4):           # cautela: nunca tira mais de 1/4 das linhas da página
+        # segunda passada: faixa óbvia logo depois de uma palavra solta (“ARTICLE” / “NATURE COMMUNICATIONS | DOI…”)
+        for k, row in enumerate(ordered[:3]):
+            mid = (min(b["top"] for b in row) + max(b["bottom"] for b in row)) / 2
+            if not (mid < height * 0.1 if edge == "top" else mid > height * 0.9):
+                break
+            if strong(row):
+                drop.update(id(b) for b in row)
+    if len(drop) > max(3, len(lines) // 4):           # cautela: nunca tira mais de 1/4 das linhas da página
         return blocks
     return [b for b in blocks if id(b) not in drop]
 
@@ -398,6 +573,55 @@ def reading_order(blocks: list[dict], width: float, columns: bool = True, gutter
             out.append(b)
         else:
             band.append(b)
+    flush()
+    return out
+
+
+def river_order(blocks: list[dict], width: float, rivers: list[tuple[float, float, float]]) -> list[dict]:
+    """Ordem de leitura pelos corredores entre colunas (de `column_rivers`): na altura de cada corredor,
+    lê-se coluna por coluna; um título ou figura que atravessa o corredor separa a parte de cima da de baixo.
+    Funciona com 2, 3 ou mais colunas. Sem corredores, usa a ordem de sempre."""
+    if not rivers:
+        return reading_order(blocks, width, True)
+    blocks = sorted(blocks, key=lambda b: (b["top"], b["x0"]))
+
+    def key(b: dict):
+        mid = (b["top"] + b["bottom"]) / 2
+        active = [k for k, (x, t, bt) in enumerate(rivers) if t <= mid <= bt]
+        if any(b["x0"] < rivers[k][0] - 1 and b["x1"] > rivers[k][0] + 1 for k in active):
+            return None                                   # atravessa: fica sozinho, na ordem de cima para baixo
+        return tuple(active)
+
+    out: list[dict] = []
+    zone: list[dict] = []
+    zkey = ()
+
+    def flush():
+        if not zone:
+            return
+        if not zkey:
+            out.extend(zone)
+        else:
+            cuts = sorted(rivers[k][0] for k in zkey)
+            cols: list[list[dict]] = [[] for _ in range(len(cuts) + 1)]
+            for b in zone:
+                mid = (b["x0"] + b["x1"]) / 2
+                cols[sum(1 for c in cuts if mid > c)].append(b)
+            for col in cols:
+                out.extend(sorted(col, key=lambda b: b["top"]))
+        zone.clear()
+
+    for b in blocks:
+        k = key(b)
+        if k is None:
+            flush()
+            out.append(b)
+            zkey = ()
+            continue
+        if k != zkey:
+            flush()
+            zkey = k
+        zone.append(b)
     flush()
     return out
 
@@ -692,6 +916,7 @@ def _layout_pdf(path: Path) -> str:
             W, H = float(page.width), float(page.height)
             blocks: list[dict] = []
             page_gutter = None              # corredor entre colunas (achado pelas palavras, se houver texto)
+            rivers: list = []
             tables = page.find_tables() if option("pdf_tables", True) else []
             bboxes = []
             for t in tables:
@@ -737,6 +962,9 @@ def _layout_pdf(path: Path) -> str:
                     segs = []
                 blocks += segs
                 ocr_pages += 1
+                if columns:                               # colunas da página escaneada, pelas linhas lidas
+                    rivers = column_rivers([dict(x, upright=True) for x in segs if x.get("kind") == "line"],
+                                           W, min_words=1)
                 conf = mean_confidence(segs)
                 if conf is not None and conf < 70:
                     weak_ocr.append((i + 1, conf))
@@ -744,9 +972,11 @@ def _layout_pdf(path: Path) -> str:
                     empty_pages.append(i + 1)
             else:
                 page_gutter = word_gutter(words, W) if columns else None
-                segs = words_to_segments(words, page_gutter)
+                rivers = column_rivers(words, W) if columns else []
+                segs = words_to_segments(words, page_gutter, rivers=rivers)
                 if option("pdf_tables", True):                    # tabelas sem linhas desenhadas
-                    found, segs = borderless_tables(segs, W, words_to_segments(words, page_gutter, gap=1.0), words)
+                    found, segs = borderless_tables(segs, W, words_to_segments(words, page_gutter, gap=1.0,
+                                                                                rivers=rivers), words)
                     blocks += found
                 blocks += segs
                 if want_images:
@@ -779,7 +1009,9 @@ def _layout_pdf(path: Path) -> str:
                 empty_pages.append(i + 1)
             if m_top or m_bot:
                 blocks = [b for b in blocks if b["top"] >= H * m_top and b["bottom"] <= H * (1 - m_bot)]
-            ordered = reading_order(blocks, W, columns, page_gutter)
+            # com corredores achados pelas palavras (2, 3 ou mais colunas), a ordem segue os corredores
+            ordered = (river_order(blocks, W, rivers) if columns and rivers
+                       else reading_order(blocks, W, columns, page_gutter))
             pages.append((i, ordered))
             # prévia: texto provisório da página (títulos e tabelas são arrumados no fim)
             report_partial(i + 1, "\n\n".join(b["text"] for b in ordered
