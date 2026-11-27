@@ -205,10 +205,12 @@ def build_models() -> Path:
     print(f"Baixando modelos do Docling para {target} …", flush=True)
     from docling.utils.model_downloader import download_models
 
-    try:
-        download_models(output_dir=target, progress=False)
-    except TypeError:
-        download_models(output_dir=target)
+    # só o que o Markinho usa: layout e tabelas (~500 MB). Fórmulas (~600 MB) e classificador de figuras ficam
+    # de fora — quem quiser fórmulas baixa em Motores > Baixar modelos (pedido pela própria pessoa)
+    download_models(output_dir=target, progress=False, with_layout=True, with_tableformer=True,
+                    with_code_formula=False, with_picture_classifier=False, with_rapidocr=False)
+    for extra in target.glob("*-onnx"):          # cópia ONNX do modelo de layout (não usada)
+        shutil.rmtree(extra, ignore_errors=True)
     return target
 
 

@@ -109,6 +109,7 @@ jobs:
           }
           python packaging/build.py --edition ${{ matrix.edition }} inno
       - name: Instalador .msi (WiX)
+        if: matrix.edition != 'completa'      # COMPLETA: só .exe e .zip (arquivos grandes; menos formatos)
         continue-on-error: true
         shell: pwsh
         run: |
@@ -173,8 +174,8 @@ jobs:
         run: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
       - name: Dependências da edição
         run: pip install -r requirements-${{ matrix.edition }}.txt pyinstaller
-      - name: Programa, tar.gz e .deb
-        run: python packaging/build.py --edition ${{ matrix.edition }} app zip deb
+      - name: "Programa, tar.gz e .deb (na COMPLETA, só o AppImage)"
+        run: python packaging/build.py --edition ${{ matrix.edition }} ${{ matrix.edition == 'completa' && 'app' || 'app zip deb' }}
       - name: AppImage
         continue-on-error: true
         run: |
@@ -245,6 +246,7 @@ jobs:
             Todas as edições: interface em português, inglês e espanhol. Tudo roda no seu computador: nenhum documento é enviado para a internet.
 
             Para mudar de edição, instale a outra por cima: as configurações são mantidas.
+            A COMPLETA é publicada só como instalador .exe e .zip portátil (Windows) e AppImage (Linux), por ser grande.
 
             ## Escolha o arquivo
 

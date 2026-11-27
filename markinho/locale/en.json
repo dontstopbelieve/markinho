@@ -595,6 +595,7 @@
 "O exportador '{0}' não gera {1}.": "The exporter '{0}' does not produce {1}.",
 "O filtro deve ser só um nome de arquivo (ex.: *.pdf), sem pastas ou “..”.": "The filter must be just a file name (e.g. *.pdf), without folders or “..”.",
 "O mais rápido, para muitos arquivos digitais. Não lê escaneados e não traz imagens; em PDFs sai texto corrido, sem títulos.": "The fastest, for many digital files. Does not read scans or bring images; in PDFs you get running text without headings.",
+"O modelo de fórmulas não está instalado: baixe-o em Motores › Baixar modelos do Docling para reconhecer fórmulas.": "The formula model is not installed: download it in Engines › Download Docling models to recognize formulas.",
 "O motor {0} não aceita arquivos '{1}'.": "The {0} engine does not accept '{1}' files.",
 "O nome do arquivo .md segue o padrão de nomes das configurações: se o nome do original identificar alguém, use um padrão como “documento_{n}”.": "The .md file name follows the naming pattern in the settings: if the original name identifies someone, use a pattern such as “document_{n}”.",
 "O padrão não pode ficar vazio.": "The pattern cannot be empty.",

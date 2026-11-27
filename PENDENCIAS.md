@@ -55,6 +55,10 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
 - [ ] **Destino da COMPLETA**: gerar no GitHub (Windows e Linux) para ver o tamanho real (limite de 2 GB
       por arquivo nas Releases) e comparar a qualidade Docling × Nativo. Se o ganho for pequeno, ficar com
       uma versão só.
+      **27/11/2026 — COMPLETA mais leve:** a primeira geração no Linux deu 3 arquivos de ~1,9 GB (no limite).
+      Agora só vão os modelos de layout e de tabelas (~506 MB em vez de 1,3 GB; testado sem internet);
+      fórmulas viram download opcional (aviso na conversão). Formatos: .exe e .zip (Windows), AppImage
+      (Linux), .dmg (macOS). Falta: gerar de novo e conferir que cada arquivo fica abaixo de 2 GB.
       **Comparação de 27/11/2026** (11 PDFs do acervo do Docling: artigos, jornal, relatório IBM, formulário):
       - Achado: o Nativo **grudava palavras** em PDFs do LaTeX e jornais (espaço de ~1,5 pt; até 640 palavras
         coladas num artigo). Corrigido: espaço proporcional à letra (`pdf.WORD_GAP`); agora 0–4 por documento.

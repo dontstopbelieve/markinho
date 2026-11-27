@@ -334,7 +334,15 @@ class DoclingEngine(Engine):
             if po.do_table_structure:
                 po.table_structure_options.mode = (
                     TableFormerMode.ACCURATE if opts.get("table_accurate", True) else TableFormerMode.FAST)
-            po.do_formula_enrichment = bool(opts.get("formulas"))
+            want_formulas = bool(opts.get("formulas"))
+            if want_formulas and local is not None and not any(local.glob("*CodeFormula*")):
+                # a COMPLETA vem sem o modelo de fórmulas (~600 MB): sem ele, segue sem fórmulas e avisa
+                from .core import warn
+
+                warn(tr("O modelo de fórmulas não está instalado: baixe-o em Motores › Baixar modelos do Docling "
+                        "para reconhecer fórmulas."))
+                want_formulas = False
+            po.do_formula_enrichment = want_formulas
             po.do_code_enrichment = bool(opts.get("code"))
             if opts.get("_extract_images"):
                 po.generate_picture_images = True

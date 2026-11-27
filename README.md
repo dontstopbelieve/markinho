@@ -64,7 +64,8 @@ já vem com soluções para os problemas mais comuns de conversão.
 | Descrição de imagens com IA local (se o Ollama estiver instalado) | ✔ | ✔ |
 | **IA de layout (Docling)**, com modelos incluídos para funcionar **sem internet** | | ✔ |
 | MarkItDown e RapidOCR | | ✔ |
-| Tamanho aproximado do instalador | ~100–150 MB | ~1–2 GB |
+| Tamanho aproximado do instalador | ~100–150 MB | ~1–1,5 GB |
+| Formatos de download | todos (abaixo) | Windows: instalador `.exe` e `.zip` portátil · Linux: AppImage · macOS: `.dmg` |
 
 ### Qual edição escolher?
 
@@ -222,7 +223,9 @@ mantém as suas configurações. Vale para atualizar (3.0 → 3.1) e para subir 
 | **Marker** | PDF de alta precisão com OCR e equações | Apache-2.0 (código) + modelos com restrição comercial | não incluído (o usuário pode instalar) |
 | **PyMuPDF4LLM** | PDF muito rápido em CPU | **AGPL-3.0** | não incluído (o usuário pode instalar) |
 
-**Uso offline:** a edição COMPLETA já traz os modelos do Docling e funciona sem internet.
+**Uso offline:** a edição COMPLETA já traz os modelos do Docling de layout e de tabelas e funciona sem
+internet. O modelo de **fórmulas** (~600 MB) não vem junto, para o instalador caber no limite do GitHub:
+quem precisa baixa uma vez em *Motores* > **Baixar modelos do Docling**.
 Rodando pelo código-fonte, use *Motores* > **Baixar modelos** (ou
 `markinho --download-models docling`) uma vez, num computador com internet.
 
