@@ -16,6 +16,10 @@ de IA de um motor opcional — e mesmo aí nenhum documento é enviado.
 - O Markinho conta, só no seu computador, quantos documentos você já converteu, para mostrar
   **uma única vez** um agradecimento aos 100 e aos 1.000 documentos (com a opção “Não mostrar de
   novo”). Esse número nunca é enviado a ninguém.
+- **Copiar para IA** e **Exportar como skill para IA** só preparam o texto ou os arquivos no seu
+  computador. Quando **você** cola esse texto ou usa a skill num assistente on-line (ChatGPT,
+  Claude.ai, Gemini…), o conteúdo passa a ir para esse serviço, conforme as regras dele. Para
+  documentos sigilosos, anonimize antes ou use um assistente que rode no seu computador.
 
 ## Anonimizar
 

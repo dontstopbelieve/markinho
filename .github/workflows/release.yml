@@ -235,7 +235,7 @@ jobs:
 
             | Edição | O que traz |
             |---|---|
-            | **LEVE** | Motor nativo (PDF, Word, Excel, PowerPoint, HTML, EPUB…), correção de caracteres, imagens, exportação para DOCX/PDF/HTML/TXT, pedaços para IA, servidor MCP, botão direito no Windows |
+            | **LEVE** | Motor nativo (PDF, Word, Excel, PowerPoint, HTML, EPUB…), correção de caracteres, imagens, exportação para DOCX/PDF/HTML/TXT, pedaços para IA, skill para assistentes de IA, servidor MCP, botão direito no Windows |
             | **PADRÃO** | LEVE + Pandoc (21 formatos de exportação) + OCR (português e inglês) com tratamento da imagem |
             | **COMPLETA** | PADRÃO + IA de layout (Docling, funciona offline) + MarkItDown + RapidOCR |
 
@@ -244,7 +244,7 @@ jobs:
             - **PADRÃO**: também escaneados, fotos de documentos e prints (OCR em português e inglês, que endireita e gira páginas) e exportação para 21 formatos.
             - **COMPLETA**: PDFs difíceis (artigos, tabelas complicadas, fórmulas), com IA de layout que funciona sem internet. Instalador grande e conversão mais lenta.
 
-            Tudo roda no seu computador: nenhum documento é enviado para a internet.
+            Todas as edições: interface em português, inglês e espanhol. Tudo roda no seu computador: nenhum documento é enviado para a internet.
 
             Para mudar de edição, instale a outra por cima: as configurações são mantidas.
 

@@ -971,5 +971,6 @@
 "✓ {0}. Cole no assistente com Ctrl+V.": "✓ {0}. Paste it into the assistant with Ctrl+V.",
 "✔ Configurado em {0}. <b>Feche e abra o Claude Desktop</b> para ativar. Pergunte, por exemplo: “Liste os documentos que o Markinho pode ler”.": "✔ Configured in {0}. <b>Close and reopen Claude Desktop</b> to activate it. Ask, for example: “List the documents Markinho can read”.",
 "✔ Configuração copiada para a área de transferência.": "✔ Configuration copied to the clipboard.",
+"🔒 O Markinho só cria os arquivos aqui. Se você usar a skill num assistente on-line (Claude.ai, por exemplo), o texto dos capítulos vai para esse serviço — em documentos sigilosos, anonimize antes.": "🔒 Markinho only creates the files here. If you use the skill in an online assistant (Claude.ai, for example), the text of the chapters goes to that service — for confidential documents, anonymize first.",
 "🔒 Offline — seus documentos não saem do computador": "🔒 Offline — your documents stay on your computer"
 }

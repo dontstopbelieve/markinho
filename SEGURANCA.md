@@ -118,6 +118,23 @@ Revisão do pacote inteiro com a ferramenta de revisão do Claude Code. Corrigid
 - **Contribuições de código não aceitas** (CONTRIBUTING.md): reduz o risco de código malicioso entrar
   por pull request.
 
+### 27/11/2026 — Idiomas e “Exportar como skill para IA”
+
+- **Idiomas (inglês e espanhol):** nenhuma decisão do programa depende de texto traduzido (motivo de
+  nova tentativa com outro motor e situação do relatório do lote usam códigos internos); testes
+  conferem que todo texto tem tradução e que códigos internos não passam pela tradução.
+- **Skill para IA:** nome da skill e nomes dos capítulos só com letras, números e hífens (sem `..`
+  nem barras: não dá para gravar fora da pasta escolhida, inclusive dentro do .zip). Títulos do
+  documento entram no índice sem quebras de linha e com `|`, `[` e `]` escapados (não mudam a tabela,
+  os links nem o cabeçalho YAML); a descrição vai entre aspas, sem quebras e sem `<` `>`.
+- **Texto do documento não é instrução:** o `SKILL.md` avisa o assistente para não seguir ordens
+  escritas dentro dos capítulos (proteção contra documentos preparados para enganar a IA).
+- **Substituir uma skill antiga** apaga só a pasta `chapters/` dela, depois de perguntar; se essa
+  pasta for um atalho (link), só o atalho é removido, nunca o que ele aponta. Testes em
+  `tests/test_skillpack.py`.
+- **Privacidade:** a janela e o texto de Privacidade avisam que, ao usar a skill ou o “Copiar para
+  IA” num assistente on-line, o conteúdo vai para esse serviço.
+
 ## Rotina antes de cada versão
 
 1. `pip install pip-audit` e `pip-audit -r requirements-padrao.txt` (e as outras edições).

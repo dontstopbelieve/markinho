@@ -92,7 +92,7 @@ SEGURANCA.md       registro das verificações de segurança: acrescente uma ent
 
 ```bash
 pip install -r requirements-padrao.txt -r requirements-dev.txt   # leve | padrao | completa
-QT_QPA_PLATFORM=offscreen python -m pytest -q                    # ~250 testes, ~30 s
+QT_QPA_PLATFORM=offscreen python -m pytest -q                    # ~270 testes, ~35 s
 QT_QPA_PLATFORM=offscreen python -m pytest -q --cov               # cobertura (mínimo em pyproject: fail_under)
 python run.py                                                    # interface
 python -m markinho arquivo.pdf -o saida.md                        # terminal

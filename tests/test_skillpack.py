@@ -128,3 +128,29 @@ def test_terminal_cria_skill(tmp_path, monkeypatch):
     assert any((p / "SKILL.md").is_file() for p in tmp_path.iterdir() if p.is_dir())
     with pytest.raises(SystemExit):
         cli([str(src), "--skill", "--chunks"])
+
+
+def test_titulos_nao_quebram_o_indice():
+    md = "# Parte [1](http://x) | a\n\n" + LONG + "\n\n# Outra\n\n" + LONG
+    idx = build_skill([("T", md)]).files["SKILL.md"]
+    assert "[Parte \\[1\\](http://x) \\| a](chapters/01-" in idx
+
+
+def test_substituir_skill_antiga_sem_seguir_atalhos(tmp_path):
+    pack = build_skill([("Manual do Produto", _book(2))])
+    root = write_folder(pack, tmp_path)
+    (root / "chapters" / "velho.md").write_text("x", encoding="utf-8")
+    write_folder(pack, tmp_path, replace=True)
+    assert not (root / "chapters" / "velho.md").exists()
+    fora = tmp_path / "fora"
+    fora.mkdir()
+    (fora / "importante.txt").write_text("não apagar", encoding="utf-8")
+    import shutil as sh
+
+    sh.rmtree(root / "chapters")
+    try:
+        (root / "chapters").symlink_to(fora, target_is_directory=True)
+    except OSError:
+        pytest.skip("sem permissão para criar atalhos")
+    write_folder(pack, tmp_path, replace=True)
+    assert (fora / "importante.txt").is_file() and not (root / "chapters").is_symlink()

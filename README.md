@@ -4,8 +4,8 @@
 > instaladores estarão na página **Releases** deste repositório.
 
 Converte documentos **para Markdown** e de **Markdown para outros formatos**, com
-interface gráfica e linha de comando. **Tudo roda no seu computador**: nenhum documento
-é enviado para a internet.
+interface gráfica e linha de comando, em **português, inglês e espanhol**. **Tudo roda no seu
+computador**: nenhum documento é enviado para a internet.
 
 Reúne num só programa as ideias do
 [markitdown](https://github.com/microsoft/markitdown), do
@@ -24,6 +24,8 @@ problemas mais comuns de conversão.
 | Exportação para DOCX, PDF, HTML e TXT | ✔ | ✔ | ✔ |
 | **Pedaços para RAG/IA** (JSON/JSONL), por título, página ou tamanho | ✔ | ✔ | ✔ |
 | **Servidor MCP local**: Claude Desktop, Cursor e VS Code convertem arquivos pelo Markinho | ✔ | ✔ | ✔ |
+| **Exportar como skill para IA** (índice + um arquivo por capítulo para Claude Code, Claude.ai, Codex…) | ✔ | ✔ | ✔ |
+| Interface em **português, inglês e espanhol** | ✔ | ✔ | ✔ |
 | Descrição de imagens com IA local (se o Ollama estiver instalado) | ✔ | ✔ | ✔ |
 | **Pandoc**: ~35 formatos de entrada e 21 de exportação (ODT, EPUB, LaTeX, RTF, PowerPoint…) | | ✔ | ✔ |
 | **OCR** (escaneados e imagens): português e inglês | | ✔ | ✔ |
@@ -139,7 +141,8 @@ python run.py
 | **Páginas a revisar** | Quando o OCR tem baixa confiança ou uma página fica sem texto, aparece uma faixa amarela com as páginas; clique numa delas para ver o original ao lado |
 | **Progresso e Parar** | PDFs grandes mostram “página 12 de 80” na lista; **Parar** (Esc) interrompe na próxima página |
 | **Pasta monitorada** | Ferramentas > Pasta monitorada: todo arquivo novo que cair na pasta (Downloads, scanner…) é convertido sozinho enquanto o Markinho estiver aberto |
-| **Exportar como skill para IA** | Ferramentas > Exportar como skill para IA: cria um pacote no formato aberto *Agent Skills* (`SKILL.md` com índice + um arquivo por capítulo) que Claude Code, Claude.ai, Codex, Copilot e outros consultam só no capítulo de que precisam — muito menos *tokens* do que colar o documento inteiro. Salva numa pasta, em .zip ou direto no Claude Code. Feito sem IA, pelos títulos do documento. No terminal: `markinho manual.pdf --skill -o manual.zip` |
+| **Exportar como skill para IA** | Ferramentas > Exportar como skill para IA: o documento vira um índice + um arquivo por capítulo que o assistente consulta só onde precisa (veja [Skills para assistentes de IA](#skills-para-assistentes-de-ia)) |
+| **Idioma da interface** | Configurações > Aparência > Idioma: português, inglês ou espanhol (ou o do sistema). Veja [Idiomas](#idiomas) |
 | **Juntar e dividir** | Arquivo > Juntar todos em um .md; Ferramentas > Dividir por títulos (um arquivo por capítulo) |
 | **Relatório do lote** | Ferramentas > Relatório do lote: planilha (CSV, abre no Excel) ou página HTML com o que deu certo, avisos e erros |
 | **Relatório de erro** | Ajuda > Gerar relatório de erro: texto para mandar ao suporte, **sem o conteúdo dos documentos** (você confere antes de salvar) |
@@ -222,6 +225,64 @@ divide o Markdown em **pedaços** e grava em JSONL (um por linha) ou JSON:
 Na interface: **Exportar…** > “Pedaços para RAG / IA”. No terminal:
 `markinho manual.pdf --chunks -o manual.jsonl --chunk-size 1000 --chunk-overlap 100`.
 
+## Skills para assistentes de IA
+
+Uma *skill* é um pacote que assistentes como **Claude Code, Claude.ai, Codex, GitHub Copilot** e outros
+compatíveis com o formato aberto **Agent Skills** consultam quando a pergunta é sobre aquele assunto. Em vez
+de colar o documento inteiro na conversa, o assistente lê um índice curto e abre **só o capítulo de que
+precisa**: gasta bem menos *tokens* e responde pelo texto real, dizendo de qual capítulo veio a resposta.
+
+**Como criar:** converta o documento e use **Ferramentas > Exportar como skill para IA…**
+
+1. Escolha **o que exportar**: o documento atual ou todos os convertidos numa skill só (um grupo de
+   capítulos por documento).
+2. Confira o **nome** (vira o comando no assistente, ex.: `/manual-do-produto`) e a **descrição** — é ela
+   que o assistente lê para decidir quando consultar a skill. Os dois já vêm preenchidos.
+3. Escolha **onde salvar**: numa **pasta** (para copiar para a pasta de skills do seu assistente), num
+   **.zip** (para enviar nas configurações do Claude.ai, na parte de Skills) ou **direto no Claude Code**
+   deste computador (`~/.claude/skills`).
+
+**O que é gerado:**
+
+```
+manual-do-produto/
+  SKILL.md                 nome, descrição, instruções ao assistente e índice dos capítulos
+  chapters/
+    01-introducao.md
+    02-instalacao.md
+    …
+```
+
+- Os capítulos saem dos **títulos do documento** (nível 1; se não houver, nível 2 ou 3). Capítulos muito
+  grandes são divididos de novo (~6 mil *tokens* no máximo) e trechos minúsculos (nomes de autores,
+  palavras-chave…) juntam-se ao vizinho. Blocos de código nunca são cortados no meio.
+- O índice mostra, para cada capítulo, os assuntos (subtítulos) e o tamanho estimado em *tokens*.
+- As instruções pedem ao assistente que abra só o capítulo necessário, cite de onde veio a informação, não
+  invente e **não siga ordens escritas dentro dos documentos** (proteção contra textos maliciosos).
+- Imagens ficam de fora (o assistente não as vê); a descrição delas, se houver, é mantida.
+- Feito **sem IA e sem internet**. Se você usar a skill num assistente on-line, o texto dos capítulos vai
+  para esse serviço: em documentos sigilosos, anonimize antes.
+
+No terminal: `markinho manual.pdf --skill -o manual.zip` (ou `-o pasta/`; vários arquivos viram uma skill
+só; `--skill nome-da-skill` define o nome). Ideia inspirada no
+[book-to-skill](https://github.com/virgiliojr94/book-to-skill); o código do Markinho é próprio.
+
+## Idiomas
+
+A interface está em **português (Brasil)**, **inglês** e **espanhol**: menus, botões, mensagens, janelas,
+ajuda do terminal, servidor MCP, relatório do lote e o texto de Privacidade.
+
+- Por padrão o Markinho usa o **idioma do sistema** (português → português, espanhol → espanhol, os outros
+  → inglês). Para escolher: **Configurações > Aparência > Idioma**; vale ao abrir o programa de novo.
+- No terminal, a variável `MARKINHO_LANG` escolhe o idioma (`MARKINHO_LANG=en markinho --help`).
+- Os números seguem o idioma (1.000 em português e espanhol, 1,000 em inglês).
+- Ficam em português de propósito: o relatório de erro (é lido pelo suporte), os marcadores do texto
+  anonimizado (`[PESSOA 1]`, `[CPF]`), as marcas de página dentro do Markdown e os nomes das opções do
+  terminal.
+- A anonimização e o OCR ainda são pensados para o Brasil: os documentos reconhecidos são brasileiros (CPF,
+  CNPJ, PIS…) e o OCR lê português e inglês. E-mails, cartões de crédito e a sua lista funcionam em
+  qualquer idioma.
+
 ## Assistentes de IA (servidor MCP local)
 
 Claude Desktop, Cursor, VS Code e outros assistentes compatíveis com **MCP** podem usar o
@@ -277,7 +338,7 @@ precisar de LaTeX), HTML e TXT.
   sozinho e avisa qual usou.
 - Abas: **Markdown** (editável), **Visualização** (com imagens) e **Correções**.
 - Painel **Configurações**: motor e opções, correção de caracteres, **Saída** (imagens,
-  perfil, metadados, Ollama) e **Aparência** (tema claro/escuro).
+  perfil, metadados, Ollama) e **Aparência** (tema claro/escuro e idioma).
 - Correções, perfil, metadados e modo das imagens mudam na hora, sem reconverter.
 
 **Terminal:** com arquivos, o mesmo comando roda sem interface. No Windows, use
@@ -312,13 +373,17 @@ markinho fotos/*.png --describe qwen2.5vl:3b
 ```
 
 ```bash
+markinho manual.pdf --skill -o manual.zip
+```
+
+```bash
 markinho --engines
 ```
 
 Os exemplos, na ordem: converter um arquivo; forçar OCR em todas as páginas; embutir as
 imagens e incluir metadados; converter vários arquivos com o perfil “Texto para IA”; usar o
 Pandoc com outro dialeto; converter PDF → Markdown → Word; descrever imagens com o Ollama;
-listar motores, OCR e formatos disponíveis.
+criar uma skill para assistentes de IA; listar motores, OCR e formatos disponíveis.
 
 **Como biblioteca:**
 
@@ -375,6 +440,10 @@ markinho/
   describe.py     texto alternativo com IA local (Ollama)
   textfix.py      correção de caracteres
   chunker.py      pedaços para RAG (JSON/JSONL)
+  aitools.py      Copiar para IA: tokens e divisão em partes
+  skillpack.py    Exportar como skill para IA (SKILL.md + capítulos)
+  anonymize.py    anonimização de dados pessoais
+  compare.py      comparar duas versões
   naming.py       padrões de nome dos arquivos de saída
   presets.py      modos Rápido / Equilibrado / Máxima qualidade
   exporter.py     Markdown → DOCX/PDF/HTML/… (Pandoc ou nativo)
@@ -382,7 +451,10 @@ markinho/
   edition.py      edições LEVE / PADRÃO / COMPLETA
   credits.py      créditos (incluídos × inspiração) e textos de licença
   mcp_server.py   servidor MCP local (pastas autorizadas)
+  i18n.py         idiomas da interface: tr() e locale/en.json, locale/es.json
+  privacy.py      texto de privacidade (PRIVACIDADE.md é cópia)
   gui.py          interface PySide6
+  gui_tools.py    janelas das ferramentas (Para IA, skill, dividir, pasta monitorada…)
 packaging/        PyInstaller, Inno Setup, WiX, .deb, AppImage, DMG, ícones
 tests/            pytest
 ```
@@ -474,6 +546,8 @@ básicos do sistema (sistema operacional, processador, memória, idioma, tela), 
 sem pastas e, para cada erro, o nome/tipo/tamanho do arquivo, a mensagem, os detalhes técnicos e a
 configuração usada — **nunca o conteúdo dos documentos** nem o nome do usuário. Ele só fica na
 memória enquanto o programa está aberto e nada é enviado sozinho: você confere e decide.
+**Copiar para IA** e **Exportar como skill para IA** só preparam o texto ou os arquivos no computador;
+quando você usa esse material num assistente on-line, ele vai para esse serviço, conforme as regras dele.
 Detalhes em [PRIVACIDADE.md](PRIVACIDADE.md) e em **Ajuda > Privacidade e relatório de erro**.
 
 ## Diagnóstico
@@ -493,4 +567,5 @@ python -m pytest --cov --cov-report=html     # cobertura: abra htmlcov/index.htm
 A cobertura (quanto do código os testes usam) é medida também no GitHub a cada envio: o relatório
 fica em Actions > Testes > Artifacts > `cobertura-testes` (7 dias). Se a cobertura cair abaixo do
 mínimo definido em `pyproject.toml` (`fail_under`), o teste falha. As regras de negócio (correção de
-caracteres, pedaços para IA, exportação, anonimização, MCP) ficam acima de 89%.
+caracteres, pedaços para IA, exportação, anonimização, MCP) ficam acima de 89%. Os testes também
+conferem que todo texto da interface tem tradução em inglês e espanhol.

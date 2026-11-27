@@ -23,6 +23,10 @@ de IA de um motor opcional — e mesmo aí nenhum documento é enviado.
 - O Markinho conta, só no seu computador, quantos documentos você já converteu, para mostrar
   **uma única vez** um agradecimento aos 100 e aos 1.000 documentos (com a opção “Não mostrar de
   novo”). Esse número nunca é enviado a ninguém.
+- **Copiar para IA** e **Exportar como skill para IA** só preparam o texto ou os arquivos no seu
+  computador. Quando **você** cola esse texto ou usa a skill num assistente on-line (ChatGPT,
+  Claude.ai, Gemini…), o conteúdo passa a ir para esse serviço, conforme as regras dele. Para
+  documentos sigilosos, anonimize antes ou use um assistente que rode no seu computador.
 
 ## Anonimizar
 
@@ -94,6 +98,10 @@ models of an optional engine — and even then no document is sent.
 - Markinho counts, only on your computer, how many documents you have converted, to show a thank
   you **only once** at 100 and at 1,000 documents (with a “Don't show again” option). This number
   is never sent to anyone.
+- **Copy for AI** and **Export as AI skill** only prepare the text or the files on your computer.
+  When **you** paste that text or use the skill in an online assistant (ChatGPT, Claude.ai,
+  Gemini…), the content goes to that service, under its own rules. For confidential documents,
+  anonymize first or use an assistant that runs on your computer.
 
 ## Anonymize
 
@@ -166,6 +174,10 @@ IA de un motor opcional — e incluso entonces no se envía ningún documento.
 - Markinho cuenta, solo en su equipo, cuántos documentos ha convertido, para mostrar un
   agradecimiento **una sola vez** a los 100 y a los 1.000 documentos (con la opción “No volver a
   mostrar”). Ese número nunca se envía a nadie.
+- **Copiar para IA** y **Exportar como skill para IA** solo preparan el texto o los archivos en su
+  equipo. Cuando **usted** pega ese texto o usa la skill en un asistente en línea (ChatGPT,
+  Claude.ai, Gemini…), el contenido va a ese servicio, según sus propias reglas. Para documentos
+  confidenciales, anonimice antes o use un asistente que se ejecute en su equipo.
 
 ## Anonimizar
 

@@ -153,6 +153,9 @@ class SkillDialog(QDialog):
                                "Claude.ai, Codex, Copilot…) lê o índice e abre só o capítulo de que precisa, em vez de "
                                "carregar o documento inteiro — gasta bem menos tokens e responde pelo texto real. "
                                "Feito aqui, sem IA e sem internet: os capítulos vêm dos títulos do documento.")))
+        lay.addWidget(_hint(tr("🔒 O Markinho só cria os arquivos aqui. Se você usar a skill num assistente on-line "
+                               "(Claude.ai, por exemplo), o texto dos capítulos vai para esse serviço — em documentos "
+                               "sigilosos, anonimize antes.")))
         form = QFormLayout()
         self.scope = QComboBox()
         if current is not None:
@@ -286,11 +289,7 @@ class SkillDialog(QDialog):
             if self.dest.checkedId() == self.DEST_ZIP:
                 target.write_bytes(to_zip(self.pack))
             else:
-                if target.exists():           # substitui só a skill antiga (capítulos que sumiram não ficam)
-                    import shutil
-
-                    shutil.rmtree(target / "chapters", ignore_errors=True)
-                write_folder(self.pack, target.parent)
+                write_folder(self.pack, target.parent, replace=True)
         except OSError as exc:
             QMessageBox.critical(self, tr("Exportar como skill para IA"), tr("Não foi possível salvar:\n{0}").format(exc))
             return

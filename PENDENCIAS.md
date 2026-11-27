@@ -2,7 +2,14 @@
 
 Lista viva do que falta. Atualize ao concluir cada item. (Revisada em 15/11/2026.)
 
-## Onde paramos (16/11/2026)
+## Onde paramos (27/11/2026)
+
+~270 testes, cobertura ~79% (mínimo 75% no CI). Repositório **público** desde 26/11. Novidades de 27/11:
+interface em **inglês e espanhol** (Configurações > Aparência > Idioma) e **Exportar como skill para IA**
+(Ferramentas; `--skill` no terminal). Documentação (README, PRIVACIDADE, SEGURANCA) atualizada.
+Falta: teste do instalador no Windows pelo dono → publicar a v3.0.0.
+
+### Histórico (16/11/2026)
 
 221 testes, cobertura 76% (mínimo 75% no CI). Desde 15/11: relatório de erro com configuração e
 sistema, privacidade, anonimização (com avisos), cobertura de testes, decisão de projeto gratuito e

@@ -176,7 +176,9 @@ def _topics(text: str) -> list[str]:
 
 
 def _cell(text: str) -> str:
-    return re.sub(r"\s+", " ", text).replace("|", "\\|").strip()
+    """Texto do documento numa linha do índice: sem quebras e sem |, [ ] que mudariam a tabela ou os links."""
+    text = re.sub(r"\s+", " ", text).strip()
+    return text.replace("\\", "\\\\").replace("|", "\\|").replace("[", "\\[").replace("]", "\\]")
 
 
 def _clean_description(text: str) -> str:
@@ -253,9 +255,18 @@ def _skill_md(name: str, title: str, description: str, chapters: list[Chapter], 
     return "\n".join(lines) + "\n"
 
 
-def write_folder(pack: SkillPack, parent: Path) -> Path:
-    """Grava em <parent>/<nome>/ (substitui só os arquivos do pacote; nada fora dessa pasta)."""
+def write_folder(pack: SkillPack, parent: Path, replace: bool = False) -> Path:
+    """Grava em <parent>/<nome>/. Com `replace`, apaga antes só a pasta chapters/ da skill antiga (capítulos
+    que sumiram não ficam); se ela for um atalho (link), só o atalho é removido, nunca o que ele aponta."""
     root = Path(parent) / pack.name
+    old = root / "chapters"
+    if replace and (old.is_symlink() or old.exists()):
+        if old.is_symlink() or old.is_file():
+            old.unlink()
+        else:
+            import shutil
+
+            shutil.rmtree(old)
     for rel, text in pack.files.items():
         target = root / rel
         target.parent.mkdir(parents=True, exist_ok=True)
