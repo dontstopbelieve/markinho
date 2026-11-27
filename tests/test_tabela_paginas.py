@@ -79,3 +79,45 @@ def test_regras_da_juncao():
     pages = [(0, [_t([head, ["1", "2"]])]), (1, [_t([["3", "4"]])]), (2, [_t([["5", "6"]]), _ln("fim")])]
     out, n = merge_split_tables(pages)
     assert n == 2 and out[0][1][0]["rows"][-1] == ["5", "6"]
+
+
+def _sem_linhas(target: Path) -> Path:
+    """Tabela sem nenhuma linha desenhada (só alinhamento), entre parágrafos comuns."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table
+
+    st = getSampleStyleSheet()
+    data = [["Região", "Receita", "Meta"], ["Norte", "1.234,56", "1.100"], ["Nordeste", "2.508,10", "2.000"],
+            ["Sudeste", "4.870,00", "5.000"], ["Sul", "3.001,00", "2.900"]]
+    texto = ("Este é um parágrafo comum com várias palavras para formar linhas inteiras de texto corrido, "
+             "que não devem virar tabela de jeito nenhum, mesmo quando a página tem uma tabela logo abaixo.")
+    story = [Paragraph("Vendas", st["Title"]), Paragraph(texto, st["Normal"]), Spacer(1, 12),
+             Table(data, colWidths=[120, 90, 90]), Spacer(1, 12), Paragraph(texto, st["Normal"])]
+    SimpleDocTemplate(str(target), pagesize=A4).build(story)
+    return target
+
+
+def test_tabela_sem_linhas_desenhadas(tmp_path):
+    md = convert(_sem_linhas(tmp_path / "sem_linhas.pdf"), "native").markdown
+    tables = _tables(md)
+    assert len(tables) == 1
+    body = "\n".join(tables[0])
+    assert "| Região | Receita | Meta |" in body and "| Nordeste | 2.508,10 | 2.000 |" in body
+    assert "parágrafo comum" not in body                          # o texto corrido ficou fora da tabela
+
+
+def test_colunas_de_texto_nao_viram_tabela(tmp_path):
+    from reportlab.pdfgen.canvas import Canvas
+
+    target = tmp_path / "jornal.pdf"
+    c = Canvas(str(target))
+    frase = "palavras de uma notícia comprida que continua"
+    for col in range(4):                                          # 4 colunas estreitas de texto corrido
+        y = 780
+        for i in range(25):
+            c.setFont("Times-Roman", 8)
+            c.drawString(40 + col * 135, y, f"{frase} {i}")
+            y -= 10
+    c.save()
+    assert not _tables(convert(target, "native").markdown)

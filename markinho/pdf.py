@@ -192,6 +192,74 @@ def find_gutter(blocks: list[dict], width: float) -> float | None:
     return None
 
 
+def borderless_tables(segs: list[dict], width: float) -> tuple[list[dict], list[dict]]:
+    """Tabelas SEM linhas desenhadas, achadas pelo alinhamento: 3+ linhas seguidas com 2+ células curtas cada,
+    cujas colunas caem nos mesmos lugares. Devolve (blocos de tabela, segmentos que sobraram).
+    Texto em colunas (linhas compridas), listas de uma coluna e sumários com pontinhos ficam de fora."""
+    from .converters import md_table
+
+    if any(sg["kind"] == "line" and _TOC_RE.match(sg["text"].strip()) for sg in segs):
+        return [], segs                       # página de índice/sumário: vira lista (blocks_to_markdown)
+    rows: list[list[dict]] = []
+    for sg in sorted(segs, key=lambda x: (x["top"], x["x0"])):
+        if rows and abs(sg["top"] - rows[-1][0]["top"]) <= 0.5 * max(sg["size"], 1):
+            rows[-1].append(sg)
+        else:
+            rows.append([sg])
+
+    def cell_row(r: list[dict]) -> bool:
+        return (len(r) >= 2 and all(sg["kind"] == "line" and not sg.get("mono") for sg in r)
+                and all(sg["x1"] - sg["x0"] < width * 0.3 for sg in r)
+                and not any(re.search(r"\.{4,}|…{2,}", sg["text"]) for sg in r))      # sumário com pontinhos
+
+    tables, used = [], set()
+    i = 0
+    while i < len(rows):
+        if not cell_row(rows[i]):
+            i += 1
+            continue
+        j = i + 1
+        while j < len(rows) and cell_row(rows[j]) and \
+                rows[j][0]["top"] - rows[j - 1][0]["bottom"] < 2.5 * max(rows[j][0]["size"], 1):
+            j += 1
+        group = rows[i:j]
+        if len(group) >= 3:
+            # colunas = faixas de x que algum segmento ocupa; os vãos que nenhum ocupa separam as colunas
+            spans = sorted((sg["x0"], sg["x1"]) for r in group for sg in r)
+            cols: list[list[float]] = []
+            for x0, x1 in spans:
+                if cols and x0 <= cols[-1][1] + 2:
+                    cols[-1][1] = max(cols[-1][1], x1)
+                else:
+                    cols.append([x0, x1])
+            if 2 <= len(cols) <= 12:
+                filled = [sum(1 for r in group if any(c[0] - 1 <= (sg["x0"] + sg["x1"]) / 2 <= c[1] + 1 for sg in r))
+                          for c in cols]
+                # células de tabela são curtas (poucas palavras) ou números; linhas de colunas de jornal são frases
+                texts = [sg["text"] for r in group for sg in r]
+                words = sorted(len(t.split()) for t in texts)
+                numeric = sum(1 for t in texts if re.fullmatch(r"[\d\s.,%$€£R()+\-–/:]+", t)) / max(1, len(texts))
+                short = words[len(words) // 2] <= 3 or numeric >= 0.3
+                # colunas de verdade aparecem na maioria das linhas (alinhamento consistente)
+                if short and sum(1 for f in filled if f >= len(group) * 0.6) >= 2:
+                    table_rows = []
+                    for r in group:
+                        cells = [""] * len(cols)
+                        for sg in r:
+                            mid = (sg["x0"] + sg["x1"]) / 2
+                            k = min(range(len(cols)), key=lambda c: 0 if cols[c][0] <= mid <= cols[c][1]
+                                    else min(abs(mid - cols[c][0]), abs(mid - cols[c][1])))
+                            cells[k] = (cells[k] + " " + sg["text"]).strip()
+                        table_rows.append(cells)
+                    tables.append({"kind": "table", "text": md_table(table_rows), "rows": table_rows,
+                                   "x0": min(sg["x0"] for r in group for sg in r),
+                                   "x1": max(sg["x1"] for r in group for sg in r),
+                                   "top": group[0][0]["top"], "bottom": max(sg["bottom"] for sg in group[-1])})
+                    used.update(id(sg) for r in group for sg in r)
+        i = j
+    return tables, [sg for sg in segs if id(sg) not in used]
+
+
 def reading_order(blocks: list[dict], width: float, columns: bool = True, gutter: float | None = None) -> list[dict]:
     blocks = sorted(blocks, key=lambda b: (b["top"], b["x0"]))
     if columns and gutter is None:
@@ -561,7 +629,11 @@ def _layout_pdf(path: Path) -> str:
                     empty_pages.append(i + 1)
             else:
                 page_gutter = word_gutter(words, W) if columns else None
-                blocks += words_to_segments(words, page_gutter)
+                segs = words_to_segments(words, page_gutter)
+                if option("pdf_tables", True):
+                    found, segs = borderless_tables(segs, W)      # tabelas sem linhas desenhadas
+                    blocks += found
+                blocks += segs
                 if want_images:
                     for im in page.images:
                         x0, top, x1, bottom = (max(0, im["x0"]), max(0, im["top"]), min(W, im["x1"]), min(H, im["bottom"]))
