@@ -138,6 +138,14 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
 
 ## Mais tarde
 
+- [ ] **Ideias de usabilidade inspiradas na SoMark** (27/11/2026; só ideias, sem código nem o modelo OXR, cuja
+      licença tem restrição comercial; se alguma entrar, registrar a SoMark em `INSPIRED_BY`):
+      1. Selo fixo “🔒 Offline: seus documentos não saíram do computador” na barra de status (pequeno; v3.0).
+      2. Painel “Sumário” clicável com os títulos do documento convertido (médio; v3.0 ou 3.1).
+      3. Texto aparecendo enquanto converte PDFs grandes, página a página (médio; v3.1).
+      4. Código colorido na aba Visualização, com biblioteca de licença livre (pequeno; v3.0).
+      5. “Ler esta imagem como…” texto/tabela/código ao converter fotos e prints (médio; v3.1).
+      6. Ferramentas > Comparar duas versões de um documento (grande; depois).
 - [x] **Espaço de arquivos do GitHub esgotado** (26/11/2026): em repositório privado são 500 MB para os
       instaladores gerados (“Artifact storage quota has been hit”). Arquivos agora ficam guardados só 2 dias.
       Se acontecer de novo: apagar artefatos antigos (Actions > execução > Artifacts > lixeira; o GitHub
