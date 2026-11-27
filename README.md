@@ -65,7 +65,8 @@ já vem com soluções para os problemas mais comuns de conversão.
 | **IA de layout (Docling)**, com modelos incluídos para funcionar **sem internet** | | ✔ |
 | MarkItDown e RapidOCR | | ✔ |
 | Tamanho aproximado do instalador | ~100–150 MB | ~1–1,5 GB |
-| **Pacotes extras** opcionais (ex.: Fórmulas e código), instalados uma vez e usados sem internet | | ✔ |
+| **Pacote extra Idiomas do OCR** (espanhol, francês, alemão, russo, chinês, árabe), opcional | ✔ | ✔ |
+| **Pacote extra Fórmulas e código** (LaTeX), opcional | | ✔ |
 
 ### Qual edição escolher?
 
@@ -226,15 +227,16 @@ mantém as suas configurações. Vale para atualizar (3.0 → 3.1) e para subir 
 **Uso offline:** a edição COMPLETA já traz os modelos do Docling de layout e de tabelas e funciona sem
 internet.
 
-### Pacotes extras (COMPLETA)
+### Pacotes extras
 
-Recursos de IA que poucas pessoas usam vêm **à parte**, para o instalador ficar menor (o GitHub aceita
-no máximo 2 GB por arquivo). Instale só se for usar; depois de instalado, o pacote fica no computador e
+Recursos que poucas pessoas usam vêm **à parte**, para o instalador ficar menor (o GitHub aceita no
+máximo 2 GB por arquivo). Instale só se for usar; depois de instalado, o pacote fica no computador e
 funciona sem internet.
 
 | Pacote | Tamanho | Para que serve | Vale a pena para | Dispensável para |
 |---|---|---|---|---|
-| **Fórmulas e código** (`Markinho-Pacote-Formulas-….zip`) | ~600 MB | Converte equações em texto editável (LaTeX) e reconhece código de programação | Artigos científicos, teses, apostilas de exatas, documentação técnica | Contratos, processos, relatórios, documentos de escritório |
+| **Idiomas extras do OCR** (`Markinho-Pacote-Idiomas-OCR-….zip`), PADRÃO e COMPLETA | ~95 MB | Lê escaneados, fotos e prints em espanhol (`spa`), francês (`fra`), alemão (`deu`), russo (`rus`), chinês simplificado (`chi_sim`, vertical: `chi_sim_vert`) e árabe (`ara`); versões rápida e precisa | Documentos escaneados nesses idiomas (contratos internacionais, imigração, traduções) | Documentos digitais (PDF com texto, Word…), que não usam OCR, e escaneados em português/inglês |
+| **Fórmulas e código** (`Markinho-Pacote-Formulas-….zip`), só COMPLETA | ~640 MB | Converte equações em texto editável (LaTeX) e reconhece código de programação | Artigos científicos, teses, apostilas de exatas, documentação técnica | Contratos, processos, relatórios, documentos de escritório |
 
 Como instalar:
 
@@ -248,7 +250,12 @@ Como instalar:
 
 O Markinho **não baixa nada sozinho**: quem baixa é o navegador ou o instalador, e só o pacote. Ao instalar,
 o Markinho confere cada arquivo (SHA-256 e tamanho) e recusa pacotes danificados ou adulterados. Sem o
-pacote, as fórmulas saem como texto simples ou imagem, e o Markinho avisa qual pacote resolve.
+pacote de fórmulas, elas saem como texto simples ou imagem, e o Markinho avisa qual pacote resolve.
+
+Depois de instalar os idiomas, diga ao OCR qual usar em *Configurações* › **Idiomas do OCR**, juntando
+com `+` (por exemplo `por+spa`, ou só `chi_sim` para chinês); no terminal:
+`markinho digitalizado.pdf --opt ocr_lang=por+spa`. No Mac e no Linux o pacote de idiomas precisa do
+Tesseract do sistema (que lá também pode receber idiomas pelo próprio gerenciador de pacotes).
 Rodando pelo código-fonte, use *Motores* > **Baixar modelos** (ou
 `markinho --download-models docling`) uma vez, num computador com internet.
 

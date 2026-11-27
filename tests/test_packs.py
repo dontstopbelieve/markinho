@@ -3,6 +3,7 @@
 """Pacotes extras: gerar, conferir, instalar, juntar com os modelos embutidos e recusar pacotes adulterados."""
 import json
 import zipfile
+from pathlib import Path
 
 import pytest
 
@@ -21,10 +22,15 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setenv("MARKINHO_MODELS", str(bundled))
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "usuario"))
     monkeypatch.setattr(packs, "docling_available", lambda: True)
+    monkeypatch.setattr(packs, "tesseract_available", lambda: True)
     src = tmp_path / "fonte"
-    (src / FOLDER / "sub").mkdir(parents=True)
-    (src / FOLDER / "model.safetensors").write_bytes(b"x" * 5000)
-    (src / FOLDER / "sub" / "config.json").write_text("{}")
+    (src / "docling" / FOLDER / "sub").mkdir(parents=True)
+    (src / "docling" / FOLDER / "model.safetensors").write_bytes(b"x" * 5000)
+    (src / "docling" / FOLDER / "sub" / "config.json").write_text("{}")
+    for d in ("tessdata", "tessdata_best"):
+        (src / d).mkdir()
+        for lang in packs.OCR_LANGS:
+            (src / d / f"{lang}.traineddata").write_bytes(lang.encode() * 10)
     return tmp_path, src
 
 
@@ -141,11 +147,16 @@ def test_recusa_outra_versao_arquivo_invalido_e_edicao(env, tmp_path, monkeypatc
     monkeypatch.setattr(packs, "docling_available", lambda: False)
     with pytest.raises(PackError, match="COMPLETA"):
         install_from_zip(z)
+    monkeypatch.setattr(packs, "tesseract_available", lambda: False)
+    with pytest.raises(PackError, match="Tesseract"):
+        install_from_zip(build_pack(PACKS_BY_ID["idiomas"], env[1], tmp_path / "i", "9.9.9"))
 
 
 def test_build_sem_modelo(env, tmp_path):
     with pytest.raises(PackError):
         build_pack(PACKS_BY_ID["formulas"], tmp_path / "vazio", tmp_path / "o", "1")
+    with pytest.raises(PackError):
+        build_pack(PACKS_BY_ID["idiomas"], tmp_path / "vazio", tmp_path / "o", "1")
 
 
 def test_textos_explicam_para_quem_serve():
@@ -178,7 +189,7 @@ def test_janela(env, monkeypatch):
     z = _pack(env)
     d = PacksDialog(None)
     pk = PACKS_BY_ID["formulas"]
-    assert "Não instalado" in d.status["formulas"].text()
+    assert "Não instalado" in d.status["formulas"].text() and "idiomas" in d.status
     assert not d.install(pk, str(z.with_name("nao.zip")))
     assert d.install(pk, str(z))
     assert "Instalado" in d.status["formulas"].text() and d.remove_btn["formulas"].isEnabled()
@@ -187,3 +198,66 @@ def test_janela(env, monkeypatch):
     d.remove(pk)
     assert "Não instalado" in d.status["formulas"].text()
     d.deleteLater()
+
+
+# ---------------------------------------------------------------- idiomas extras do OCR
+def test_idiomas_juntam_com_os_do_tesseract(env, tmp_path, monkeypatch):
+    from markinho import ocr
+
+    base = tmp_path / "sistema" / "tessdata"
+    (base / "configs").mkdir(parents=True)
+    (base / "configs" / "tsv").write_text("tessedit_create_tsv 1")
+    for lang in ("por", "eng", "osd"):
+        (base / f"{lang}.traineddata").write_bytes(b"base")
+    monkeypatch.setattr(ocr, "base_languages", lambda: {"por", "eng"})
+    monkeypatch.setattr(ocr, "bundled_best_dir", lambda: None)
+    pk = PACKS_BY_ID["idiomas"]
+    assert packs.merged_tessdata(base) is None              # sem pacote: fica a pasta do sistema
+    assert not packs.installed(pk) and not packs.removable(pk)
+    install_from_zip(build_pack(pk, env[1], tmp_path / "rel", "9.9.9"))
+    assert packs.installed(pk) and packs.removable(pk)
+    merged = packs.merged_tessdata(base)
+    names = {f.name for f in merged.iterdir()}
+    assert {"por.traineddata", "spa.traineddata", "ara.traineddata", "chi_sim.traineddata", "configs"} <= names
+    assert (merged / "configs" / "tsv").read_text() == "tessedit_create_tsv 1"
+    assert (merged / "por.traineddata").read_bytes() == b"base"
+    best = packs.merged_tessdata(None, "tessdata_best")
+    assert (best / "rus.traineddata").is_file()
+    packs.uninstall(pk)
+    assert not packs.installed(pk)
+    assert (base / "por.traineddata").is_file()             # o do sistema nunca é apagado
+
+
+def test_ocr_usa_pasta_juntada(env, tmp_path, monkeypatch):
+    from markinho import ocr
+
+    if ocr.tesseract_cmd() is None:
+        pytest.skip("sem Tesseract")
+    install_from_zip(build_pack(PACKS_BY_ID["idiomas"], env[1], tmp_path / "rel", "9.9.9"))
+    try:
+        ocr.refresh()
+        import os
+
+        assert ocr.tesseract_cmd()
+        assert os.environ["TESSDATA_PREFIX"] == str(packs.models_root() / "tessdata")
+        assert "spa" in {f.stem for f in Path(os.environ["TESSDATA_PREFIX"]).glob("*.traineddata")}
+        assert ocr.tessdata_best_dir() == str(packs.models_root() / "tessdata_best")
+        assert "por" in ocr.base_languages()
+    finally:
+        packs.uninstall(PACKS_BY_ID["idiomas"])
+        ocr.refresh()
+        ocr.tesseract_cmd()
+
+
+def test_chines_sem_espacos():
+    from markinho.ocr import cjk_join
+
+    assert cjk_join("本 合同 由 双方 签订 。") == "本合同由双方签订。"
+    assert cjk_join("Total: 100 元 por mês") == "Total: 100 元 por mês"
+    assert cjk_join("Contrato em português") == "Contrato em português"
+
+
+def test_textos_explicam_cada_pacote():
+    for pk in packs.PACKS:
+        assert pk.need and pk.size_mb > 0 and pk.editions
+    assert "espanhol" in PACKS_BY_ID["idiomas"].what and "por+spa" in PACKS_BY_ID["idiomas"].what

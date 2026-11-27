@@ -372,11 +372,11 @@ class PacksDialog(QDialog):
 
     def __init__(self, parent):
         from . import __version__
-        from .packs import PACKS, docling_available
+        from .packs import PACKS, available
 
         super().__init__(parent)
         self.setWindowTitle(tr("Pacotes extras"))
-        self.resize(600, 420)
+        self.resize(640, 640)
         self.version = __version__
         lay = QVBoxLayout(self)
         lay.addWidget(QLabel(tr("<h3>Pacotes extras</h3>")))
@@ -384,9 +384,6 @@ class PacksDialog(QDialog):
                                "Instale só se precisar: <b>baixe o arquivo .zip uma vez</b> na página de versões "
                                "(pelo navegador) e escolha “Instalar de um arquivo…”. Depois ele fica no "
                                "computador e funciona sem internet. O Markinho não baixa nada sozinho.")))
-        if not docling_available():
-            lay.addWidget(anon_warning(tr("Os pacotes extras são para a edição COMPLETA (motor Docling, IA de "
-                                          "layout). Nesta edição eles não têm efeito.")))
         self.status: dict[str, QLabel] = {}
         self.remove_btn: dict[str, QPushButton] = {}
         for pk in PACKS:
@@ -397,9 +394,11 @@ class PacksDialog(QDialog):
             bl.addWidget(st)
             for text in (pk.what, pk.who, pk.skip):
                 bl.addWidget(_hint(text))
+            if not available(pk):
+                bl.addWidget(anon_warning(pk.need))
             row = QHBoxLayout()
             b_inst = QPushButton(tr("Instalar de um arquivo…"))
-            b_inst.setEnabled(docling_available())
+            b_inst.setEnabled(available(pk))
             b_inst.clicked.connect(lambda _c=False, p=pk: self.install(p))
             b_get = QPushButton(tr("Abrir a página de download"))
             b_get.clicked.connect(lambda _c=False, p=pk: self.open_page(p))
@@ -419,12 +418,12 @@ class PacksDialog(QDialog):
         self.refresh()
 
     def refresh(self) -> None:
-        from .packs import PACKS, installed, user_docling_dir
+        from .packs import PACKS, installed, removable
 
         for pk in PACKS:
             ok = installed(pk)
             self.status[pk.id].setText(tr("✔ <b>Instalado</b>") if ok else tr("Não instalado"))
-            self.remove_btn[pk.id].setEnabled(any((user_docling_dir() / f).is_dir() for f in pk.folders))
+            self.remove_btn[pk.id].setEnabled(removable(pk))
 
     def open_page(self, pk) -> None:
         from PySide6.QtCore import QUrl

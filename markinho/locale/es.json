@@ -410,7 +410,6 @@
 "Imagens: ler como": "Imágenes: leer como",
 "Incluir as imagens (pasta ao lado do .md)": "Incluir las imágenes (carpeta junto al .md)",
 "Incluir sumário": "Incluir índice",
-"Instalados: por (português) e eng (inglês).": "Instalados: por (portugués) y eng (inglés).",
 "Instalar direto no Claude Code deste computador ({0})": "Instalar directamente en el Claude Code de este equipo ({0})",
 "Instalar skill no Claude Code (usar o Markinho pelo terminal)": "Instalar skill en Claude Code (usar Markinho desde el terminal)",
 "Interface gráfica e visualizador de PDF": "Interfaz gráfica y visor de PDF",
@@ -1070,7 +1069,6 @@
 "Escolha o arquivo do pacote": "Elija el archivo del paquete",
 "Pacote do Markinho (*.zip)": "Paquete de Markinho (*.zip)",
 "(O arquivo escolhido era de outro pacote.)": "(El archivo elegido era de otro paquete.)",
-"Os pacotes extras são para a edição COMPLETA (motor Docling, IA de layout). Nesta edição eles não têm efeito.": "Los paquetes extra son para la edición COMPLETA (motor Docling, IA de diseño). En esta edición no tienen efecto.",
 "✔ <b>Instalado</b>": "✔ <b>Instalado</b>",
 "{0} (~{1} MB)": "{0} (~{1} MB)",
 "Remover o pacote “{0}”? Para usá-lo de novo, será preciso instalar o .zip outra vez.": "¿Quitar el paquete “{0}”? Para volver a usarlo, tendrá que instalar el .zip otra vez.",
@@ -1083,7 +1081,6 @@
 "Vale a pena para: artigos científicos, teses, apostilas de matemática, física, química e engenharia, documentação técnica.": "Vale la pena para: artículos científicos, tesis, apuntes de matemáticas, física, química e ingeniería, documentación técnica.",
 "Dispensável para: contratos, processos, relatórios, planilhas, documentos de escritório em geral. Sem ele, as fórmulas saem como texto simples ou imagem; o resto do documento não muda.": "Prescindible para: contratos, expedientes, informes, hojas de cálculo y documentos de oficina en general. Sin él, las fórmulas salen como texto simple o imagen; el resto del documento no cambia.",
 "este arquivo não é um pacote extra do Markinho": "este archivo no es un paquete extra de Markinho",
-"os pacotes extras são para a edição COMPLETA (com o motor Docling)": "los paquetes extra son para la edición COMPLETA (con el motor Docling)",
 "o pacote tem arquivos fora da lista de conteúdo": "el paquete tiene archivos fuera de la lista de contenido",
 "faltam arquivos no pacote (download incompleto?)": "faltan archivos en el paquete (¿descarga incompleta?)",
 "pacote desconhecido: {0}": "paquete desconocido: {0}",
@@ -1093,5 +1090,12 @@
 "não foi possível abrir o arquivo: {0}": "no se pudo abrir el archivo: {0}",
 "pacote da versão {0}; esta é a {1}": "paquete de la versión {0}; esta es la {1}",
 "o pacote está danificado (conferência falhou em {0}); baixe-o de novo": "el paquete está dañado (la verificación falló en {0}); descárguelo de nuevo",
-"arquivo do pacote maior do que o esperado: {0}": "archivo del paquete más grande de lo esperado: {0}"
+"arquivo do pacote maior do que o esperado: {0}": "archivo del paquete más grande de lo esperado: {0}",
+"Já vêm: por (português) e eng (inglês). Com o pacote extra “Idiomas extras do OCR”: spa, fra, deu, rus, chi_sim, chi_sim_vert e ara. Junte com +, por exemplo por+spa.": "Incluidos: por (portugués) y eng (inglés). Con el paquete extra “Idiomas extra del OCR”: spa, fra, deu, rus, chi_sim, chi_sim_vert y ara. Combínelos con +, por ejemplo por+spa.",
+"Precisa da edição COMPLETA (motor Docling).": "Requiere la edición COMPLETA (motor Docling).",
+"Idiomas extras do OCR": "Idiomas extra del OCR",
+"Permite ler documentos escaneados, fotos e prints em espanhol (spa), francês (fra), alemão (deu), russo (rus), chinês simplificado (chi_sim; em colunas verticais: chi_sim_vert) e árabe (ara). Traz as versões rápida e precisa (modo Máxima qualidade). Depois de instalar, indique o idioma em Configurações › Idiomas do OCR, por exemplo por+spa.": "Permite leer documentos escaneados, fotos y capturas en español (spa), francés (fra), alemán (deu), ruso (rus), chino simplificado (chi_sim; en columnas verticales: chi_sim_vert) y árabe (ara). Trae las versiones rápida y precisa (modo Máxima calidad). Después de instalarlo, indique el idioma en Configuración › Idiomas del OCR, por ejemplo por+spa.",
+"Vale a pena para: quem recebe documentos escaneados ou fotografados nesses idiomas (contratos internacionais, imigração, traduções, pesquisa).": "Vale la pena para: quien recibe documentos escaneados o fotografiados en estos idiomas (contratos internacionales, inmigración, traducciones, investigación).",
+"Dispensável para: documentos digitais (PDF com texto, Word, Excel…) em qualquer idioma, que não usam OCR, e para escaneados só em português ou inglês, que já vêm no Markinho.": "Prescindible para: documentos digitales (PDF con texto, Word, Excel…) en cualquier idioma, que no usan OCR, y para escaneados solo en portugués o inglés, que ya vienen en Markinho.",
+"Precisa do Tesseract (OCR), que já vem no Markinho para Windows. No Mac e no Linux, instale o Tesseract do sistema (brew install tesseract ou apt install tesseract-ocr).": "Requiere Tesseract (OCR), que ya viene con Markinho para Windows. En Mac y Linux, instale el Tesseract del sistema (brew install tesseract o apt install tesseract-ocr)."
 }

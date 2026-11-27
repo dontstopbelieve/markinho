@@ -175,6 +175,9 @@ Revisão do pacote inteiro com a ferramenta de revisão do Claude Code. Corrigid
 - Instala numa pasta temporária e só troca no fim (pacote ruim não deixa nada pela metade).
 - O instalador do Windows confere o SHA-256 do .zip (baixado ou ao lado do instalador) antes de usá-lo.
 - O Markinho não baixa nada: o teste de sigilo continua valendo. Testes em `tests/test_packs.py`.
+- Pacote de idiomas do OCR: só aceita `tessdata/<idioma>.traineddata` e `tessdata_best/<idioma>.traineddata`
+  dos 7 idiomas da lista; a pasta do Tesseract do sistema nunca é alterada (o pacote fica na pasta do usuário,
+  com atalhos para os idiomas do sistema).
 
 ## Rotina antes de cada versão
 

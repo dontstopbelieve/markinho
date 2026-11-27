@@ -215,22 +215,39 @@ def build_models() -> Path:
     return target
 
 
-def build_packs() -> list[Path]:
-    """Pacotes extras (ex.: Fórmulas) em .zip, para as Releases e para o instalador do Windows baixar."""
-    sys.path.insert(0, str(ROOT))
-    from markinho.packs import PACKS, build_pack
+def _pack_sources() -> Path:
+    """Pasta com tudo o que os pacotes da edição precisam (docling/…, tessdata/…, tessdata_best/…)."""
+    from markinho.packs import OCR_LANGS
 
-    src = BUILD / "models" / "extras"
-    if not (src.is_dir() and any(src.iterdir())):
-        src.mkdir(parents=True, exist_ok=True)
-        print(f"Baixando modelos dos pacotes extras para {src} …", flush=True)
+    src = BUILD / "models" / "pacotes"
+    if EDITION == "completa" and not any((src / "docling").glob("*CodeFormula*")):
+        print(f"Baixando o modelo de fórmulas do Docling para {src / 'docling'} …", flush=True)
         from docling.utils.model_downloader import download_models
 
-        download_models(output_dir=src, progress=False, with_layout=False, with_tableformer=False,
+        download_models(output_dir=src / "docling", progress=False, with_layout=False, with_tableformer=False,
                         with_code_formula=True, with_picture_classifier=False, with_rapidocr=False)
+    for kind in ("fast", "best"):                     # idiomas do OCR (Apache-2.0)
+        folder = src / ("tessdata" if kind == "fast" else "tessdata_best")
+        folder.mkdir(parents=True, exist_ok=True)
+        for lang in OCR_LANGS:
+            dest = folder / f"{lang}.traineddata"
+            if not dest.exists():
+                url = f"https://github.com/tesseract-ocr/tessdata_{kind}/raw/main/{lang}.traineddata"
+                print("baixando", url, flush=True)
+                urllib.request.urlretrieve(url, dest)
+    return src
+
+
+def build_packs() -> list[Path]:
+    """Pacotes extras da edição em .zip, para as Releases e para o instalador do Windows baixar."""
+    from markinho.packs import PACKS, build_pack
+
+    src = _pack_sources()
     RELEASE.mkdir(exist_ok=True)
     out = []
     for pk in PACKS:
+        if EDITION not in pk.editions:
+            continue
         target = build_pack(pk, src, RELEASE, VERSION)
         print(f"→ {target} ({target.stat().st_size / 1e6:.0f} MB)")
         out.append(target)
@@ -238,25 +255,24 @@ def build_packs() -> list[Path]:
 
 
 def _pack_defines() -> list[str]:
-    """Para o Inno Setup: nome, endereço e SHA-256 de cada pacote gerado (só na COMPLETA)."""
-    if EDITION != "completa":
-        return []
-    sys.path.insert(0, str(ROOT))
+    """Para o Inno Setup: nome, endereço e SHA-256 de cada pacote da edição já gerado."""
     import hashlib
 
     from markinho.packs import PACKS
 
     out = []
     for pk in PACKS:
+        if EDITION not in pk.editions:
+            continue
         f = RELEASE / pk.file_name(VERSION)
         if not f.is_file():
-            print(f"aviso: {f.name} não foi gerado; o instalador sai sem a opção de pacote extra")
+            print(f"aviso: {f.name} não foi gerado; o instalador sai sem a opção desse pacote extra")
             continue
         h = hashlib.sha256()
         with f.open("rb") as fh:
             for chunk in iter(lambda: fh.read(1 << 20), b""):
                 h.update(chunk)
-        key = pk.file_title
+        key = pk.id.capitalize()
         out += [f"/DPack{key}File={f.name}", f"/DPack{key}Url={pk.url(VERSION)}", f"/DPack{key}Sha={h.hexdigest()}",
                 f"/DPack{key}Size={pk.size_mb}"]
     return out

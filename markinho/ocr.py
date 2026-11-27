@@ -45,6 +45,9 @@ def _bundle_dirs() -> list[Path]:
     return dirs
 
 
+_BASE_PREFIX = os.environ.get("TESSDATA_PREFIX")     # o que a pessoa (ou o sistema) definiu antes do Markinho
+
+
 @lru_cache(maxsize=1)
 def tesseract_cmd() -> str | None:
     """Caminho do executável do Tesseract (embutido, no PATH ou no local padrão do Windows)."""
@@ -61,11 +64,77 @@ def tesseract_cmd() -> str | None:
                 candidates.append(Path(base) / "Programs" / "Tesseract-OCR" / exe)
     for c in candidates:
         if c.is_file():
-            tessdata = c.parent / "tessdata"
-            if tessdata.is_dir() and "TESSDATA_PREFIX" not in os.environ:
-                os.environ["TESSDATA_PREFIX"] = str(tessdata)
+            base = base_tessdata(str(c))
+            from .packs import merged_tessdata
+
+            merged = merged_tessdata(base)        # pacote "Idiomas extras do OCR" instalado: pasta juntada
+            if merged is not None:
+                os.environ["TESSDATA_PREFIX"] = str(merged)
+            elif base is not None:
+                os.environ["TESSDATA_PREFIX"] = str(base)
             return str(c)
     return None
+
+
+@lru_cache(maxsize=4)
+def base_tessdata(cmd: str) -> Path | None:
+    """Pasta de idiomas que vem com o Tesseract (embutido, do sistema ou indicada pela pessoa)."""
+    if _BASE_PREFIX and Path(_BASE_PREFIX).is_dir():
+        return Path(_BASE_PREFIX)
+    local = Path(cmd).parent / "tessdata"
+    if local.is_dir():
+        return local
+    import re
+    import subprocess
+
+    env = {k: v for k, v in os.environ.items() if k != "TESSDATA_PREFIX"}
+    try:
+        out = subprocess.run([cmd, "--list-langs"], capture_output=True, text=True, timeout=20, env=env,
+                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    except (OSError, subprocess.SubprocessError):
+        return None
+    m = re.search(r'"([^"\n]+)"', (out.stdout or "") + (out.stderr or ""))
+    if m and Path(m.group(1)).is_dir():
+        return Path(m.group(1))
+    return None
+
+
+def base_languages() -> set[str]:
+    """Idiomas que já vêm com o Tesseract, sem contar os do pacote extra."""
+    cmd = tesseract_cmd()
+    base = base_tessdata(cmd) if cmd else None
+    return {f.stem for f in base.glob("*.traineddata")} if base else set()
+
+
+def bundled_best_dir() -> Path | None:
+    env = os.environ.get("MARKINHO_TESSDATA_BEST")
+    cands = ([Path(env)] if env else []) + [d / "tesseract" / "tessdata_best" for d in _bundle_dirs()]
+    for c in cands:
+        if c.is_dir() and any(c.glob("*.traineddata")):
+            return c
+    return None
+
+
+_CJK = "\u3000-\u303f\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef"
+_CJK_GAP = None
+
+
+def cjk_join(text: str) -> str:
+    """Chinês e japonês não separam palavras com espaço: tira os espaços que o OCR põe entre esses caracteres."""
+    global _CJK_GAP
+    if not any("\u3000" <= ch <= "\uffef" for ch in text):
+        return text
+    if _CJK_GAP is None:
+        import re
+
+        _CJK_GAP = re.compile(f"(?<=[{_CJK}]) +(?=[{_CJK}])")
+    return _CJK_GAP.sub("", text)
+
+
+def refresh() -> None:
+    """Depois de instalar ou remover um pacote de idiomas: procura os idiomas de novo."""
+    for f in (tesseract_cmd, tessdata_best_dir, tesseract_languages, _has_osd, base_tessdata):
+        f.cache_clear()
 
 
 @lru_cache(maxsize=1)
@@ -74,12 +143,13 @@ def tessdata_best_dir() -> str | None:
 
     Vem no instalador do Windows (PADRÃO/COMPLETA) em ``tesseract/tessdata_best``; em outros
     sistemas pode ser indicada pela variável MARKINHO_TESSDATA_BEST."""
-    env = os.environ.get("MARKINHO_TESSDATA_BEST")
-    cands = ([Path(env)] if env else []) + [d / "tesseract" / "tessdata_best" for d in _bundle_dirs()]
-    for c in cands:
-        if c.is_dir() and any(c.glob("*.traineddata")):
-            return str(c)
-    return None
+    from .packs import merged_tessdata
+
+    bundled = bundled_best_dir()
+    merged = merged_tessdata(bundled, "tessdata_best")
+    if merged is not None:
+        return str(merged)
+    return str(bundled) if bundled is not None else None
 
 
 @lru_cache(maxsize=1)
@@ -320,7 +390,7 @@ def ocr_lines(img, backend: str = "auto", lang: str = "por+eng", enhance_img: bo
             # altura típica das palavras (ignora letras como "g" e "j" esticando a caixa)
             heights = sorted(data["height"][i] for i in idxs)
             confs = [float(data["conf"][i]) for i in idxs]
-            lines.append({"text": " ".join(data["text"][i] for i in idxs), "x0": x0, "x1": x1,
+            lines.append({"text": cjk_join(" ".join(data["text"][i] for i in idxs)), "x0": x0, "x1": x1,
                           "top": top, "bottom": bottom, "height": heights[len(heights) // 2],
                           "conf": sum(confs) / len(confs), "chars": sum(len(data["text"][i]) for i in idxs)})
         return lines

@@ -410,7 +410,6 @@
 "Imagens: ler como": "Images: read as",
 "Incluir as imagens (pasta ao lado do .md)": "Include the images (folder next to the .md)",
 "Incluir sumário": "Include table of contents",
-"Instalados: por (português) e eng (inglês).": "Installed: por (Portuguese) and eng (English).",
 "Instalar direto no Claude Code deste computador ({0})": "Install straight into Claude Code on this computer ({0})",
 "Instalar skill no Claude Code (usar o Markinho pelo terminal)": "Install skill in Claude Code (use Markinho from the terminal)",
 "Interface gráfica e visualizador de PDF": "Graphical interface and PDF viewer",
@@ -1070,7 +1069,6 @@
 "Escolha o arquivo do pacote": "Choose the pack file",
 "Pacote do Markinho (*.zip)": "Markinho pack (*.zip)",
 "(O arquivo escolhido era de outro pacote.)": "(The chosen file was a different pack.)",
-"Os pacotes extras são para a edição COMPLETA (motor Docling, IA de layout). Nesta edição eles não têm efeito.": "Extra packs are for the COMPLETE edition (Docling engine, layout AI). They have no effect in this edition.",
 "✔ <b>Instalado</b>": "✔ <b>Installed</b>",
 "{0} (~{1} MB)": "{0} (~{1} MB)",
 "Remover o pacote “{0}”? Para usá-lo de novo, será preciso instalar o .zip outra vez.": "Remove the “{0}” pack? To use it again, you will need to install the .zip again.",
@@ -1083,7 +1081,6 @@
 "Vale a pena para: artigos científicos, teses, apostilas de matemática, física, química e engenharia, documentação técnica.": "Worth it for: scientific papers, theses, math, physics, chemistry and engineering course material, technical documentation.",
 "Dispensável para: contratos, processos, relatórios, planilhas, documentos de escritório em geral. Sem ele, as fórmulas saem como texto simples ou imagem; o resto do documento não muda.": "Not needed for: contracts, legal cases, reports, spreadsheets, office documents in general. Without it, formulas come out as plain text or images; the rest of the document is unchanged.",
 "este arquivo não é um pacote extra do Markinho": "this file is not a Markinho extra pack",
-"os pacotes extras são para a edição COMPLETA (com o motor Docling)": "extra packs are for the COMPLETE edition (with the Docling engine)",
 "o pacote tem arquivos fora da lista de conteúdo": "the pack has files that are not in its content list",
 "faltam arquivos no pacote (download incompleto?)": "files are missing from the pack (incomplete download?)",
 "pacote desconhecido: {0}": "unknown pack: {0}",
@@ -1093,5 +1090,12 @@
 "não foi possível abrir o arquivo: {0}": "could not open the file: {0}",
 "pacote da versão {0}; esta é a {1}": "pack for version {0}; this is {1}",
 "o pacote está danificado (conferência falhou em {0}); baixe-o de novo": "the pack is damaged (check failed on {0}); download it again",
-"arquivo do pacote maior do que o esperado: {0}": "pack file larger than expected: {0}"
+"arquivo do pacote maior do que o esperado: {0}": "pack file larger than expected: {0}",
+"Já vêm: por (português) e eng (inglês). Com o pacote extra “Idiomas extras do OCR”: spa, fra, deu, rus, chi_sim, chi_sim_vert e ara. Junte com +, por exemplo por+spa.": "Included: por (Portuguese) and eng (English). With the “OCR extra languages” extra pack: spa, fra, deu, rus, chi_sim, chi_sim_vert and ara. Combine with +, for example por+spa.",
+"Precisa da edição COMPLETA (motor Docling).": "Requires the COMPLETE edition (Docling engine).",
+"Idiomas extras do OCR": "OCR extra languages",
+"Permite ler documentos escaneados, fotos e prints em espanhol (spa), francês (fra), alemão (deu), russo (rus), chinês simplificado (chi_sim; em colunas verticais: chi_sim_vert) e árabe (ara). Traz as versões rápida e precisa (modo Máxima qualidade). Depois de instalar, indique o idioma em Configurações › Idiomas do OCR, por exemplo por+spa.": "Reads scanned documents, photos and screenshots in Spanish (spa), French (fra), German (deu), Russian (rus), Simplified Chinese (chi_sim; in vertical columns: chi_sim_vert) and Arabic (ara). Includes the fast and the accurate versions (Maximum quality mode). After installing, set the language in Settings › OCR languages, for example por+spa.",
+"Vale a pena para: quem recebe documentos escaneados ou fotografados nesses idiomas (contratos internacionais, imigração, traduções, pesquisa).": "Worth it for: people who receive scanned or photographed documents in these languages (international contracts, immigration, translation, research).",
+"Dispensável para: documentos digitais (PDF com texto, Word, Excel…) em qualquer idioma, que não usam OCR, e para escaneados só em português ou inglês, que já vêm no Markinho.": "Not needed for: digital documents (PDF with text, Word, Excel…) in any language, which do not use OCR, and for scans only in Portuguese or English, which Markinho already includes.",
+"Precisa do Tesseract (OCR), que já vem no Markinho para Windows. No Mac e no Linux, instale o Tesseract do sistema (brew install tesseract ou apt install tesseract-ocr).": "Requires Tesseract (OCR), which comes with Markinho for Windows. On Mac and Linux, install the system Tesseract (brew install tesseract or apt install tesseract-ocr)."
 }

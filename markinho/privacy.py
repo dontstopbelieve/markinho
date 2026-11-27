@@ -16,7 +16,7 @@ de IA de um motor opcional — e mesmo aí nenhum documento é enviado.
 
 - A descrição de imagens usa o **Ollama instalado no seu computador** (endereço local); nenhum
   serviço on-line é chamado.
-- **Pacotes extras** (ex.: Fórmulas, na COMPLETA): você baixa o .zip pelo navegador, ou o instalador do
+- **Pacotes extras** (ex.: Idiomas extras do OCR; Fórmulas, na COMPLETA): você baixa o .zip pelo navegador, ou o instalador do
   Windows baixa se você marcar a opção — só o pacote é baixado, nada é enviado. O Markinho apenas confere
   e descompacta o arquivo, sem acessar a internet.
 - O servidor para assistentes de IA (MCP) só abre as pastas que você autorizou e só grava se você
@@ -101,7 +101,7 @@ models of an optional engine — and even then no document is sent.
 
 - Image description uses the **Ollama installed on your computer** (a local address); no online
   service is called.
-- **Extra packs** (e.g. Formulas, in the COMPLETE edition): you download the .zip in your browser, or the
+- **Extra packs** (e.g. OCR extra languages; Formulas, in the COMPLETE edition): you download the .zip in your browser, or the
   Windows installer downloads it if you tick the option — only the pack is downloaded, nothing is sent.
   Markinho only checks and unpacks the file, without going online.
 - The server for AI assistants (MCP) only opens the folders you authorized and only writes if you
@@ -187,7 +187,7 @@ IA de un motor opcional — e incluso entonces no se envía ningún documento.
 
 - La descripción de imágenes usa el **Ollama instalado en su equipo** (una dirección local); no se
   llama a ningún servicio en línea.
-- **Paquetes extra** (p. ej., Fórmulas, en la COMPLETA): usted descarga el .zip con el navegador, o el
+- **Paquetes extra** (p. ej., Idiomas extra del OCR; Fórmulas, en la COMPLETA): usted descarga el .zip con el navegador, o el
   instalador de Windows lo descarga si marca la opción — solo se descarga el paquete, no se envía nada.
   Markinho solo verifica y descomprime el archivo, sin acceder a internet.
 - El servidor para asistentes de IA (MCP) solo abre las carpetas que usted autorizó y solo escribe

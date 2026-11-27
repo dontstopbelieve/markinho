@@ -58,8 +58,8 @@ markinho/
   mcp_server.py    servidor MCP local (pastas autorizadas)
   describe.py      texto alternativo via Ollama local
   models.py        modelos de IA offline (pasta do usuário / embutidos na COMPLETA)
-  packs.py         pacotes extras (ex.: Fórmulas): .zip nas Releases, conferido (SHA-256) e instalado na pasta do
-                   usuário; junta com os embutidos (atalhos); instalador do Windows oferece baixar
+  packs.py         pacotes extras (Idiomas do OCR; Fórmulas na COMPLETA): .zip nas Releases, conferido (SHA-256) e
+                   instalado na pasta do usuário; junta com os embutidos/do sistema (atalhos); instalador do Windows oferece
   edition.py       edições PADRÃO / COMPLETA (marca gravada no build; “leve” antiga = PADRÃO)
   credits.py       créditos e textos de licença (Ajuda > Sobre)
   gui.py           interface: fila, comparar com original, configurações, exportar, MCP…

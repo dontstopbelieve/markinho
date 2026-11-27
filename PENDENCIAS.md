@@ -63,7 +63,10 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
       artigo de matemática sai com as fórmulas em LaTeX. Todos os formatos de instalador continuam.
       Falta: gerar de novo e conferir (a) cada arquivo < 2 GB e (b) a opção do pacote no instalador —
       o download só funciona depois que a versão (tag) for publicada com o .zip.
-      Ideia para depois: pacote de **idiomas extras do OCR** (espanhol, francês, alemão…).
+      **Pacote Idiomas extras do OCR** (27/11, as duas edições, ~95 MB): espanhol, francês, alemão, russo,
+      chinês simplificado (e vertical) e árabe, rápidos e precisos (tessdata, Apache-2.0). Testado sem rede:
+      os 6 idiomas lidos certo (sem o pacote, russo/chinês/árabe viravam lixo). Chinês sem espaços entre
+      caracteres (`ocr.cjk_join`). Instalador do Windows oferece os dois pacotes.
       **Comparação de 27/11/2026** (11 PDFs do acervo do Docling: artigos, jornal, relatório IBM, formulário):
       - Achado: o Nativo **grudava palavras** em PDFs do LaTeX e jornais (espaço de ~1,5 pt; até 640 palavras
         coladas num artigo). Corrigido: espaço proporcional à letra (`pdf.WORD_GAP`); agora 0–4 por documento.

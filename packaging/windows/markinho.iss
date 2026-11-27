@@ -21,6 +21,10 @@
   #define IconFile "..\icons\markinho.ico"
 #endif
 
+#if defined(PackFormulasFile) || defined(PackIdiomasFile)
+  #define HasPacks
+#endif
+
 [Setup]
 AppId={{6F1C2B9E-3D4A-4E8B-9C7D-2A5F0E1B3C4D}
 AppName=Markinho
@@ -55,15 +59,29 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Messages]
 brazilianportuguese.FinishedLabel=O Markinho foi instalado.%n%nDica: para fixá-lo na barra de tarefas, abra o Markinho, clique com o botão direito no ícone dele na barra de tarefas e escolha “Fixar na barra de tarefas”.%n%nPara converter sem abrir o programa: botão direito no arquivo > Markinho (no Windows 11, em “Mostrar mais opções”).
 english.FinishedLabel=Markinho has been installed.%n%nTip: to pin it to the taskbar, open Markinho, right-click its taskbar icon and choose “Pin to taskbar”.%n%nTo convert without opening the program: right-click a file > Markinho > Converter para Markdown aqui (on Windows 11, under “Show more options”).
-#ifdef PackFormulasFile
-brazilianportuguese.SelectComponentsLabel2=Os pacotes extras são opcionais: instale só o que for usar. Cada um fica no computador e funciona sem internet. Dá para instalar depois em Ferramentas > Pacotes extras.%n%nFórmulas e código: converte equações em texto editável (LaTeX) e reconhece código de programação. Vale a pena para artigos científicos, teses e apostilas de exatas. Dispensável para contratos, processos, relatórios e documentos de escritório.%n%nO pacote é baixado do GitHub agora (só o pacote: nenhum documento seu é enviado). Sem internet? Coloque o arquivo {#PackFormulasFile} na mesma pasta deste instalador.
-english.SelectComponentsLabel2=Extra packs are optional: install only what you will use. Each one stays on your computer and works offline. You can also install them later in Tools > Extra packs.%n%nFormulas and code: turns equations into editable text (LaTeX) and recognizes programming code. Worth it for scientific papers, theses and STEM course material. Not needed for contracts, reports and office documents.%n%nThe pack is downloaded from GitHub now (only the pack: none of your documents is sent). Offline? Put the file {#PackFormulasFile} in the same folder as this installer.
+#ifdef HasPacks
+  #ifdef PackIdiomasFile
+    #define TxtIdiomasPt "Idiomas extras do OCR: lê escaneados e fotos em espanhol, francês, alemão, russo, chinês e árabe. Vale a pena para quem recebe documentos escaneados nesses idiomas; dispensável para documentos digitais (PDF com texto, Word) e escaneados só em português ou inglês.%n%n"
+    #define TxtIdiomasEn "OCR extra languages: reads scans and photos in Spanish, French, German, Russian, Chinese and Arabic. Worth it if you receive scanned documents in those languages; not needed for digital documents (PDF with text, Word) or scans only in Portuguese or English.%n%n"
+  #else
+    #define TxtIdiomasPt ""
+    #define TxtIdiomasEn ""
+  #endif
+  #ifdef PackFormulasFile
+    #define TxtFormulasPt "Fórmulas e código: converte equações em texto editável (LaTeX) e reconhece código de programação. Vale a pena para artigos científicos, teses e apostilas de exatas; dispensável para contratos, processos, relatórios e documentos de escritório.%n%n"
+    #define TxtFormulasEn "Formulas and code: turns equations into editable text (LaTeX) and recognizes programming code. Worth it for scientific papers, theses and STEM material; not needed for contracts, reports and office documents.%n%n"
+  #else
+    #define TxtFormulasPt ""
+    #define TxtFormulasEn ""
+  #endif
+brazilianportuguese.SelectComponentsLabel2=Os pacotes extras são opcionais: instale só o que for usar. Cada um fica no computador e funciona sem internet; dá para instalar depois em Ferramentas > Pacotes extras.%n%n{#TxtIdiomasPt}{#TxtFormulasPt}Os pacotes marcados são baixados do GitHub agora (só o pacote: nenhum documento seu é enviado). Sem internet? Coloque o arquivo .zip do pacote na mesma pasta deste instalador.
+english.SelectComponentsLabel2=Extra packs are optional: install only what you will use. Each one stays on your computer and works offline; you can also install them later in Tools > Extra packs.%n%n{#TxtIdiomasEn}{#TxtFormulasEn}Ticked packs are downloaded from GitHub now (only the pack: none of your documents is sent). Offline? Put the pack's .zip file in the same folder as this installer.
 #endif
 
-#ifdef PackFormulasFile
-; Pacotes extras (só na COMPLETA): a pessoa marca o que quer. Se o .zip estiver na mesma pasta deste
-; instalador, ele é usado sem internet; senão, o instalador baixa das Releases e confere o SHA-256.
-; Quem descompacta e confere o conteúdo é o próprio Markinho (--instalar-pacote), depois de instalado.
+#ifdef HasPacks
+; Pacotes extras: a pessoa marca o que quer. Se o .zip estiver na mesma pasta deste instalador, ele é
+; usado sem internet; senão, o instalador baixa das Releases e confere o SHA-256. Quem descompacta e
+; confere arquivo por arquivo é o próprio Markinho (--instalar-pacote), depois de instalado.
 [Types]
 Name: "padrao"; Description: "Recomendada (sem pacotes extras)"
 Name: "tudo"; Description: "Com todos os pacotes extras"
@@ -71,7 +89,12 @@ Name: "escolher"; Description: "Escolher"; Flags: iscustom
 
 [Components]
 Name: "programa"; Description: "Markinho {#Edition} (obrigatório)"; Types: padrao tudo escolher; Flags: fixed
-Name: "formulas"; Description: "Pacote extra Fórmulas e código (~{#PackFormulasSize} MB a mais)"; Types: tudo
+#ifdef PackIdiomasFile
+Name: "idiomas"; Description: "Idiomas extras do OCR: espanhol, francês, alemão, russo, chinês e árabe (~{#PackIdiomasSize} MB)"; Types: tudo
+#endif
+#ifdef PackFormulasFile
+Name: "formulas"; Description: "Fórmulas e código: equações em LaTeX (~{#PackFormulasSize} MB)"; Types: tudo
+#endif
 
 #endif
 [Tasks]
@@ -423,36 +446,44 @@ english.PackInstalling=Checking and installing the extra pack…
 [Code]
 const EnvKeyUser = 'Environment';
 
-#ifdef PackFormulasFile
+#ifdef HasPacks
 var
   DownloadPage: TDownloadWizardPage;
-  PackZip: string;
+  ZipIdiomas, ZipFormulas: string;
 
 procedure InitializeWizard;
 begin
   DownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing), SetupMessage(msgPreparingDesc), nil);
 end;
 
-function PackOk(Path: string): Boolean;
+{ .zip ao lado do instalador e íntegro: usa sem internet. Senão, agenda o download (o Inno confere o SHA-256). }
+function PickZip(Comp, FileName, Url, Sha: string): string;
 begin
-  Result := FileExists(Path) and (CompareText(GetSHA256OfFile(Path), '{#PackFormulasSha}') = 0);
+  Result := '';
+  if not WizardIsComponentSelected(Comp) then exit;
+  Result := ExpandConstant('{src}\') + FileName;
+  if FileExists(Result) and (CompareText(GetSHA256OfFile(Result), Sha) = 0) then exit;
+  Result := ExpandConstant('{tmp}\') + FileName;
+  DownloadPage.Add(Url, FileName, Sha);
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
-  if (CurPageID <> wpReady) or not WizardIsComponentSelected('formulas') then exit;
-  PackZip := ExpandConstant('{src}\{#PackFormulasFile}');
-  if PackOk(PackZip) then exit;                      { .zip ao lado do instalador: sem internet }
-  PackZip := ExpandConstant('{tmp}\{#PackFormulasFile}');
+  if CurPageID <> wpReady then exit;
   DownloadPage.Clear;
-  DownloadPage.Add('{#PackFormulasUrl}', '{#PackFormulasFile}', '{#PackFormulasSha}');
+#ifdef PackIdiomasFile
+  ZipIdiomas := PickZip('idiomas', '{#PackIdiomasFile}', '{#PackIdiomasUrl}', '{#PackIdiomasSha}');
+#endif
+#ifdef PackFormulasFile
+  ZipFormulas := PickZip('formulas', '{#PackFormulasFile}', '{#PackFormulasUrl}', '{#PackFormulasSha}');
+#endif
+  if ((ZipIdiomas = '') or FileExists(ZipIdiomas)) and ((ZipFormulas = '') or FileExists(ZipFormulas)) then exit;
   DownloadPage.Show;
   try
     try
-      DownloadPage.Download;                        { confere o SHA-256 sozinho }
+      DownloadPage.Download;
     except
-      PackZip := '';
       if not DownloadPage.AbortedByUser then
         SuppressibleMsgBox(CustomMessage('PackFail') + #13#10#13#10 + GetExceptionMessage, mbInformation, MB_OK, IDOK);
     end;
@@ -461,14 +492,20 @@ begin
   end;
 end;
 
-procedure InstallPacks;
+procedure InstallZip(Zip: string);
 var Code: Integer;
 begin
-  if (PackZip = '') or not WizardIsComponentSelected('formulas') or not FileExists(PackZip) then exit;
+  if (Zip = '') or not FileExists(Zip) then exit;
   WizardForm.StatusLabel.Caption := CustomMessage('PackInstalling');
-  if not Exec(ExpandConstant('{app}\Markinho.exe'), '--instalar-pacote "' + PackZip + '"', '', SW_HIDE,
+  if not Exec(ExpandConstant('{app}\Markinho.exe'), '--instalar-pacote "' + Zip + '"', '', SW_HIDE,
               ewWaitUntilTerminated, Code) or (Code <> 0) then
     SuppressibleMsgBox(CustomMessage('PackFail'), mbInformation, MB_OK, IDOK);
+end;
+
+procedure InstallPacks;
+begin
+  InstallZip(ZipIdiomas);
+  InstallZip(ZipFormulas);
 end;
 #else
 procedure InstallPacks;

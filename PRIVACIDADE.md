@@ -9,7 +9,7 @@ de IA de um motor opcional — e mesmo aí nenhum documento é enviado.
 
 - A descrição de imagens usa o **Ollama instalado no seu computador** (endereço local); nenhum
   serviço on-line é chamado.
-- **Pacotes extras** (ex.: Fórmulas, na COMPLETA): você baixa o .zip pelo navegador, ou o instalador do
+- **Pacotes extras** (ex.: Idiomas extras do OCR; Fórmulas, na COMPLETA): você baixa o .zip pelo navegador, ou o instalador do
   Windows baixa se você marcar a opção — só o pacote é baixado, nada é enviado. O Markinho apenas confere
   e descompacta o arquivo, sem acessar a internet.
 - O servidor para assistentes de IA (MCP) só abre as pastas que você autorizou e só grava se você

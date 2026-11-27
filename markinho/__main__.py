@@ -130,7 +130,7 @@ def cli(argv: list[str]) -> int:
         return 0
     if args.pacotes:
         from . import __version__ as _v
-        from .packs import PACKS, installed
+        from .packs import PACKS, available, installed
 
         for pk in PACKS:
             state = tr("Instalado") if installed(pk) else tr("Não instalado")
@@ -138,6 +138,8 @@ def cli(argv: list[str]) -> int:
             print("  " + pk.what)
             print("  " + pk.who)
             print("  " + pk.skip)
+            if not available(pk):
+                print("  " + pk.need)
             print("  " + tr("Baixar: {0}").format(pk.url(_v)))
         return 0
     if args.instalar_pacote:

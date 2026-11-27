@@ -95,7 +95,8 @@ class NativeEngine(Engine):
         Option("ocr_backend", tr("Motor de OCR"), "choice", "auto",
                [("auto", tr("Automático")), ("tesseract", tr("Tesseract (mantém acentos)")),
                 ("rapidocr", tr("RapidOCR (sem instalação, perde acentos)"))]),
-        Option("ocr_lang", tr("Idiomas do OCR (Tesseract)"), "text", "por+eng", help=tr("Instalados: por (português) e eng (inglês).")),
+        Option("ocr_lang", tr("Idiomas do OCR (Tesseract)"), "text", "por+eng", help=tr("Já vêm: por (português) e eng (inglês). Com o pacote extra “Idiomas extras do OCR”: spa, fra, "
+                        "deu, rus, chi_sim, chi_sim_vert e ara. Junte com +, por exemplo por+spa.")),
         Option("ocr_enhance", tr("OCR: melhorar a imagem antes"), "bool", True,
                help=tr("Tons de cinza, contraste automático, endireita páginas tortas e gira páginas de lado. "
                     "Ajuda em fotos de celular e cópias escuras ou tortas.")),
