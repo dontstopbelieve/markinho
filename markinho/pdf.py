@@ -85,8 +85,41 @@ def _title(meta_title: str | None, path: Path) -> str:
 # --------------------------------------------------------------------------- #
 # Palavras -> linhas ("segmentos")
 # --------------------------------------------------------------------------- #
-def words_to_segments(words: list[dict]) -> list[dict]:
-    """Agrupa palavras em linhas e quebra a linha onde há um vão grande (colunas)."""
+def word_gutter(words: list[dict], width: float) -> float | None:
+    """Corredor vertical entre colunas achado pelas palavras (não pelas linhas): mesmo estreito (~5 pt, comum
+    em enciclopédias e jornais), ele aparece porque as palavras das duas colunas nunca o atravessam, de cima a
+    baixo. Devolve o x do meio do corredor, ou None se a página tem uma coluna só."""
+    body = [w for w in words if w.get("upright", True) and (w["x1"] - w["x0"]) < width * 0.3]
+    if len(body) < 40:
+        return None
+    lo, hi = int(width * 0.3), int(width * 0.7)
+    cover = [0] * (hi - lo + 1)
+    for w in body:
+        for x in range(max(lo, int(w["x0"])), min(hi, int(w["x1"])) + 1):
+            cover[x - lo] += 1
+    tol = max(1, int(len(body) * 0.01))           # títulos e figuras que atravessam o corredor
+    runs, start = [], None
+    for i, c in enumerate(cover + [tol + 1]):
+        if c <= tol and start is None:
+            start = i
+        elif c > tol and start is not None:
+            if i - start >= 4:
+                runs.append((i - start, lo + (start + i) / 2))
+            start = None
+    # o maior corredor com texto de verdade dos DOIS lados (a margem vazia da direita não conta)
+    for _length, x in sorted(runs, reverse=True):
+        left = [w for w in body if w["x1"] <= x]
+        right = [w for w in body if w["x0"] >= x]
+        if len(left) < len(body) * 0.25 or len(right) < len(body) * 0.25:
+            continue
+        if len({round(w["top"]) for w in left}) >= 8 and len({round(w["top"]) for w in right}) >= 8:
+            return x
+    return None
+
+
+def words_to_segments(words: list[dict], split_x: float | None = None) -> list[dict]:
+    """Agrupa palavras em linhas e quebra a linha onde há um vão grande (colunas). `split_x`: corredor entre
+    colunas (de `word_gutter`) — a linha é quebrada ali mesmo que o vão seja estreito."""
     words = sorted(words, key=lambda w: (round(w["top"]), w["x0"]))
     rows: list[list[dict]] = []
     for w in words:
@@ -105,7 +138,8 @@ def words_to_segments(words: list[dict]) -> list[dict]:
         cur = [row[0]]
         for w in row[1:]:
             size = statistics.median([c.get("size", 10) or 10 for c in cur])
-            if w["x0"] - cur[-1]["x1"] > max(1.8 * size, 14):
+            crosses = split_x is not None and cur[-1]["x1"] <= split_x + 1 and w["x0"] >= split_x - 1
+            if crosses or w["x0"] - cur[-1]["x1"] > max(1.8 * size, 14):
                 segs.append(_make_seg(cur))
                 cur = [w]
             else:
@@ -141,26 +175,29 @@ def find_gutter(blocks: list[dict], width: float) -> float | None:
             cover[x - lo] += 1
     # títulos centralizados e figuras atravessam o corredor: tolera alguns blocos
     tol = max(1, int(len(narrow) * 0.06))
-    best, run_start, best_len = None, None, 0
+    runs, run_start = [], None
     for i, c in enumerate(cover + [tol + 1]):
         if c <= tol and run_start is None:
             run_start = i
         elif c > tol and run_start is not None:
-            if i - run_start > best_len:
-                best_len, best = i - run_start, lo + (run_start + i) / 2
+            if i - run_start >= 6:
+                runs.append((i - run_start, lo + (run_start + i) / 2))
             run_start = None
-    if best is None or best_len < 6:
-        return None
-    left = sum(1 for b in narrow if b["x1"] <= best)
-    right = sum(1 for b in narrow if b["x0"] >= best)
-    if left < len(narrow) * 0.25 or right < len(narrow) * 0.25:
-        return None
-    return best
+    # o maior corredor com blocos dos dois lados (a margem vazia depois da última coluna não conta)
+    for _length, best in sorted(runs, reverse=True):
+        left = sum(1 for b in narrow if b["x1"] <= best)
+        right = sum(1 for b in narrow if b["x0"] >= best)
+        if left >= len(narrow) * 0.25 and right >= len(narrow) * 0.25:
+            return best
+    return None
 
 
-def reading_order(blocks: list[dict], width: float, columns: bool = True) -> list[dict]:
+def reading_order(blocks: list[dict], width: float, columns: bool = True, gutter: float | None = None) -> list[dict]:
     blocks = sorted(blocks, key=lambda b: (b["top"], b["x0"]))
-    gutter = find_gutter(blocks, width) if columns else None
+    if columns and gutter is None:
+        gutter = find_gutter(blocks, width)
+    elif not columns:
+        gutter = None
     if gutter is None:
         return blocks
     out: list[dict] = []
@@ -471,6 +508,7 @@ def _layout_pdf(path: Path) -> str:
             page = pdf.pages[i]
             W, H = float(page.width), float(page.height)
             blocks: list[dict] = []
+            page_gutter = None              # corredor entre colunas (achado pelas palavras, se houver texto)
             tables = page.find_tables() if option("pdf_tables", True) else []
             bboxes = []
             for t in tables:
@@ -522,7 +560,8 @@ def _layout_pdf(path: Path) -> str:
                 elif conf is None:
                     empty_pages.append(i + 1)
             else:
-                blocks += words_to_segments(words)
+                page_gutter = word_gutter(words, W) if columns else None
+                blocks += words_to_segments(words, page_gutter)
                 if want_images:
                     for im in page.images:
                         x0, top, x1, bottom = (max(0, im["x0"]), max(0, im["top"]), min(W, im["x1"]), min(H, im["bottom"]))
@@ -551,7 +590,7 @@ def _layout_pdf(path: Path) -> str:
                 empty_pages.append(i + 1)
             if m_top or m_bot:
                 blocks = [b for b in blocks if b["top"] >= H * m_top and b["bottom"] <= H * (1 - m_bot)]
-            ordered = reading_order(blocks, W, columns)
+            ordered = reading_order(blocks, W, columns, page_gutter)
             pages.append((i, ordered))
             # prévia: texto provisório da página (títulos e tabelas são arrumados no fim)
             report_partial(i + 1, "\n\n".join(b["text"] for b in ordered
