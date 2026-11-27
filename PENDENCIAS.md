@@ -69,6 +69,8 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
 - [x] **Aviso de contribuições** (26/11/2026): CONTRIBUTING.md, modelo de pull request com aviso,
       modelos de issue (problema e sugestão) e link para relato privado de segurança.
 - [x] **Relato privado de falhas** ligado (26/11/2026; conferido pela API).
+- [x] **CodeQL e secret scanning** ligados (27/11/2026). Primeira análise do CodeQL concluída; o dono
+      confere os alertas em Security > Code scanning (eles só aparecem com login).
 - [x] **Dependabot** (26/11/2026): o GitHub já analisa as dependências (execução “Graph Update: pip”).
       Rodar `pip-audit` antes de cada release (`pip install pip-audit` e `pip-audit -r requirements-padrao.txt`).
 - [ ] **Revisão jurídica dos avisos** (16/11/2026): o aviso “O Markinho não se responsabiliza…” da

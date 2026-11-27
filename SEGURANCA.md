@@ -107,6 +107,17 @@ Revisão do pacote inteiro com a ferramenta de revisão do Claude Code. Corrigid
 - Intervalo de anos (“2019-2020”) deixou de ser confundido com telefone; lista de nomes salva como
   “UTF-8 com BOM” passou a funcionar no terminal; a janela de anonimizar não trava mais a cada letra.
 
+### 26–27/11/2026 — Repositório público e proteções automáticas do GitHub
+
+- Repositório aberto (público), com o histórico já recomeçado e sem segredos.
+- **Relato privado de falhas** ligado (aba Security > Report a vulnerability).
+- **Dependabot**: análise automática das bibliotecas do projeto.
+- **Code scanning (CodeQL)**: análise automática do código a cada mudança; primeira análise completa
+  concluída em 27/11/2026. Resultados em Security > Code scanning.
+- **Secret scanning** com bloqueio de envio de senhas/chaves (push protection).
+- **Contribuições de código não aceitas** (CONTRIBUTING.md): reduz o risco de código malicioso entrar
+  por pull request.
+
 ## Rotina antes de cada versão
 
 1. `pip install pip-audit` e `pip-audit -r requirements-padrao.txt` (e as outras edições).
