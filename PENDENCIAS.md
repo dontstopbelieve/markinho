@@ -76,6 +76,10 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
       chinês simplificado (e vertical) e árabe, rápidos e precisos (tessdata, Apache-2.0). Testado sem rede:
       os 6 idiomas lidos certo (sem o pacote, russo/chinês/árabe viravam lixo). Chinês sem espaços entre
       caracteres (`ocr.cjk_join`). Instalador do Windows oferece os dois pacotes.
+      **Idioma do OCR automático** (27/11, ideia do OCRia-nano-1 da LlamaIndex, cuja licença proíbe uso em
+      produto concorrente — não entra): `ocr_lang = auto` (padrão) lê em por+eng; se a confiança cai, o OSD do
+      Tesseract diz a escrita (cirílica/árabe/chinesa); se é latina, palavras típicas escolhem spa/fra/deu; relê
+      no idioma instalado ou avisa para instalar o pacote. Português continua com uma leitura só.
       **Comparação de 27/11/2026** (11 PDFs do acervo do Docling: artigos, jornal, relatório IBM, formulário):
       - Achado: o Nativo **grudava palavras** em PDFs do LaTeX e jornais (espaço de ~1,5 pt; até 640 palavras
         coladas num artigo). Corrigido: espaço proporcional à letra (`pdf.WORD_GAP`); agora 0–4 por documento.

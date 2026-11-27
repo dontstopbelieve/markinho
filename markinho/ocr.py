@@ -222,7 +222,9 @@ def pick_backend(choice: str = "auto") -> str | None:
 
 
 def _tess_lang(lang: str) -> str:
-    """Usa só os idiomas pedidos que estão instalados (evita erro do Tesseract)."""
+    """Usa só os idiomas pedidos que estão instalados (evita erro do Tesseract). “auto” começa por por+eng."""
+    if lang.strip().lower() == AUTO_LANG:
+        lang = "por+eng"
     have = set(tesseract_languages())
     want = [x for x in lang.replace(",", "+").split("+") if x.strip()]
     ok = [x for x in want if x in have] or (["por"] if "por" in have else ["eng"] if "eng" in have else [])
@@ -327,6 +329,67 @@ def _tess_data(img, lang: str, config: str):
     return data, (sum(confs) / len(confs) if confs else 0.0)
 
 
+AUTO_LANG = "auto"
+# escrita detectada pelo Tesseract (OSD) → idioma do pacote “Idiomas extras do OCR”
+_SCRIPT_LANG = {"cyrillic": "rus", "arabic": "ara", "han": "chi_sim", "hans": "chi_sim", "hant": "chi_sim"}
+# palavras muito comuns e típicas de cada idioma (para escolher entre os de escrita latina)
+_STOPWORDS = {
+    "por": "não uma os do da em é ao são também pelo pela à às dos das nas nos você foram está".split(),
+    "eng": "the and of to is that for with was are this from have which be by".split(),
+    "spa": "el los del y una es más pero sus las muy también está fueron entre sobre".split(),
+    "fra": "le les des et est une du au pas qui dans sur avec ce sont nous vous leur".split(),
+    "deu": "der die und das ist nicht mit den ein eine zu von auf sich dem des im".split(),
+}
+
+
+def guess_latin_language(text: str) -> str | None:
+    """Idioma de escrita latina mais provável pelo texto lido (só se a diferença for clara)."""
+    import re
+
+    tokens = re.findall(r"[^\W\d_]+", text.lower())
+    if len(tokens) < 15:
+        return None
+    counts = {lang: sum(1 for t in tokens if t in set(words)) for lang, words in _STOPWORDS.items()}
+    ranked = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)
+    (best, hits), (_second, hits2) = ranked[0], ranked[1]
+    if hits >= 6 and hits >= 1.5 * max(hits2, 1):
+        return best
+    return None
+
+
+def _auto_language(img, data: dict, conf: float) -> str | None:
+    """Com o idioma “auto”: depois de ler em por+eng, diz se vale reler em outro idioma instalado."""
+    have = set(tesseract_languages())
+    text = " ".join(t for t in data["text"] if t.strip())
+    script = None
+    if conf < 65 and _has_osd():                       # leitura ruim: talvez seja outro alfabeto
+        try:
+            import pytesseract
+
+            osd = pytesseract.image_to_osd(img, config="--psm 0", output_type=pytesseract.Output.DICT)
+            script = str(osd.get("script", "")).lower()
+        except Exception:  # noqa: BLE001
+            script = None
+    if script and script in _SCRIPT_LANG:
+        lang = _SCRIPT_LANG[script]
+        if lang in have:
+            return lang if lang == "chi_sim" else f"{lang}+eng"
+        from .core import warn
+
+        warn(tr("Há texto em outro alfabeto (cirílico, árabe ou chinês), mas esse idioma do OCR não está "
+                "instalado: instale o pacote extra “Idiomas extras do OCR” em Ferramentas › Pacotes extras."))
+        return None
+    lang = guess_latin_language(text)
+    if lang and lang not in ("por", "eng"):
+        if lang in have:
+            return f"{lang}+eng"
+        from .core import warn
+
+        warn(tr("O texto parece estar em outro idioma (espanhol, francês ou alemão), que o OCR ainda não tem: "
+                "instale o pacote extra “Idiomas extras do OCR” em Ferramentas › Pacotes extras."))
+    return None
+
+
 def ocr_lines(img, backend: str = "auto", lang: str = "por+eng", enhance_img: bool | None = None,
               model: str | None = None) -> list[dict]:
     """Reconhece o texto de uma imagem PIL. Devolve linhas com text, x0, x1, top, bottom
@@ -349,20 +412,32 @@ def ocr_lines(img, backend: str = "auto", lang: str = "por+eng", enhance_img: bo
             model = str(_option("ocr_model", "fast"))
         if enhance_img:
             img = enhance(img)
-        config = "--psm 3"
         best = tessdata_best_dir() if model == "best" else None
+
+        def config_for(tl: str) -> str:
+            if best:
+                have = {f.stem for f in Path(best).glob("*.traineddata")}
+                if all(x in have for x in tl.split("+")):
+                    return "--psm 3 " + _tessdata_arg(best)
+            return "--psm 3"
+
+        def read(tl: str):
+            cfg = config_for(tl)
+            try:
+                return (*_tess_data(img, tl, cfg), cfg)
+            except Exception:  # noqa: BLE001 — modelos “best” com problema: usa os normais em vez de falhar
+                if "--tessdata-dir" not in cfg:
+                    raise
+                return (*_tess_data(img, tl, "--psm 3"), "--psm 3")
+
         tl = _tess_lang(lang)
-        if best:
-            have = {f.stem for f in Path(best).glob("*.traineddata")}
-            if all(x in have for x in tl.split("+")):
-                config += " " + _tessdata_arg(best)
-        try:
-            data, conf = _tess_data(img, tl, config)
-        except Exception:  # noqa: BLE001 — modelos “best” com problema: usa os normais em vez de falhar
-            if "--tessdata-dir" not in config:
-                raise
-            config = "--psm 3"
-            data, conf = _tess_data(img, tl, config)
+        data, conf, config = read(tl)
+        if lang.strip().lower() == AUTO_LANG:          # idioma automático: relê no idioma certo, se instalado
+            alt = _auto_language(img, data, conf)
+            if alt and alt != tl:
+                data2, conf2, config2 = read(alt)
+                if conf2 >= conf - 5 or alt.startswith(("rus", "ara", "chi")):
+                    data, conf, config, tl = data2, conf2, config2, alt
         # página de lado ou de cabeça para baixo: leitura ruim → detecta a orientação e refaz
         if enhance_img and conf < 60 and _has_osd():
             try:

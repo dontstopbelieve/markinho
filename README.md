@@ -252,9 +252,11 @@ O Markinho **não baixa nada sozinho**: quem baixa é o navegador ou o instalado
 o Markinho confere cada arquivo (SHA-256 e tamanho) e recusa pacotes danificados ou adulterados. Sem o
 pacote de fórmulas, elas saem como texto simples ou imagem, e o Markinho avisa qual pacote resolve.
 
-Depois de instalar os idiomas, diga ao OCR qual usar em *Configurações* › **Idiomas do OCR**, juntando
-com `+` (por exemplo `por+spa`, ou só `chi_sim` para chinês); no terminal:
-`markinho digitalizado.pdf --opt ocr_lang=por+spa`. No Mac e no Linux o pacote de idiomas precisa do
+Depois de instalar os idiomas, o Markinho **reconhece sozinho** o idioma de cada página escaneada (idioma do
+OCR em `auto`, o padrão): lê em português e inglês e, se a escrita for cirílica, árabe ou chinesa — ou o texto
+for claramente espanhol, francês ou alemão —, lê de novo no idioma certo. Sem o pacote, ele avisa qual instalar.
+Para fixar um idioma: *Configurações* › **Idiomas do OCR**, juntando com `+` (ex.: `por+spa`); no terminal,
+`--opt ocr_lang=por+spa`. No Mac e no Linux o pacote de idiomas precisa do
 Tesseract do sistema (que lá também pode receber idiomas pelo próprio gerenciador de pacotes).
 Rodando pelo código-fonte, use *Motores* > **Baixar modelos** (ou
 `markinho --download-models docling`) uma vez, num computador com internet.

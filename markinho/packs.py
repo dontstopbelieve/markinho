@@ -64,8 +64,8 @@ _TEXTS = {
         name=tr("Idiomas extras do OCR"),
         what=tr("Permite ler documentos escaneados, fotos e prints em espanhol (spa), francês (fra), alemão (deu), "
                 "russo (rus), chinês simplificado (chi_sim; em colunas verticais: chi_sim_vert) e árabe (ara). "
-                "Traz as versões rápida e precisa (modo Máxima qualidade). Depois de instalar, indique o idioma em "
-                "Configurações › Idiomas do OCR, por exemplo por+spa."),
+                "Traz as versões rápida e precisa (modo Máxima qualidade). Depois de instalar, o Markinho reconhece "
+                "sozinho o idioma da página; para fixar um, use Configurações › Idiomas do OCR (ex.: por+spa)."),
         who=tr("Vale a pena para: quem recebe documentos escaneados ou fotografados nesses idiomas (contratos "
                "internacionais, imigração, traduções, pesquisa)."),
         skip=tr("Dispensável para: documentos digitais (PDF com texto, Word, Excel…) em qualquer idioma, que não "

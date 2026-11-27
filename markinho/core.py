@@ -49,7 +49,12 @@ def warn(message: str, pages: list[int] | None = None, info: bool = False) -> No
     `info=True`: só informação (ex.: “carimbos removidos”), sem o ícone de alerta."""
     notes = _NOTES.get()
     if notes is not None:
-        notes.append(((INFO if info else "") + message, sorted(set(pages or []))))
+        text = (INFO if info else "") + message
+        for k, (old, old_pages) in enumerate(notes):    # o mesmo aviso de várias páginas vira um só
+            if old == text:
+                notes[k] = (old, sorted(set(old_pages) | set(pages or [])))
+                return
+        notes.append((text, sorted(set(pages or []))))
 
 
 def is_alert(message: str) -> bool:

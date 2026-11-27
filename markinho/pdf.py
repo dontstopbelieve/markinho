@@ -856,7 +856,7 @@ def _ocr_settings():
 
     mode = option("ocr", "auto")
     backend = ocr.pick_backend(option("ocr_backend", "auto")) if mode != "off" else None
-    return mode, backend, option("ocr_lang", "por+eng")
+    return mode, backend, option("ocr_lang", "auto")
 
 
 def _ocr_page_blocks(page_image, scale: float, backend: str, lang: str) -> list[dict]:
