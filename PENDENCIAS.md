@@ -61,8 +61,10 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
       (~640 MB): o instalador do Windows oferece (baixa ou usa o .zip ao lado, com SHA-256), e em todos os
       sistemas há Ferramentas › Pacotes extras e `--instalar-pacote`. Testado: com o pacote e sem rede, um
       artigo de matemática sai com as fórmulas em LaTeX. Todos os formatos de instalador continuam.
-      Falta: gerar de novo e conferir (a) cada arquivo < 2 GB e (b) a opção do pacote no instalador —
-      o download só funciona depois que a versão (tag) for publicada com o .zip.
+      Falta: gerar de novo e conferir cada arquivo < 2 GB e a opção do pacote no instalador.
+      **Pacotes têm página própria** (tag `pacotes-1`, workflow “Pacotes extras”, rodar uma vez): servem a
+      todas as versões do programa e o instalador acha o pacote antes mesmo da v3.0.0. O build do instalador
+      lê o SHA256SUMS.txt dessa página; se ainda não existir, o instalador sai sem a tela de pacotes.
       **Pacote Idiomas extras do OCR** (27/11, as duas edições, ~95 MB): espanhol, francês, alemão, russo,
       chinês simplificado (e vertical) e árabe, rápidos e precisos (tessdata, Apache-2.0). Testado sem rede:
       os 6 idiomas lidos certo (sem o pacote, russo/chinês/árabe viravam lixo). Chinês sem espaços entre

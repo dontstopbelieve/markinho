@@ -1,0 +1,60 @@
+name: Pacotes extras
+
+# Publica os pacotes extras (Idiomas do OCR, Fórmulas e código) numa página própria das Releases
+# (tag pacotes-<número>), separada das versões do programa. Basta rodar UMA vez: os instaladores de
+# qualquer versão do Markinho baixam daqui. Só rode de novo se o conteúdo dos pacotes mudar (aí aumente
+# PACKS_VERSION em markinho/packs.py antes).
+# Como rodar: aba Actions > Pacotes extras > Run workflow.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  PYTHONUTF8: "1"
+
+jobs:
+  pacotes:
+    runs-on: ubuntu-24.04   # versão fixa (o ubuntu-latest muda sozinho)
+    timeout-minutes: 40     # trava = para, sem gastar a cota
+    permissions:
+      contents: write       # só este job publica
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: PyTorch para processador e Docling (só para baixar o modelo de fórmulas)
+        run: |
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements-completa.txt
+      - name: Gerar os pacotes
+        run: python packaging/build.py --edition completa pacotes
+      - name: Número da página de pacotes
+        id: v
+        run: echo "tag=pacotes-$(python -c 'from markinho.packs import PACKS_VERSION;print(PACKS_VERSION)')" >> "$GITHUB_OUTPUT"
+      - name: Somas SHA-256
+        run: cd release && sha256sum Markinho-Pacote-*.zip > SHA256SUMS.txt && cat SHA256SUMS.txt && ls -la
+      - uses: softprops/action-gh-release@40c2ca6ddd77ba2a30bbea8f67409c0f76868d67  # v3
+        with:
+          tag_name: ${{ steps.v.outputs.tag }}
+          name: Pacotes extras do Markinho
+          make_latest: false
+          files: |
+            release/Markinho-Pacote-*.zip
+            release/SHA256SUMS.txt
+          body: |
+            Recursos **opcionais** do Markinho. Instale só o que for usar: cada pacote fica no computador e
+            funciona sem internet. **Não é o programa** — o Markinho fica na [página de versões](https://github.com/dontstopbelieve/markinho/releases).
+
+            | Pacote | Edição | Para que serve | Vale a pena para | Dispensável para |
+            |---|---|---|---|---|
+            | `Markinho-Pacote-Idiomas-OCR-….zip` (~95 MB) | PADRÃO e COMPLETA | Lê escaneados, fotos e prints em espanhol, francês, alemão, russo, chinês e árabe | Documentos escaneados nesses idiomas | Documentos digitais (PDF com texto, Word) e escaneados em português/inglês |
+            | `Markinho-Pacote-Formulas-….zip` (~640 MB) | COMPLETA | Fórmulas em texto editável (LaTeX) e código de programação | Artigos científicos, teses, apostilas de exatas | Contratos, processos, relatórios, documentos de escritório |
+
+            **Como instalar:** no instalador do Windows, marque o pacote (ele baixa daqui sozinho); ou baixe o
+            `.zip` e use, no Markinho, *Ferramentas › Pacotes extras › Instalar de um arquivo…*.
+            O Markinho confere cada arquivo do pacote antes de instalar (`SHA256SUMS.txt` traz as somas).

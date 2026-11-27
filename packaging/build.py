@@ -248,32 +248,52 @@ def build_packs() -> list[Path]:
     for pk in PACKS:
         if EDITION not in pk.editions:
             continue
-        target = build_pack(pk, src, RELEASE, VERSION)
+        target = build_pack(pk, src, RELEASE)
         print(f"→ {target} ({target.stat().st_size / 1e6:.0f} MB)")
         out.append(target)
     return out
 
 
-def _pack_defines() -> list[str]:
-    """Para o Inno Setup: nome, endereço e SHA-256 de cada pacote da edição já gerado."""
+def _pack_sums() -> dict[str, str]:
+    """SHA-256 dos pacotes: dos .zip gerados aqui ou, senão, da página de pacotes já publicada no GitHub."""
     import hashlib
 
-    from markinho.packs import PACKS
+    from markinho.packs import PACKS_SUMS_URL
 
-    out = []
-    for pk in PACKS:
-        if EDITION not in pk.editions:
-            continue
-        f = RELEASE / pk.file_name(VERSION)
-        if not f.is_file():
-            print(f"aviso: {f.name} não foi gerado; o instalador sai sem a opção desse pacote extra")
-            continue
+    sums: dict[str, str] = {}
+    for f in RELEASE.glob("Markinho-Pacote-*.zip") if RELEASE.is_dir() else []:
         h = hashlib.sha256()
         with f.open("rb") as fh:
             for chunk in iter(lambda: fh.read(1 << 20), b""):
                 h.update(chunk)
+        sums[f.name] = h.hexdigest()
+    try:
+        with urllib.request.urlopen(PACKS_SUMS_URL, timeout=60) as r:
+            for line in r.read().decode("utf-8", "replace").splitlines():
+                parts = line.split()
+                if len(parts) == 2 and len(parts[0]) == 64:
+                    sums.setdefault(parts[1].lstrip("*"), parts[0].lower())
+    except OSError as exc:
+        print(f"aviso: não deu para ler {PACKS_SUMS_URL} ({exc})")
+    return sums
+
+
+def _pack_defines() -> list[str]:
+    """Para o Inno Setup: nome, endereço e SHA-256 de cada pacote da edição já publicado."""
+    from markinho.packs import PACKS
+
+    sums = _pack_sums()
+    out = []
+    for pk in PACKS:
+        if EDITION not in pk.editions:
+            continue
+        sha = sums.get(pk.file_name())
+        if not sha:
+            print(f"aviso: {pk.file_name()} ainda não foi publicado (workflow “Pacotes extras”); "
+                  "o instalador sai sem a opção desse pacote")
+            continue
         key = pk.id.capitalize()
-        out += [f"/DPack{key}File={f.name}", f"/DPack{key}Url={pk.url(VERSION)}", f"/DPack{key}Sha={h.hexdigest()}",
+        out += [f"/DPack{key}File={pk.file_name()}", f"/DPack{key}Url={pk.url()}", f"/DPack{key}Sha={sha}",
                 f"/DPack{key}Size={pk.size_mb}"]
     return out
 

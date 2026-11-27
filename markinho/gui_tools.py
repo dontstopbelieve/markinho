@@ -429,9 +429,9 @@ class PacksDialog(QDialog):
         from PySide6.QtCore import QUrl
         from PySide6.QtGui import QDesktopServices
 
-        from .packs import RELEASES
+        from .packs import PACKS_PAGE
 
-        QDesktopServices.openUrl(QUrl(f"{RELEASES}/tag/v{self.version}"))     # o navegador baixa, não o Markinho
+        QDesktopServices.openUrl(QUrl(PACKS_PAGE))     # o navegador baixa, não o Markinho
 
     def install(self, pk, path: str | None = None) -> bool:
         from PySide6.QtWidgets import QApplication, QProgressDialog

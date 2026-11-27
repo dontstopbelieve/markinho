@@ -43,7 +43,8 @@ def test_gera_e_instala(env):
     pk = PACKS_BY_ID["formulas"]
     z = _pack(env)
     assert z.name == "Markinho-Pacote-Formulas-9.9.9.zip"
-    assert pk.url("9.9.9").endswith("/v9.9.9/Markinho-Pacote-Formulas-9.9.9.zip")
+    assert pk.url("9.9.9").endswith("/download/pacotes-9.9.9/Markinho-Pacote-Formulas-9.9.9.zip")
+    assert pk.url() == f"{packs.RELEASES}/download/{packs.PACKS_TAG}/{pk.file_name()}"
     assert not packs.installed(pk)
     seen = []
     assert install_from_zip(z, lambda d, t: seen.append((d, t)), check_version="9.9.9") is pk
@@ -194,7 +195,7 @@ def test_janela(env, monkeypatch):
     assert d.install(pk, str(z))
     assert "Instalado" in d.status["formulas"].text() and d.remove_btn["formulas"].isEnabled()
     d.open_page(pk)
-    assert opened and "/releases/tag/v" in opened[0]
+    assert opened == [packs.PACKS_PAGE] and "/releases/tag/pacotes-" in opened[0]
     d.remove(pk)
     assert "Não instalado" in d.status["formulas"].text()
     d.deleteLater()

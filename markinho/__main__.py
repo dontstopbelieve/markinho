@@ -129,7 +129,6 @@ def cli(argv: list[str]) -> int:
         print(tr("O Markinho não acessa a internet. Para ver se há versão nova: {0}").format(RELEASES_URL))
         return 0
     if args.pacotes:
-        from . import __version__ as _v
         from .packs import PACKS, available, installed
 
         for pk in PACKS:
@@ -140,7 +139,7 @@ def cli(argv: list[str]) -> int:
             print("  " + pk.skip)
             if not available(pk):
                 print("  " + pk.need)
-            print("  " + tr("Baixar: {0}").format(pk.url(_v)))
+            print("  " + tr("Baixar: {0}").format(pk.url()))
         return 0
     if args.instalar_pacote:
         from .packs import PackError, install_from_zip

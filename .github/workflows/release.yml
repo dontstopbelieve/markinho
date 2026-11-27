@@ -100,8 +100,6 @@ jobs:
         if: matrix.edition != 'completa'
         continue-on-error: true
         run: python packaging/build.py --edition ${{ matrix.edition }} onefile
-      - name: Pacotes extras (idiomas do OCR; na COMPLETA, também fórmulas) — o instalador oferece baixar
-        run: python packaging/build.py --edition ${{ matrix.edition }} pacotes
       - name: Instalador .exe (Inno Setup)
         continue-on-error: true
         shell: pwsh
@@ -247,8 +245,8 @@ jobs:
             Todas as edições: interface em português, inglês e espanhol. Tudo roda no seu computador: nenhum documento é enviado para a internet.
 
             Para mudar de edição, instale a outra por cima: as configurações são mantidas.
-            **Pacotes extras (opcionais):** `Markinho-Pacote-Idiomas-OCR-….zip` (as duas edições) lê escaneados em espanhol,
-            francês, alemão, russo, chinês e árabe; `Markinho-Pacote-Formulas-….zip` (COMPLETA) reconhece fórmulas (LaTeX) e código.
+            **Pacotes extras (opcionais):** Idiomas do OCR (espanhol, francês, alemão, russo, chinês e árabe; as duas edições)
+            e Fórmulas e código (COMPLETA) ficam na página [Pacotes extras](https://github.com/dontstopbelieve/markinho/releases/tag/pacotes-1).
             O instalador do Windows oferece baixá-los; nos outros casos, baixe o .zip e use Ferramentas › Pacotes extras.
 
             ## Escolha o arquivo

@@ -38,6 +38,12 @@ from .i18n import tr
 MANIFEST = "markinho-pacote.json"
 FORMAT = 1
 RELEASES = "https://github.com/dontstopbelieve/markinho/releases"
+# Os pacotes têm página própria nas Releases, separada das versões do programa: são publicados uma vez
+# (workflow "Pacotes extras") e servem a várias versões do Markinho. Mudou o conteúdo → aumente o número.
+PACKS_VERSION = "1"
+PACKS_TAG = f"pacotes-{PACKS_VERSION}"
+PACKS_PAGE = f"{RELEASES}/tag/{PACKS_TAG}"
+PACKS_SUMS_URL = f"{RELEASES}/download/{PACKS_TAG}/SHA256SUMS.txt"
 MAX_TOTAL = 6 * 1024 ** 3          # nenhum pacote passa de 6 GB descompactado
 MAX_FILES = 2000
 
@@ -88,11 +94,11 @@ class Pack:
     skip = property(lambda self: self._t("skip"))
     need = property(lambda self: self._t("need"))
 
-    def file_name(self, version: str) -> str:
+    def file_name(self, version: str = PACKS_VERSION) -> str:
         return f"Markinho-Pacote-{self.file_title}-{version}.zip"
 
-    def url(self, version: str) -> str:
-        return f"{RELEASES}/download/v{version}/{self.file_name(version)}"
+    def url(self, version: str = PACKS_VERSION) -> str:
+        return f"{RELEASES}/download/pacotes-{version}/{self.file_name(version)}"
 
 
 OCR_LANGS = ("spa", "fra", "deu", "rus", "chi_sim", "chi_sim_vert", "ara")
@@ -267,7 +273,7 @@ def _refresh_ocr() -> None:
 
 
 # ---------------------------------------------------------------- criar (usado pelo build)
-def build_pack(pack: Pack, models: Path, out_dir: Path, version: str) -> Path:
+def build_pack(pack: Pack, models: Path, out_dir: Path, version: str = PACKS_VERSION) -> Path:
     """Gera o .zip do pacote a partir de uma pasta de modelos (com docling/, tessdata/…). Sempre igual."""
     files: dict[str, dict] = {}
     entries: list[tuple[str, Path]] = []

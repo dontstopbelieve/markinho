@@ -241,10 +241,10 @@ funciona sem internet.
 Como instalar:
 
 - **No instalador do Windows** (`…-setup.exe`): na tela “Selecionar componentes”, marque o pacote. O
-  instalador baixa o pacote das Releases e confere a assinatura SHA-256. **Sem internet?** Coloque o `.zip`
+  instalador baixa o pacote da página [Pacotes extras](https://github.com/dontstopbelieve/markinho/releases/tag/pacotes-1) e confere a soma SHA-256. **Sem internet?** Coloque o `.zip`
   na mesma pasta do instalador: ele é usado direto.
-- **Depois, em qualquer sistema**: baixe o `.zip` na página de
-  [Releases](https://github.com/dontstopbelieve/markinho/releases) e use *Ferramentas* > **Pacotes extras** >
+- **Depois, em qualquer sistema**: baixe o `.zip` na página
+  [Pacotes extras](https://github.com/dontstopbelieve/markinho/releases/tag/pacotes-1) e use *Ferramentas* > **Pacotes extras** >
   *Instalar de um arquivo…* (ou `markinho --instalar-pacote Markinho-Pacote-Formulas-….zip`;
   `markinho --pacotes` mostra o que está instalado).
 
