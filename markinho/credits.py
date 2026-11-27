@@ -24,6 +24,8 @@ class Credit:
 
 INCLUDED: tuple[Credit, ...] = (
     Credit("Python", "Python Software Foundation", "PSF-2.0", "https://www.python.org", "Linguagem do programa"),
+    Credit("Pygments", "Georg Brandl e colaboradores", "BSD-2-Clause", "https://pygments.org",
+           "Código colorido na visualização e no HTML exportado", "pygments"),
     Credit("Raleway (fonte)", "The Raleway Project Authors", "OFL-1.1", "https://github.com/impallari/Raleway",
            "Letras “MD” do ícone (convertidas em desenho; a fonte não é instalada)"),
     Credit("Qt / PySide6", "The Qt Company e colaboradores", "LGPL-3.0", "https://www.qt.io/qt-for-python",
@@ -71,6 +73,9 @@ INCLUDED: tuple[Credit, ...] = (
 )
 
 INSPIRED_BY: tuple[Credit, ...] = (
+    Credit("SoMark / OXR", "SoMark (Shanghai Shoukou Technology)", "—", "https://github.com/SoMarkAI",
+           "Ideias de uso: selo de “nada saiu do computador”, sumário clicável, texto aparecendo enquanto "
+           "converte, ler imagem como tabela/código e comparar versões (nada do código ou do modelo deles)"),
     Credit("markitdown", "Microsoft", "MIT", "https://github.com/microsoft/markitdown",
            "A ideia original: converter vários formatos para Markdown pensando em IA"),
     Credit("Docling", "IBM Research", "MIT", "https://github.com/docling-project/docling",

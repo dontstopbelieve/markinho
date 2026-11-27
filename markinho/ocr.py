@@ -321,6 +321,114 @@ def ocr_lines(img, backend: str = "auto", lang: str = "por+eng", enhance_img: bo
     return lines
 
 
+def ocr_words(img, backend: str = "auto", lang: str = "por+eng") -> list[dict]:
+    """Palavras com posição (para ler a imagem como tabela). RapidOCR devolve trechos em vez de palavras."""
+    be = pick_backend(backend)
+    if be is None:
+        raise RuntimeError(describe_status())
+    if img.mode not in ("RGB", "L"):
+        img = img.convert("RGB")
+    if be != "tesseract":
+        return ocr_lines(img, backend, lang)
+    import pytesseract
+
+    pytesseract.pytesseract.tesseract_cmd = tesseract_cmd()
+    if _option("ocr_enhance", True):
+        img = enhance(img)
+    data, _conf = _tess_data(img, _tess_lang(lang), "--psm 6")
+    out = []
+    for i, w in enumerate(data["text"]):
+        if w.strip() and float(data["conf"][i]) >= 0:
+            out.append({"text": w, "x0": data["left"][i], "x1": data["left"][i] + data["width"][i],
+                        "top": data["top"][i], "bottom": data["top"][i] + data["height"][i],
+                        "height": data["height"][i]})
+    return out
+
+
+def words_to_table(words: list[dict]) -> list[list[str]]:
+    """Agrupa palavras em linhas (pela altura) e colunas (pelos espaços grandes, alinhados entre linhas)."""
+    if not words:
+        return []
+    hs = sorted(max(1, w["bottom"] - w["top"]) for w in words)
+    h = hs[len(hs) // 2]
+    rows: list[list[dict]] = []
+    for w in sorted(words, key=lambda w: (w["top"] + w["bottom"]) / 2):
+        cy = (w["top"] + w["bottom"]) / 2
+        if rows and abs(cy - rows[-1][0]["_cy"]) <= h * 0.6:
+            rows[-1].append(w)
+        else:
+            w = dict(w)
+            rows.append([w])
+        rows[-1][0].setdefault("_cy", cy)
+    cells_by_row = []
+    for r in rows:
+        r.sort(key=lambda w: w["x0"])
+        cells, cur = [], [r[0]]
+        for w in r[1:]:
+            if w["x0"] - cur[-1]["x1"] > h * 1.2:          # espaço grande: nova célula
+                cells.append(cur)
+                cur = [w]
+            else:
+                cur.append(w)
+        cells.append(cur)
+        cells_by_row.append([(c[0]["x0"], " ".join(x["text"] for x in c)) for c in cells])
+    starts = sorted(x for row in cells_by_row for x, _ in row)
+    anchors: list[float] = []
+    for x in starts:                                         # início das colunas, alinhado entre linhas
+        if not anchors or x - anchors[-1] > h * 2:
+            anchors.append(x)
+    table = []
+    for row in cells_by_row:
+        line = [""] * len(anchors)
+        for x, text in row:
+            k = max(i for i, a in enumerate(anchors) if a <= x + h * 2)
+            line[k] = (line[k] + " " + text).strip()
+        table.append(line)
+    return table
+
+
+def ocr_code(img, backend: str = "auto", lang: str = "por+eng") -> str:
+    """Texto mantendo espaços e quebras de linha (código, terminal)."""
+    be = pick_backend(backend)
+    if be is None:
+        raise RuntimeError(describe_status())
+    if be != "tesseract":
+        return "\n".join(ln["text"] for ln in sorted(ocr_lines(img, backend, lang), key=lambda ln: ln["top"]))
+    import pytesseract
+
+    pytesseract.pytesseract.tesseract_cmd = tesseract_cmd()
+    if img.mode not in ("RGB", "L"):
+        img = img.convert("RGB")
+    data, _conf = _tess_data(img, _tess_lang(lang), "--psm 6 -c preserve_interword_spaces=1")
+    words = [i for i, w in enumerate(data["text"]) if w.strip() and float(data["conf"][i]) >= 0]
+    if not words:
+        return ""
+    # passo de um caractere (fonte de código é monoespaçada): cada palavra vai para a sua coluna
+    long_words = [i for i in words if len(data["text"][i]) >= 3] or words
+    cw = sorted(data["width"][i] / max(0.65, len(data["text"][i]) - 0.35)
+                for i in long_words)[len(long_words) // 2] or 1
+    groups: dict[tuple, list[int]] = {}
+    for i in words:
+        groups.setdefault((data["block_num"][i], data["par_num"][i], data["line_num"][i]), []).append(i)
+    lines = sorted(groups.values(), key=lambda ix: min(data["top"][i] for i in ix))
+    left = min(data["left"][i] for i in words)
+    hs = sorted(data["height"][i] for i in words)
+    lh = hs[len(hs) // 2] or 1
+    out, prev_bottom = [], None
+    for ix in lines:
+        ix.sort(key=lambda i: data["left"][i])
+        top = min(data["top"][i] for i in ix)
+        if prev_bottom is not None and top - prev_bottom > lh * 1.2:
+            out.append("")                                   # linha em branco entre blocos
+        text = ""
+        for i in ix:
+            col = max(0, round((data["left"][i] - left) / cw))
+            text += " " * max(1 if text else 0, col - len(text)) + data["text"][i]
+        out.append(text.rstrip())
+        prev_bottom = max(data["top"][i] + data["height"][i] for i in ix)
+    return "\n".join(out)
+
+
 def ocr_segments(img, backend: str = "auto", lang: str = "por+eng", scale: float = 1.0) -> list[dict]:
     """Linhas do OCR no formato de "segmento" do montador de PDF (coordenadas em pontos)."""
     segs = []

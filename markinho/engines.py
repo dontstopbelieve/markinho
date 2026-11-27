@@ -101,6 +101,11 @@ class NativeEngine(Engine):
                [("fast", "Rápido (fast)"), ("best", "Mais preciso (best), mais lento")],
                help="“Mais preciso” usa os modelos best quando instalados (Windows PADRÃO/COMPLETA); "
                     "sem eles, usa os normais."),
+        Option("image_mode", "Imagens: ler como", "choice", "auto",
+               [("auto", "Automático (texto com títulos)"), ("text", "Texto corrido"),
+                ("table", "Tabela"), ("code", "Código (mantém espaços)")],
+               help="Para fotos e prints: diga o que a imagem contém e o OCR monta o resultado certo — "
+                    "uma tabela em colunas, código com os espaços preservados ou texto simples."),
         Option("pdf_layout", "PDF: análise de layout (títulos, tabelas)", "bool", True),
         Option("pdf_columns", "PDF: detectar várias colunas", "bool", True,
                help="Lê cada coluna inteira antes de passar para a próxima (artigos, jornais)."),

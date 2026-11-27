@@ -233,14 +233,24 @@ def _strikethrough(html: str) -> str:
     return "".join(out)
 
 
-def markdown_to_html(md: str, toc: bool = False) -> str:
-    """Markdown -> fragmento HTML (biblioteca `markdown`; sem ela, usa o Qt)."""
+def markdown_to_html(md: str, toc: bool = False, highlight: bool = False) -> str:
+    """Markdown -> fragmento HTML (biblioteca `markdown`; sem ela, usa o Qt).
+    `highlight`: blocos de código coloridos (Pygments, cores embutidas — funciona no Qt e no HTML)."""
     md = _fix_list_indent(md)
     try:
         import markdown as mdlib
 
         exts = ["extra", "sane_lists"] + (["toc"] if toc else [])
-        body = _strikethrough(mdlib.markdown(md, extensions=exts, output_format="html"))
+        cfg = {}
+        if highlight:
+            try:
+                import pygments  # noqa: F401
+
+                exts.append("codehilite")
+                cfg = {"codehilite": {"noclasses": True, "guess_lang": False, "pygments_style": "default"}}
+            except ImportError:
+                pass
+        body = _strikethrough(mdlib.markdown(md, extensions=exts, extension_configs=cfg, output_format="html"))
         if toc:
             conv = mdlib.Markdown(extensions=["extra", "toc"])
             conv.convert(md)
@@ -260,7 +270,7 @@ def html_page(md: str, title: str = "", toc: bool = False) -> str:
     return (f'<!DOCTYPE html>\n<html lang="pt-BR"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1">'
             f"<title>{html_lib.escape(title)}</title><style>{CSS}</style></head>\n"
-            f"<body>\n{markdown_to_html(md, toc)}\n</body></html>\n")
+            f"<body>\n{markdown_to_html(md, toc, highlight=True)}\n</body></html>\n")
 
 
 def _native_html(md: str, target: Path, opts: dict) -> None:

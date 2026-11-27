@@ -127,6 +127,11 @@ python run.py
 
 | Recurso | Como usar |
 |---|---|
+| **Sumário clicável** | Ao lado do texto aparecem os títulos do documento; clique para ir até eles (Exibir > Sumário, Ctrl+Shift+O) |
+| **Prévia enquanto converte** | Em PDFs grandes, o texto das páginas já lidas aparece enquanto o resto converte (provisório; o texto final, com títulos e tabelas, vem ao terminar) |
+| **Ler imagem como tabela ou código** | Botão direito numa foto/print da lista > **Ler esta imagem como tabela / código / texto corrido**: o OCR monta colunas de tabela ou mantém a indentação do código |
+| **Comparar duas versões** | Ferramentas > Comparar duas versões: escolha a versão antiga e a nova (PDF, Word, Markdown…) e veja o que saiu, entrou ou mudou, palavra por palavra; salva um relatório em HTML |
+| **Código colorido** | Blocos de código aparecem coloridos na Visualização e no HTML exportado |
 | **Colar e converter** | Copie um trecho de uma página da web, do Word ou de um e-mail e use **Colar** (Ctrl+Shift+V): vira Markdown na hora. Uma imagem copiada (print de tela) passa pelo OCR |
 | **Copiar para IA** | Botão **Para IA** (Ctrl+Alt+C): texto enxuto (sem imagens e comentários), contagem de *tokens* e divisão em partes que cabem no ChatGPT, Claude ou Gemini — cada parte avisa o assistente para esperar a última |
 | **Word no padrão ABNT** | **Exportar** > DOCX > Modelo do Word: **ABNT** — Times New Roman 12, margens 3/2 cm, espaçamento 1,5, recuo de parágrafo, citações longas recuadas, seções numeradas e número de página |

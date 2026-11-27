@@ -28,6 +28,7 @@ _SINK: contextvars.ContextVar[Any] = contextvars.ContextVar("markinho_sink", def
 # avisos com página (para “revise aqui”), progresso por página e pedido de parada
 _NOTES: contextvars.ContextVar[Any] = contextvars.ContextVar("markinho_notes", default=None)
 _PROGRESS: contextvars.ContextVar[Any] = contextvars.ContextVar("markinho_progress", default=None)
+_PARTIAL: contextvars.ContextVar[Any] = contextvars.ContextVar("markinho_partial", default=None)
 _CANCEL: contextvars.ContextVar[Any] = contextvars.ContextVar("markinho_cancel", default=None)
 _PAGES: contextvars.ContextVar[Any] = contextvars.ContextVar("markinho_pages", default=None)
 
@@ -54,6 +55,16 @@ def record_page_starts(starts: list[tuple[int, str]]) -> None:
     box = _PAGES.get()
     if box is not None:
         box[:] = starts
+
+
+def report_partial(page: int, text: str) -> None:
+    """Texto provisório de uma página já lida (prévia enquanto o resto converte)."""
+    cb = _PARTIAL.get()
+    if cb is not None:
+        try:
+            cb(page, text)
+        except Exception:  # noqa: BLE001
+            pass
 
 
 def report_progress(done: int, total: int) -> None:
@@ -166,7 +177,8 @@ def convert_native(path: Path, opts: dict[str, Any] | None = None) -> str:
 
 def convert(path: str | Path, engine: str = "auto", engine_options: dict[str, Any] | None = None,
             fix: Any = None, output: Any = None, fallback: bool | None = None,
-            progress: Callable[[int, int], None] | None = None, cancel: Any = None) -> ConversionResult:
+            progress: Callable[[int, int], None] | None = None, cancel: Any = None,
+            partial: Callable[[int, str], None] | None = None) -> ConversionResult:
     """Converte `path` para Markdown.
 
     engine:          "auto" ou o id de um motor (veja `engines.ENGINES`).
@@ -177,17 +189,19 @@ def convert(path: str | Path, engine: str = "auto", engine_options: dict[str, An
                      (padrão: sim no modo automático).
     progress:        função (feitas, total) chamada a cada página (motor nativo).
     cancel:          `threading.Event`; quando ligado, a conversão para na próxima página.
+    partial:         função (página, texto provisório) chamada a cada página lida (PDF nativo).
     """
     from .engines import ENGINES, pick_engine
 
     if fallback is None:
         fallback = engine == "auto"
-    t_prog, t_cancel = _PROGRESS.set(progress), _CANCEL.set(cancel)
+    t_prog, t_cancel, t_part = _PROGRESS.set(progress), _CANCEL.set(cancel), _PARTIAL.set(partial)
     try:
         return _convert_with_fallback(path, engine, engine_options, fix, output, fallback)
     finally:
         _PROGRESS.reset(t_prog)
         _CANCEL.reset(t_cancel)
+        _PARTIAL.reset(t_part)
 
 
 def _convert_with_fallback(path, engine, engine_options, fix, output, fallback) -> ConversionResult:

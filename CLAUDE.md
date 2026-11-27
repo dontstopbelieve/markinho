@@ -70,6 +70,9 @@ markinho/
   diagnostics.py   relatório de erro: sistema, configurações, erros com a configuração usada (sem conteúdo)
   anonymize.py     anonimizar: CPF/CNPJ/PIS… (dígito verificador), e-mail, telefone, nomes com pista, lista,
                    metadados, EXIF das imagens (OutputOptions.anon; aplicado em finalize_result)
+  outline.py       títulos do Markdown (painel Sumário)
+  compare.py       comparar duas versões (parágrafos e palavras; relatório HTML)
+  support.py       Apoie o Markinho: Pix e agradecimento único aos 100/1.000 documentos
   privacy.py       texto de privacidade (Ajuda > Privacidade); PRIVACIDADE.md é cópia (teste confere)
   watch.py         pasta monitorada (QFileSystemWatcher + varredura)
   gui_tools.py     janelas: Para IA, Dividir, Pasta monitorada, Relatório de erro, Assistente inicial

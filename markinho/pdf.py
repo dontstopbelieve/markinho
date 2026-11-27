@@ -425,7 +425,7 @@ def _is_stamp(text: str) -> bool:
 def _layout_pdf(path: Path) -> str:
     import pdfplumber
 
-    from .core import check_cancel, report_progress, warn
+    from .core import check_cancel, report_partial, report_progress, warn
     from .ocr import mean_confidence
 
     from .converters import md_table
@@ -531,7 +531,11 @@ def _layout_pdf(path: Path) -> str:
                 empty_pages.append(i + 1)
             if m_top or m_bot:
                 blocks = [b for b in blocks if b["top"] >= H * m_top and b["bottom"] <= H * (1 - m_bot)]
-            pages.append((i, reading_order(blocks, W, columns)))
+            ordered = reading_order(blocks, W, columns)
+            pages.append((i, ordered))
+            # prévia: texto provisório da página (títulos e tabelas são arrumados no fim)
+            report_partial(i + 1, "\n\n".join(b["text"] for b in ordered
+                                               if b.get("kind") != "image" and b.get("text")))
         meta_title = (pdf.metadata or {}).get("Title")
         report_progress(len(idx), len(idx))
     if weak_ocr:
@@ -634,7 +638,23 @@ def convert_image(path: Path) -> str:
         if img.width < 1500:
             scale = min(3.0, 1500 / max(img.width, 1))
             img = img.resize((int(img.width * scale), int(img.height * scale)))
+        kind = option("image_mode", "auto")
+        if kind == "table":                       # “Ler imagem como tabela”
+            from .converters import md_table
+
+            rows = ocr.words_to_table(ocr.ocr_words(img, backend, lang))
+            parts.append(md_table(rows) if len(rows) >= 1 and max(len(r) for r in rows) >= 2
+                         else "\n".join(" ".join(r) for r in rows) or "_Nenhum texto reconhecido na imagem._")
+            continue
+        if kind == "code":                        # “Ler imagem como código” (mantém espaços)
+            code = ocr.ocr_code(img, backend, lang)
+            parts.append(f"```\n{code}\n```" if code.strip() else "_Nenhum texto reconhecido na imagem._")
+            continue
         segs = ocr.ocr_segments(img, backend, lang, 1 / scale)
+        if kind == "text":                        # texto corrido, sem detectar títulos
+            text = "\n".join(s["text"] for s in sorted(segs, key=lambda s: (s["top"], s["x0"])))
+            parts.append(text or "_Nenhum texto reconhecido na imagem._")
+            continue
         conf = ocr.mean_confidence(segs)
         if conf is not None and conf < 70:
             from .core import warn

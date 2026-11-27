@@ -44,6 +44,7 @@ class Entry:
     queued: bool = False    # na fila, aguardando o botão "Converter"
     custom: str = ""        # nome dado pelo usuário (Renomear / F2)
     progress: tuple[int, int] | None = None   # páginas feitas / total (PDF)
+    partial: list | None = None               # prévia: [(página, texto provisório)] enquanto converte
 
 
 # --------------------------------------------------------------------------- #
@@ -53,6 +54,7 @@ class _Signals(QObject):
     done = Signal(str, int, object)    # caminho, geração, ConversionResult
     failed = Signal(str, int, str)     # caminho, geração, mensagem
     progress = Signal(str, int, int, int)   # caminho, geração, feitas, total
+    partial = Signal(str, int, int, str)    # caminho, geração, página, texto provisório
 
 
 class _ConvertTask(QRunnable):
@@ -70,9 +72,12 @@ class _ConvertTask(QRunnable):
         def prog(done, total):
             self.signals.progress.emit(self.path, self.gen, done, total)
 
+        def part(page, text):
+            self.signals.partial.emit(self.path, self.gen, page, text)
+
         try:
             res = convert(self.path, self.engine, self.opts, self.fix, self.output, fallback=self.fallback,
-                          progress=prog, cancel=self.cancel)
+                          progress=prog, cancel=self.cancel, partial=part)
             self.signals.done.emit(self.path, self.gen, res)
         except ConversionError as exc:
             from .core import CANCELLED
@@ -1827,6 +1832,7 @@ class MainWindow(QMainWindow):
         self.pool = QThreadPool(self)          # conversões leves: limite definido pelo usuário
         self.pool.setMaxThreadCount(int(self.settings.value("queue/threads", min(4, _os.cpu_count() or 2))))
         self.entries: dict[str, Entry] = {}
+        self._image_mode: dict[str, str] = {}   # “Ler esta imagem como…” escolhido por arquivo
         self.gen: dict[str, int] = {}
         self._tasks: dict[str, _ConvertTask] = {}
         self._loading = False
@@ -1992,6 +1998,7 @@ class MainWindow(QMainWindow):
         tool_menu.addAction("Assistentes de IA (MCP)…", lambda: McpDialog(self).exec())
         tool_menu.addSeparator()
         tool_menu.addAction("Anonimizar um arquivo Markdown…", self.anonymize_file)
+        tool_menu.addAction("Comparar duas versões…", self.compare_versions)
         for text, slot in extra:
             tool_menu.addAction(text, slot)
         tool_menu.addSeparator()
@@ -2039,6 +2046,15 @@ class MainWindow(QMainWindow):
             if key:
                 a.setShortcut(key)
                 a.setShortcutContext(Qt.WidgetWithChildrenShortcut)
+            self.list.addAction(a)
+        # imagens: “Ler esta imagem como…” (tabela, código, texto) — reconverte com essa escolha
+        sep = QAction(self.list)
+        sep.setSeparator(True)
+        self.list.addAction(sep)
+        for text, mode in (("Ler esta imagem como tabela", "table"), ("Ler esta imagem como código", "code"),
+                           ("Ler esta imagem como texto corrido", "text"), ("Ler esta imagem automaticamente", "auto")):
+            a = QAction(text, self.list)
+            a.triggered.connect(lambda _c=False, m=mode: self.read_image_as(m))
             self.list.addAction(a)
         self.list.itemDoubleClicked.connect(lambda _it: self.rename_selected())
         self.list.currentItemChanged.connect(self._show_item)
@@ -2171,11 +2187,87 @@ class MainWindow(QMainWindow):
         self.compare_split.addWidget(self.tabs)
         self.compare_split.setStretchFactor(0, 1)
         self.compare_split.setStretchFactor(1, 1)
-        cv.addWidget(self.compare_split, 1)
+        # ---- sumário (títulos clicáveis) à esquerda do texto ----
+        self.outline = QListWidget()
+        self.outline.setToolTip("Sumário: clique num título para ir até ele no texto")
+        self.outline.itemClicked.connect(self._go_heading)
+        self.outline.setMinimumWidth(120)
+        ow = QWidget()
+        ol = QVBoxLayout(ow)
+        ol.setContentsMargins(0, 0, 0, 0)
+        ol.addWidget(QLabel("<b>Sumário</b>"))
+        ol.addWidget(self.outline, 1)
+        self.outline_box = ow
+        self.outline_split = QSplitter()
+        self.outline_split.addWidget(ow)
+        self.outline_split.addWidget(self.compare_split)
+        self.outline_split.setStretchFactor(1, 1)
+        self.outline_split.setSizes([200, 800])
+        self.outline_split.setCollapsible(1, False)
+        self._outline_timer = QTimer(self, singleShot=True, interval=400, timeout=self._refresh_outline)
+        self.editor.textChanged.connect(lambda: self._outline_timer.start())
+        ow.setVisible(False)
+        cv.addWidget(self.outline_split, 1)
 
         split = QSplitter()
         split.addWidget(left)
-        split.addWidget(center)
+        # ---- tela de boas-vindas (lista vazia) e barra de etapas ----
+        from PySide6.QtWidgets import QStackedWidget
+
+        welcome = QWidget()
+        welcome.setObjectName("welcome")
+        wl = QVBoxLayout(welcome)
+        wl.addStretch(1)
+        ip = icon_path()
+        if ip:
+            logo = QLabel()
+            from PySide6.QtGui import QPixmap
+
+            logo.setPixmap(QPixmap(str(ip)).scaled(96, 96, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            logo.setAlignment(Qt.AlignCenter)
+            wl.addWidget(logo)
+        wt = QLabel("<h2>Arraste seus documentos para cá</h2>"
+                    "<p>PDF, Word, Excel, PowerPoint, páginas da web, e-books, fotos e escaneados.<br>"
+                    "O Markinho transforma em texto limpo, pronto para salvar, copiar para a IA ou exportar.</p>")
+        wt.setAlignment(Qt.AlignCenter)
+        wt.setWordWrap(True)
+        wl.addWidget(wt)
+        brow = QHBoxLayout()
+        brow.addStretch(1)
+        b_pick = QPushButton("  Escolher arquivos…  ")
+        b_pick.setStyleSheet("QPushButton { background: #1565C0; color: white; font-weight: bold; padding: 10px 18px;"
+                             " border-radius: 6px; font-size: 14px; } QPushButton:hover { background: #0D47A1; }")
+        b_pick.clicked.connect(self.add_files_dialog)
+        brow.addWidget(b_pick)
+        b_folder = QPushButton("Uma pasta inteira…")
+        b_folder.clicked.connect(self.add_folder_dialog)
+        brow.addWidget(b_folder)
+        b_write = QPushButton("Escrever do zero")
+        b_write.clicked.connect(self.new_document)
+        brow.addWidget(b_write)
+        brow.addStretch(1)
+        wl.addLayout(brow)
+        tips = QLabel("Dicas: <b>Ctrl+Shift+V</b> cola e converte um texto ou imagem copiados · no Windows, clique "
+                      "com o botão direito num arquivo › <b>Markinho</b> · 🔒 nada sai do seu computador")
+        tips.setAlignment(Qt.AlignCenter)
+        tips.setWordWrap(True)
+        tips.setStyleSheet("color: palette(window-text); font-size: 12px; margin-top: 18px;")
+        wl.addWidget(tips)
+        wl.addStretch(2)
+        welcome.setStyleSheet("QWidget#welcome { border: 2px dashed palette(mid); border-radius: 12px; }")
+        self.center_stack = QStackedWidget()
+        self.center_stack.addWidget(welcome)
+        self.center_stack.addWidget(center)
+        self.steps = QLabel()
+        self.steps.setTextFormat(Qt.RichText)
+        self.steps.setAlignment(Qt.AlignCenter)
+        self.steps.setStyleSheet("padding: 4px; font-size: 13px;")
+        cwrap = QWidget()
+        cwl = QVBoxLayout(cwrap)
+        cwl.setContentsMargins(6, 6, 6, 0)
+        cwl.addWidget(self.steps)
+        cwl.addWidget(self.center_stack, 1)
+        split.addWidget(cwrap)
         split.setStretchFactor(1, 1)
         split.setSizes([290, 700])
         left.setMinimumWidth(120)
@@ -2218,6 +2310,12 @@ class MainWindow(QMainWindow):
         a_cmp.toggled.connect(self.compare_btn.setChecked)
         self.compare_btn.toggled.connect(a_cmp.setChecked)
         vm.addAction(a_cmp)
+        self.act_outline = QAction("Sumário", self, checkable=True)
+        self.act_outline.setShortcut("Ctrl+Shift+O")
+        self.act_outline.setToolTip("Mostra os títulos do documento; clique para ir até eles")
+        self.act_outline.setChecked(self.settings.value("ui/outline", True, type=bool))
+        self.act_outline.toggled.connect(lambda v: (self.settings.setValue("ui/outline", v), self._refresh_outline()))
+        vm.addAction(self.act_outline)
         vm.addSeparator()
         for text, step, key in (("Aumentar o texto", 1, "Ctrl++"), ("Diminuir o texto", -1, "Ctrl+-"),
                                 ("Tamanho normal do texto", 0, "Ctrl+0")):
@@ -2245,6 +2343,12 @@ class MainWindow(QMainWindow):
         self.watch_label = QLabel()
         self.watch_label.setStyleSheet("color: palette(window-text);")
         self.statusBar().addPermanentWidget(self.watch_label)
+        self.offline_label = QLabel("🔒 Offline — seus documentos não saem do computador")
+        self.offline_label.setStyleSheet("color: #1b5e20; font-weight: bold; padding: 0 8px;")
+        self.offline_label.setToolTip("Toda a conversão, o OCR, a anonimização e a exportação acontecem aqui, no "
+                                      "seu computador. O Markinho não envia documentos, textos nem nomes de "
+                                      "arquivos para a internet. Detalhes em Ajuda > Privacidade.")
+        self.statusBar().addPermanentWidget(self.offline_label)
         self.statusBar().showMessage("Pronto")
         self.setAcceptDrops(True)               # soltar arquivos em qualquer lugar da janela
         self.panel.set_simple(self.act_simple.isChecked())
@@ -2330,6 +2434,7 @@ class MainWindow(QMainWindow):
     def _start(self, path: str) -> None:
         entry = self.entries[path]
         entry.busy, entry.error, entry.queued = True, "", False
+        entry.partial = []
         self.gen[path] = self.gen.get(path, 0) + 1
         eid = self.panel.engine_id()
         opts = self.panel.engine_options()
@@ -2342,12 +2447,15 @@ class MainWindow(QMainWindow):
                 eid, opts = chosen.id, self.panel.engine_options(chosen.id)
             except RuntimeError:
                 pass
+        if path in self._image_mode:            # “Ler esta imagem como…”
+            eid, opts = "native", {**self.panel.engine_options("native"), "image_mode": self._image_mode[path]}
         task = _ConvertTask(path, self.gen[path], eid, opts, self.panel.fix_options(), self.panel.output_options(),
                             fallback=self.panel.engine_id() == AUTO)
         task.setAutoDelete(False)
         task.signals.done.connect(self._on_done)
         task.signals.failed.connect(self._on_failed)
         task.signals.progress.connect(self._on_progress)
+        task.signals.partial.connect(self._on_partial)
         self._tasks[path] = task
         heavy = eid in ENGINES and ENGINES[eid].heavy
         (self.heavy_pool if heavy else self.pool).start(task)
@@ -2414,6 +2522,21 @@ class MainWindow(QMainWindow):
         if ok:
             e.custom = "" if text.strip() in ("", self._stem(e)) else text.strip()
             self._decorate(item)
+
+    def read_image_as(self, mode: str) -> None:
+        """Reconverte as imagens selecionadas dizendo ao OCR o que elas contêm."""
+        from .converters import IMAGE_EXTS
+
+        keys = [it.data(ROLE_PATH) for it in self.list.selectedItems()
+                if Path(it.data(ROLE_PATH)).suffix.lower() in IMAGE_EXTS]
+        if not keys:
+            self.statusBar().showMessage("Selecione uma imagem (foto ou print) na lista.", 4000)
+            return
+        for k in keys:
+            self._image_mode[k] = mode
+            if not self.entries[k].busy:
+                self.entries[k].edited = False
+                self._start(k)
 
     def reconvert(self, all_items: bool) -> None:
         items = [self.list.item(i) for i in range(self.list.count())] if all_items else self.list.selectedItems()
@@ -2496,12 +2619,35 @@ class MainWindow(QMainWindow):
         e = self.entries[path]
         e.result, e.error, e.busy, e.edited, e.text = result, "", False, False, result.markdown
         e.progress = None
+        e.partial = None
         from .support import count_conversion
 
         milestone = count_conversion(self.settings)
         if milestone:
             self._support_due = milestone          # mostra quando terminar o que está convertendo
         self._after_update(path)
+
+    PARTIAL_HEADER = ("<!-- PRÉVIA: texto provisório das páginas já lidas. Títulos, tabelas e o texto final "
+                      "aparecem quando a conversão terminar. -->")
+
+    def _on_partial(self, path: str, gen: int, page: int, text: str) -> None:
+        e = self.entries.get(path)
+        if e is None or gen != self.gen.get(path) or not e.busy:
+            return
+        if e.partial is None:
+            e.partial = []
+        e.partial.append((page, text))
+        item = self.list.currentItem()
+        if item is not None and item.data(ROLE_PATH) == path:
+            from PySide6.QtGui import QTextCursor
+
+            self._loading = True
+            if self.editor.document().isEmpty():
+                self.editor.setPlainText(self.PARTIAL_HEADER)
+            cur = self.editor.textCursor()
+            cur.movePosition(QTextCursor.End)
+            cur.insertText(f"\n\n<!-- página {page} -->\n\n{text}")
+            self._loading = False
 
     def _on_progress(self, path: str, gen: int, done: int, total: int) -> None:
         e = self.entries.get(path)
@@ -2521,6 +2667,7 @@ class MainWindow(QMainWindow):
         self._tasks.pop(path, None)
         e = self.entries[path]
         e.error, e.busy, e.progress = message, False, None
+        e.partial = None
         self._after_update(path)
 
     def _after_update(self, path: str) -> None:
@@ -2533,6 +2680,7 @@ class MainWindow(QMainWindow):
         self._update_buttons()
 
     def _update_progress(self) -> None:
+        self._update_steps()
         if hasattr(self, "act_cancel"):
             self.act_cancel.setEnabled(any(x.busy for x in self.entries.values()))
         total = len(self.entries)
@@ -2729,12 +2877,17 @@ class MainWindow(QMainWindow):
                               "<b>Converter</b> (F5) quando terminar de adicionar arquivos.")
         elif e.busy:
             self.editor.clear()
-            self.info.setText(f"Convertendo {Path(e.path).name}…")
+            if e.partial:                        # prévia das páginas já lidas
+                self.editor.setPlainText(self.PARTIAL_HEADER + "".join(
+                    f"\n\n<!-- página {p} -->\n\n{t}" for p, t in e.partial))
+            self.info.setText(f"Convertendo {Path(e.path).name}… (prévia: o texto final aparece ao terminar)")
         elif e.error:
             self.editor.clear()
             self.info.setText(f"<span style='color:#c0392b'>⚠ {html.escape(e.error)}</span>")
         else:
             self.editor.setPlainText(e.text)
+            if self.act_simple.isChecked() and e.result.engine != "editor":
+                self.tabs.setCurrentWidget(self.preview)     # modo simples: o texto formatado primeiro
             where = Path(e.path).name if not e.path.startswith("<") else "Documento novo (não salvo)"
             self.info.setText(f"<b>{html.escape(where)}</b>  •  {html.escape(e.result.converter)}  •  "
                               f"{num_br(len(e.text))} caracteres" + ("  •  ✎ editado" if e.edited else ""))
@@ -2744,6 +2897,41 @@ class MainWindow(QMainWindow):
         self._loading = False
         self._refresh_views()
         self._update_buttons()
+
+    def _refresh_outline(self) -> None:
+        """Sumário com os títulos do texto; só aparece se ligado e se houver ao menos 2 títulos."""
+        from .outline import headings
+
+        heads = headings(self.editor.toPlainText())
+        self.outline.clear()
+        for level, title, line in heads:
+            it = QListWidgetItem(("    " * (level - 1)) + title)
+            it.setData(Qt.UserRole, line)
+            it.setToolTip(title)
+            if level == 1:
+                f = it.font()
+                f.setBold(True)
+                it.setFont(f)
+            self.outline.addItem(it)
+        show = hasattr(self, "act_outline") and self.act_outline.isChecked() and len(heads) >= 2
+        self.outline_box.setVisible(show)
+
+    def _go_heading(self, item) -> None:
+        line = item.data(Qt.UserRole)
+        title = item.toolTip()
+        if self.tabs.currentWidget() is self.preview:
+            from PySide6.QtGui import QTextCursor
+
+            self.preview.moveCursor(QTextCursor.Start)
+            self.preview.find(title)
+            return
+        from PySide6.QtGui import QTextCursor
+
+        block = self.editor.document().findBlockByNumber(int(line))
+        cur = QTextCursor(block)
+        self.editor.setTextCursor(cur)
+        self.editor.verticalScrollBar().setValue(int(line))      # QPlainTextEdit rola em linhas
+        self.editor.setFocus()
 
     def _editor_changed(self) -> None:
         if self._loading:
@@ -2770,7 +2958,13 @@ class MainWindow(QMainWindow):
         if w is self.preview:
             e = self._current()
             self.preview.assets = e.result.assets if e is not None and e.result is not None else {}
-            self.preview.setMarkdown(self.editor.toPlainText())
+            text = self.editor.toPlainText()
+            if "```" in text or "~~~" in text:          # código: colorido (Pygments)
+                from .exporter import markdown_to_html
+
+                self.preview.setHtml(markdown_to_html(text, highlight=True))
+            else:
+                self.preview.setMarkdown(text)
         elif w is self.fixes:
             self.fixes.setHtml(self._fixes_html())
 
@@ -2835,8 +3029,32 @@ class MainWindow(QMainWindow):
         self.act_cancel.setEnabled(any(x.busy for x in entries))
         # destaque azul no próximo passo: “Converter” se há fila; senão “Salvar”
         pending = any(x.queued and not x.busy for x in entries)
+        self._update_steps(pending)
         self._set_primary(self.act_convert, pending)
         self._set_primary(self.act_save, not pending and self.act_save.isEnabled())
+
+    def _update_steps(self, pending: bool | None = None) -> None:
+        """Barra ① Adicionar → ② Converter → ③ Salvar e tela de boas-vindas com a lista vazia."""
+        if not hasattr(self, "steps"):
+            return
+        entries = list(self.entries.values())
+        if pending is None:
+            pending = any(x.queued and not x.busy for x in entries)
+        busy = any(x.busy for x in entries)
+        done = any(x.result is not None and not x.busy for x in entries)
+        step = 1 if not entries else 2 if (pending or busy or not done) else 3
+        names = ["① Adicionar documentos", "② Converter" + (" (em andamento…)" if busy else ""),
+                 "③ Salvar, copiar ou exportar"]
+        parts = []
+        for k, n in enumerate(names, 1):
+            if k == step:
+                parts.append(f"<span style='background:#1565C0;color:white;padding:2px 8px;'><b>&nbsp;{n}&nbsp;</b></span>")
+            elif k < step:
+                parts.append(f"<span style='color:#2e7d32'>✓ {n}</span>")
+            else:
+                parts.append(f"<span style='color:gray'>{n}</span>")
+        self.steps.setText("&nbsp;&nbsp;→&nbsp;&nbsp;".join(parts))
+        self.center_stack.setCurrentIndex(0 if not entries else 1)
 
     def _set_primary(self, act, on: bool) -> None:
         w_ = self._toolbar.widgetForAction(act) if hasattr(self, "_toolbar") else None
@@ -3258,6 +3476,13 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Anonimizar", f"Não foi possível ler o arquivo: {exc}")
             return
         AnonDialog(self, self.settings, text, Path(path)).exec()
+
+    def compare_versions(self) -> None:
+        from .gui_tools import CompareDialog
+
+        e = self._current()
+        cur_path = e.path if e is not None and e.text and not e.path.startswith("<") else ""
+        CompareDialog(self, self.settings, cur_path, e.text if cur_path else "").exec()
 
     def support(self, milestone: int | None = None) -> None:
         from .gui_tools import SupportDialog

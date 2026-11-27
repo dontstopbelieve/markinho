@@ -778,3 +778,153 @@ class SupportDialog(QDialog):
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         lay.addWidget(bb)
+
+
+# --------------------------------------------------------------------------- #
+# Comparar duas versões
+# --------------------------------------------------------------------------- #
+def _doc_text(path: str, settings: QSettings) -> str:
+    """Texto em Markdown de um arquivo: lido direto (.md/.txt) ou convertido com as configurações salvas."""
+    p = Path(path)
+    if p.suffix.lower() in (".md", ".markdown", ".txt"):
+        return p.read_text(encoding="utf-8", errors="replace")
+    import threading
+
+    from PySide6.QtWidgets import QApplication
+
+    from .core import convert
+    from .quick import SettingsSnapshot, saved_job
+
+    snap = SettingsSnapshot(settings)            # nunca ler QSettings fora da thread da interface
+    box: dict = {}
+
+    def work():
+        try:
+            eid, opts, fix, output, fallback = saved_job(snap, p)
+            output.images = "none"
+            box["md"] = convert(p, eid, opts, fix, output, fallback=fallback).markdown
+        except Exception as exc:  # noqa: BLE001
+            box["err"] = str(exc)
+
+    t = threading.Thread(target=work, daemon=True)
+    t.start()
+    while t.is_alive():
+        QApplication.processEvents()
+        t.join(0.05)
+    if "err" in box:
+        raise RuntimeError(box["err"])
+    return box["md"]
+
+
+class CompareDialog(QDialog):
+    """Ferramentas > Comparar duas versões: o que entrou, saiu ou mudou entre dois documentos."""
+
+    def __init__(self, parent, settings: QSettings, current_path: str = "", current_text: str = ""):
+        from PySide6.QtWidgets import QTextBrowser
+
+        super().__init__(parent)
+        self.settings = settings
+        self.setWindowTitle("Comparar duas versões")
+        self.resize(900, 700)
+        self._texts: dict[str, str] = {}
+        self._html = ""
+        lay = QVBoxLayout(self)
+        lay.addWidget(_hint("Escolha a versão <b>antiga</b> e a <b>nova</b> (PDF, Word, Markdown…). O Markinho converte "
+                            "as duas e mostra o que <b>saiu</b> (riscado em vermelho), o que <b>entrou</b> (em verde) "
+                            "e os trechos alterados, palavra por palavra. Tudo no seu computador."))
+        form = QFormLayout()
+        self.path_a, self.path_b = QLineEdit(), QLineEdit()
+        for edit, label, key in ((self.path_a, "Versão antiga:", "a"), (self.path_b, "Versão nova:", "b")):
+            row = QHBoxLayout()
+            edit.setPlaceholderText("Escolha um arquivo…")
+            b = QPushButton("Escolher…")
+            b.clicked.connect(lambda _c=False, e=edit: self._pick(e))
+            row.addWidget(edit, 1)
+            row.addWidget(b)
+            form.addRow(label, row)
+        lay.addLayout(form)
+        if current_text:
+            self.path_a.setText(current_path or "(documento aberto)")
+            self._texts[self.path_a.text()] = current_text
+        top = QHBoxLayout()
+        self.b_go = QPushButton("Comparar")
+        self.b_go.setDefault(True)
+        self.b_go.clicked.connect(self.run)
+        self.show_equal = QCheckBox("Mostrar também os trechos iguais")
+        self.show_equal.toggled.connect(self._render)
+        top.addWidget(self.b_go)
+        top.addWidget(self.show_equal)
+        top.addStretch()
+        lay.addLayout(top)
+        self.summary = QLabel()
+        self.summary.setWordWrap(True)
+        lay.addWidget(self.summary)
+        self.view = QTextBrowser()
+        lay.addWidget(self.view, 1)
+        bb = QDialogButtonBox()
+        self.b_save = bb.addButton("Salvar relatório (HTML)…", QDialogButtonBox.ActionRole)
+        self.b_save.setEnabled(False)
+        self.b_save.clicked.connect(self._save)
+        bb.addButton("Fechar", QDialogButtonBox.RejectRole)
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+        self.comparison = None
+
+    def _pick(self, edit: QLineEdit) -> None:
+        from .gui import recall_dir, remember_dir
+
+        path, _ = QFileDialog.getOpenFileName(self, "Escolher versão", recall_dir(self.settings, "compare"))
+        if path:
+            remember_dir(self.settings, path, "compare")
+            edit.setText(path)
+
+    def _text(self, path: str) -> str:
+        if path in self._texts:
+            return self._texts[path]
+        self._texts[path] = _doc_text(path, self.settings)
+        return self._texts[path]
+
+    def run(self) -> None:
+        from PySide6.QtCore import Qt as _Qt
+        from PySide6.QtWidgets import QApplication
+
+        from .compare import compare
+
+        a, b = self.path_a.text().strip(), self.path_b.text().strip()
+        if not a or not b:
+            QMessageBox.information(self, "Comparar", "Escolha as duas versões.")
+            return
+        self.summary.setText("Convertendo e comparando…")
+        self.b_go.setEnabled(False)
+        QApplication.setOverrideCursor(_Qt.WaitCursor)
+        try:
+            self.comparison = compare(self._text(a), self._text(b))
+        except Exception as exc:  # noqa: BLE001
+            QApplication.restoreOverrideCursor()
+            self.b_go.setEnabled(True)
+            self.summary.setText("")
+            QMessageBox.warning(self, "Comparar", f"Não foi possível ler um dos arquivos:\n\n{exc}")
+            return
+        QApplication.restoreOverrideCursor()
+        self.b_go.setEnabled(True)
+        self._render()
+
+    def _render(self, *_):
+        from .compare import to_html
+
+        if self.comparison is None:
+            return
+        self.summary.setText(f"<b>{self.comparison.summary()}</b>")
+        self._html = to_html(self.comparison, Path(self.path_a.text()).name, Path(self.path_b.text()).name,
+                             self.show_equal.isChecked())
+        self.view.setHtml(self._html)
+        self.b_save.setEnabled(True)
+
+    def _save(self) -> None:
+        from .gui import recall_dir, remember_dir
+
+        start = str(Path(recall_dir(self.settings, "compare")) / "comparacao.html")
+        path, _ = QFileDialog.getSaveFileName(self, "Salvar relatório", start, "Página HTML (*.html)")
+        if path:
+            remember_dir(self.settings, path, "compare")
+            Path(path).write_text(self._html, encoding="utf-8")

@@ -28,6 +28,7 @@ inspiraram ideias (markitdown, Marker, PyMuPDF4LLM, Unstructured, file2markdown)
 | Beautiful Soup | MIT | https://www.crummy.com/software/BeautifulSoup |
 | markdownify | MIT | https://github.com/matthewwithanm/python-markdownify |
 | Python-Markdown | BSD-3-Clause | https://github.com/Python-Markdown/markdown |
+| Pygments | BSD-2-Clause | https://pygments.org — código colorido na visualização e no HTML exportado |
 | mdformat, mdformat-gfm | MIT | https://github.com/hukkin/mdformat |
 | ftfy | Apache-2.0 | https://github.com/rspeer/python-ftfy |
 | Pillow | MIT-CMU (HPND) | https://python-pillow.org |

@@ -143,7 +143,7 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
       `.github/FUNDING.yml` (`github: dontstopbelieve`), seção “Apoie o Markinho” no README (opcional, sem
       obrigação de suporte ou atualização) e, se o dono quiser, Ajuda > Apoie o Markinho. **Pix** (chave aleatória)
       publicado no README em 27/11/2026, com QR Code em `markinho/resources/apoie-pix.png` (nome no código: MARKINHO).
-- [ ] **Ideias de usabilidade inspiradas na SoMark** (27/11/2026; só ideias, sem código nem o modelo OXR, cuja
+- [x] **Ideias de usabilidade inspiradas na SoMark** (todas implementadas em 27/11/2026) (27/11/2026; só ideias, sem código nem o modelo OXR, cuja
       licença tem restrição comercial; se alguma entrar, registrar a SoMark em `INSPIRED_BY`):
       1. Selo fixo “🔒 Offline: seus documentos não saíram do computador” na barra de status (pequeno; v3.0).
       2. Painel “Sumário” clicável com os títulos do documento convertido (médio; v3.0 ou 3.1).
@@ -159,7 +159,7 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
       Salvar em destaque azul, ícones próprios, botões secundários só com ícone em janela estreita),
       cabeçalho só com o nome do arquivo e números em pt-BR, painel em “Principal” + “Opções avançadas”
       (fechadas), correção de caracteres resumida, painel começa fechado em telas < 1280 px, textos sem jargão.
-- [ ] **UX nível C** (versão 3.1): tela vazia acolhedora com área grande para soltar arquivos, barra de etapas
+- [x] **UX nível C** (feito em 27/11/2026): tela vazia acolhedora com área grande para soltar arquivos, barra de etapas
       (Adicionar → Converter → Salvar), aba Visualização como inicial no modo simples.
 - [ ] **Testes de regressão com réplicas falsas** (plano de 16/11): tabela que quebra entre páginas,
       DOCX com caixas de texto/notas/comentários, XLSX com várias abas e células mescladas, PPTX com
