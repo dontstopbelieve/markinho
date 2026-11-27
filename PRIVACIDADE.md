@@ -20,6 +20,10 @@ de IA de um motor opcional — e mesmo aí nenhum documento é enviado.
   computador. Quando **você** cola esse texto ou usa a skill num assistente on-line (ChatGPT,
   Claude.ai, Gemini…), o conteúdo passa a ir para esse serviço, conforme as regras dele. Para
   documentos sigilosos, anonimize antes ou use um assistente que rode no seu computador.
+- Para **retomar lotes interrompidos**, o Markinho grava na pasta de saída um registro
+  (`.markinho-lote.json`) com impressões digitais (SHA-256) dos arquivos e das configurações — sem o
+  nome nem o caminho dos arquivos originais e sem o texto dos erros. A fila que faltava converter fica
+  nas configurações do usuário até o lote terminar.
 
 ## Anonimizar
 

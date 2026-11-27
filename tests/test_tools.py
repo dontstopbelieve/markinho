@@ -128,6 +128,20 @@ def test_watch_folder_converts_new_files_only(tmp_path, monkeypatch):
     assert [r.source.name for r in got] == ["novo.docx"] and not got[0].error
     assert (out / "novo.md").is_file() and not (out / "antigo.md").exists()
     assert "nota.md" not in {Path(p).name for p in candidates(inbox)}
+    # retomar: o que chegou com o Markinho fechado é convertido ao abrir; o antigo continua ignorado
+    shutil.copy(EX / "relatorio.docx", inbox / "chegou_fechado.docx")
+    w2 = FolderWatcher(inbox, out)
+    got.clear()
+    w2.converted.connect(got.append)
+    assert w2.start()
+    deadline = time.time() + 30
+    while not got and time.time() < deadline:
+        w2.scan()
+        app.processEvents()
+        time.sleep(0.2)
+    w2.stop()
+    assert [r.source.name for r in got] == ["chegou_fechado.docx"]
+    assert not (out / "antigo.md").exists() and not (out / "novo_2.md").exists()
 
 
 def test_diagnostics_hides_windows_user_name():

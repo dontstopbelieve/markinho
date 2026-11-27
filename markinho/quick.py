@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from .i18n import tr
 
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,6 +25,7 @@ class QuickResult:
     output: Path | None = None
     error: str = ""
     skipped: bool = False
+    unchanged: bool = False      # retomar: já convertido antes e sem mudanças (não foi refeito)
 
 
 def settings() -> QSettings:
@@ -136,16 +138,26 @@ def convert_here(path: str | Path, s: QSettings | None = None, index: int = 0,
                  progress=None, cancel=None) -> QuickResult:
     """Converte um arquivo para Markdown e grava ao lado do original (ou em `out_dir`, ou exatamente em
     `target`, quando o usuário escolheu nome e local). Nunca levanta exceção."""
+    from . import batch
     from .assets import write_assets
     from .core import convert
     from .naming import NameContext, plan, rename_assets
 
     s = s or settings()
     src = Path(path)
+    manifest = sha = cfg = None
     try:
         if not src.is_file():
             return QuickResult(src, error=tr("arquivo não encontrado"))
         eid, opts, fix, output, fallback = saved_job(s, src)
+        folder = Path(out_dir) if out_dir else src.parent
+        if not target and batch.enabled(s):
+            # retomar: o que já foi convertido para esta pasta, com estas configurações, e não mudou, é pulado
+            manifest = batch.Manifest(folder)
+            sha = batch.file_hash(src)
+            cfg = batch.job_key(eid, opts, fix, output, {"naming": vars(naming_options(s))})
+            if manifest.is_done(src, sha, cfg):
+                return QuickResult(src, folder / manifest.output_name(src, cfg), skipped=True, unchanged=True)
         ctx = {"origem": tr("botão direito / pasta monitorada"), "motor": eid, "opções do motor": dict(opts),
                "correção de caracteres": "ligada" if fix is not None else "desligada",
                "imagens": output.images, "perfil": output.profile}
@@ -158,22 +170,34 @@ def convert_here(path: str | Path, s: QSettings | None = None, index: int = 0,
             ctx = NameContext.from_result(src, title=title, engine=res.engine)
             nopts = naming_options(s)
             nopts.start = nopts.start + index            # {n} segue a ordem do lote
-            folder = Path(out_dir) if out_dir else src.parent
             folder.mkdir(parents=True, exist_ok=True)
-            planned = plan([ctx], nopts, folder)[0]
-            if planned.action == "skip":
-                return QuickResult(src, planned.path, skipped=True)
-            dest = planned.path
+            reserved = manifest.output_name(src, cfg) if manifest is not None else None
+            if reserved:                                 # retomando: grava por cima do que ficou pela metade
+                dest = folder / reserved
+            else:
+                planned = plan([ctx], nopts, folder)[0]
+                if planned.action == "skip":
+                    return QuickResult(src, planned.path, skipped=True)
+                dest = planned.path
+        if manifest is not None:
+            manifest.start(src, sha, cfg, dest.name)
         text, assets = res.markdown, res.assets
         if assets:
             text, assets = rename_assets(text, assets, dest.stem)
-        dest.write_text(text, encoding="utf-8")
+        batch.atomic_write(dest, text)
         if assets:
             write_assets(text, assets, dest.parent)
+        if manifest is not None:
+            manifest.finish(src, True)
         return QuickResult(src, dest)
     except PermissionError:
         return QuickResult(src, error=tr("sem permissão para gravar nesta pasta"))
     except Exception as exc:  # noqa: BLE001
+        if manifest is not None and sha:
+            try:
+                manifest.fail(src, sha, cfg, str(exc) or exc.__class__.__name__)
+            except OSError:
+                pass
         return _failed(src, exc, locals().get("ctx"))
 
 
@@ -192,7 +216,12 @@ def export_one(path: str | Path, fmt_id: str, target: str | Path, options: dict 
         md = src.read_text(encoding="utf-8", errors="replace")
         dest = Path(target)
         dest.parent.mkdir(parents=True, exist_ok=True)
-        export(md, dest, fmt_id, options or {}, base_dir=src.parent)
+        partial = dest.with_name(f".~{dest.stem}{dest.suffix}")      # trocado no fim: nunca fica pela metade
+        try:
+            export(md, partial, fmt_id, options or {}, base_dir=src.parent)
+            os.replace(partial, dest)
+        finally:
+            partial.unlink(missing_ok=True)
         return QuickResult(src, dest)
     except PermissionError:
         return QuickResult(src, error=tr("sem permissão para gravar nesta pasta"))
@@ -215,11 +244,17 @@ def _failed(src: Path, exc: Exception, ctx: dict | None = None) -> QuickResult:
 def summary(results: list[QuickResult]) -> tuple[str, str]:
     """(título, texto) do aviso final."""
     ok = [r for r in results if r.output and not r.skipped and not r.error]
-    skipped = [r for r in results if r.skipped]
+    unchanged = [r for r in results if r.unchanged]
+    skipped = [r for r in results if r.skipped and not r.unchanged]
     bad = [r for r in results if r.error]
+    if len(results) == 1 and unchanged:
+        return tr("Markinho: concluído"), tr("{0} já tinha sido convertido e não mudou: {1}").format(
+            unchanged[0].source.name, unchanged[0].output)
     if len(results) == 1 and ok:
         return tr("Markinho: concluído"), tr('{0} foi salvo em {1}').format(ok[0].output.name, ok[0].output.parent)
     parts = [tr('{0} arquivo(s) convertido(s)').format(len(ok))]
+    if unchanged:
+        parts.append(tr("{0} já convertido(s) antes e sem mudanças").format(len(unchanged)))
     if skipped:
         parts.append(tr('{0} pulado(s) (já existiam)').format(len(skipped)))
     if bad:

@@ -387,7 +387,7 @@ class MarkerEngine(Engine):
     description = (tr("PDF → Markdown de alta precisão (Datalab). OCR com Surya, equações em LaTeX, "
                    "tabelas, remoção de cabeçalhos/rodapés. Melhor com GPU; baixa modelos na 1ª vez."))
     install_hint = tr("pip install marker-pdf      (outros formatos: pip install marker-pdf[full])")
-    license = tr("GPL-3.0 (código) + licença própria dos modelos")
+    license = tr("Apache-2.0 (código) + licença própria dos modelos (restrição comercial)")
     heavy = True
     options = [
         Option("force_ocr", tr("Forçar OCR em todas as páginas"), "bool", False,

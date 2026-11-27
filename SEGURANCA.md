@@ -135,7 +135,12 @@ Revisão do pacote inteiro com a ferramenta de revisão do Claude Code. Corrigid
 - **Privacidade:** a janela e o texto de Privacidade avisam que, ao usar a skill ou o “Copiar para
   IA” num assistente on-line, o conteúdo vai para esse serviço.
 
-### 27/11/2026 — Lotes que retomam (--retomar) e tabelas entre páginas
+### 27/11/2026 — Lotes que retomam (terminal, botão direito, pasta monitorada, janela) e tabelas entre páginas
+
+- **Privacidade do registro:** as chaves são impressões digitais do caminho (não o caminho) e o texto dos
+  erros não é guardado — a pasta de saída pode ser compartilhada (inclusive depois de anonimizar) sem levar o
+  nome dos arquivos originais. Teste: `test_erro_fica_registrado_e_e_refeito`.
+- Exportações (janela, botão direito, terminal) e “Salvar todos” também gravam de forma atômica.
 
 - O registro do lote (`.markinho-lote.json`) fica na pasta de saída e pode ser mexido por qualquer um: o
   nome de saída guardado nele só é usado se for um nome de arquivo simples (sem barras, `..`, `:` nem ponto

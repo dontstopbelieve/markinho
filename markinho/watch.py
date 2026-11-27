@@ -1,7 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright (C) 2026 dontstopbelieve — Markinho
 """Pasta monitorada: todo arquivo novo que aparecer na pasta é convertido sozinho (enquanto o
-Markinho estiver aberto), com as configurações salvas, e o .md vai para a pasta de saída."""
+Markinho estiver aberto), com as configurações salvas, e o .md vai para a pasta de saída.
+
+Retomar (ligado por padrão): o registro do lote (``batch.Manifest``) fica na pasta de saída. Ao abrir o
+Markinho de novo, os arquivos que chegaram enquanto ele estava fechado, os que ficaram pela metade
+(queda, computador desligado) e os que deram erro são convertidos; os que já estavam na pasta quando a
+monitoração começou pela primeira vez continuam ignorados."""
 from __future__ import annotations
 
 import os
@@ -70,9 +75,31 @@ class FolderWatcher(QObject):
         if not self.folder.is_dir():
             return False
         self._known = candidates(self.folder)     # arquivos que já estavam lá não são convertidos
+        for path in self.catch_up():
+            self._known.pop(path, None)           # retomar: pendentes entram na próxima varredura
+            self._pending[path] = candidates(self.folder).get(path)
         self._fs.addPath(str(self.folder))
         self._poll.start()
         return True
+
+    def catch_up(self) -> list[str]:
+        """Arquivos a converter ao começar: chegaram com o Markinho fechado, ficaram pela metade ou deram
+        erro. Na primeira vez numa pasta, marca os que já estavam lá como ignorados e devolve nada."""
+        from . import batch
+        from .quick import settings
+
+        if not batch.enabled(settings()):
+            return []
+        out = self.out_dir or self.folder
+        try:
+            manifest = batch.Manifest(out)
+            first = not manifest.path.exists()
+            if first:
+                manifest.ignore(self._known)
+                return []
+            return [p for p in self._known if not manifest.seen(p)]
+        except OSError:
+            return []
 
     def stop(self) -> None:
         self._poll.stop()

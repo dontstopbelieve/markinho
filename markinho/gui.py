@@ -537,6 +537,14 @@ class SettingsPanel(QWidget):
         perf = QGroupBox(tr("Desempenho"))
         pf = QFormLayout(perf)
         pf.addRow(tr("Conversões ao mesmo tempo:"), self.threads)
+        self.resume = QCheckBox(tr("Retomar lotes interrompidos"))
+        self.resume.setChecked(self.settings.value("batch/resume", True, type=bool))
+        self.resume.setToolTip(tr("Se o Markinho fechar ou o computador desligar no meio de um lote, ele continua de "
+                                  "onde parou: oferece a fila que faltou ao abrir de novo e, no botão direito, na "
+                                  "pasta monitorada e no terminal, pula o que já foi convertido e não mudou "
+                                  "(confere a impressão digital SHA-256 de cada arquivo)."))
+        self.resume.toggled.connect(lambda v: self.settings.setValue("batch/resume", v))
+        pf.addRow(self.resume)
         self._perf_form = pf
         adv.addWidget(perf)
 
@@ -2102,6 +2110,7 @@ class MainWindow(QMainWindow):
                 self.addAction(a)
         self._base_pt = {id(w): w.font().pointSizeF() for w in (self.editor, self.preview)}
         QTimer.singleShot(0, lambda: self.text_zoom(None))     # aplica o tamanho guardado
+        QTimer.singleShot(300, self.offer_resume)                  # lote anterior que não terminou
 
         center = QWidget()
         cv = QVBoxLayout(center)
@@ -2666,7 +2675,39 @@ class MainWindow(QMainWindow):
         self._update_progress()
         self._update_buttons()
 
+    def _save_pending(self) -> None:
+        """Retomar: guarda a fila que ainda não foi convertida (some quando tudo termina)."""
+        if not getattr(self, "_resume_checked", False):
+            return                                    # ainda não ofereceu retomar o lote anterior
+        pending = [k for k, e in self.entries.items()
+                   if not k.startswith("<") and e.result is None and not e.error and (e.queued or e.busy)]
+        if pending:
+            self.settings.setValue("batch/pending", pending)
+        else:
+            self.settings.remove("batch/pending")
+
+    def offer_resume(self) -> None:
+        """Ao abrir: o último lote não terminou (fechou no meio, travou, faltou energia)? Oferece continuar."""
+        from . import batch
+
+        pending = self.settings.value("batch/pending", []) or []
+        if isinstance(pending, str):
+            pending = [pending]
+        pending = [p for p in pending if Path(p).is_file()]
+        self._resume_checked = True
+        self.settings.remove("batch/pending")
+        if not pending or not batch.enabled(self.settings):
+            return
+        ask = QMessageBox.question(self, tr("Retomar o lote"),
+                                   tr("O último lote não terminou: {0} arquivo(s) ainda não tinham sido convertidos.\n\n"
+                                      "Colocar de volta na fila e continuar?").format(len(pending)))
+        if ask == QMessageBox.Yes:
+            self.add_paths(pending)
+            if not self.act_auto.isChecked():
+                self.convert_queue(False)
+
     def _update_progress(self) -> None:
+        self._save_pending()
         self._update_steps()
         if hasattr(self, "act_cancel"):
             self.act_cancel.setEnabled(any(x.busy for x in self.entries.values()))
@@ -3132,13 +3173,24 @@ class MainWindow(QMainWindow):
         folder = Path(dlg.folder.text())
         folder.mkdir(parents=True, exist_ok=True)
         planned = plan(self._contexts(entries), dlg.naming.options(), folder)
+        from . import batch
+
+        manifest = batch.Manifest(folder) if batch.enabled(self.settings) else None
         written = skipped = 0
         for e, p in zip(entries, planned):
-            if p.action == "skip":
+            src = Path(e.path)
+            sha = batch.file_hash(src) if manifest is not None and src.is_file() else ""
+            reserved = manifest.output_name(src, "janela") if sha else None
+            target = folder / reserved if reserved else p.path   # salvando de novo: mesmo arquivo, sem _2
+            if p.action == "skip" and not reserved:
                 skipped += 1
                 continue
-            if self._write(p.path, e.text, e.result.assets):
+            if sha:
+                manifest.start(src, sha, "janela", target.name)
+            if self._write(target, e.text, e.result.assets):
                 written += 1
+                if sha:
+                    manifest.finish(src, True)
         msg = tr('{0} arquivo(s) salvo(s) em:\n{1}').format(written, folder)
         if skipped:
             msg += tr('\n\n{0} pulado(s) porque já existiam.').format(skipped)
@@ -3216,7 +3268,12 @@ class MainWindow(QMainWindow):
                         # as imagens extraídas ficam em memória: grava numa pasta temporária para o exportador
                         if files and write_assets(md, files, Path(tmp)):
                             base = tmp
-                        used = export(md, target, fid, {**opts, **extra}, backend, base_dir=base)
+                        partial = target.with_name(f".~{target.stem}{target.suffix}")   # nunca fica pela metade
+                        try:
+                            used = export(md, partial, fid, {**opts, **extra}, backend, base_dir=base)
+                            os.replace(partial, target)
+                        finally:
+                            partial.unlink(missing_ok=True)
                 except Exception as exc:  # noqa: BLE001
                     errors.append(f"{target.name}: {exc}")
         finally:
@@ -3251,7 +3308,9 @@ class MainWindow(QMainWindow):
             if assets and rename:
                 # a pasta de imagens acompanha o nome do arquivo: <nome>_assets/
                 text, assets = rename_assets(text, assets, path.stem)
-            path.write_text(text, encoding="utf-8")
+            from .batch import atomic_write
+
+            atomic_write(path, text)          # nunca fica um arquivo pela metade
             if assets:
                 write_assets(text, assets, path.parent)
             return True

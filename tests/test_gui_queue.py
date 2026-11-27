@@ -101,3 +101,61 @@ def test_converted_file_can_be_converted_again(win):
     assert e.busy
     wait(app, w)
     assert e.result is not None and e.result is not first and not e.error
+
+
+def test_retomar_lote_que_nao_terminou(win, monkeypatch):
+    from PySide6.QtWidgets import QMessageBox
+
+    app, w = win
+    w._resume_checked = True
+    w.add_paths(FILES)                                   # na fila, ainda não convertidos
+    assert sorted(w.settings.value("batch/pending")) == sorted(FILES)
+    # “o programa fechou no meio”: uma janela nova oferece continuar
+    w.clear_all()
+    w.settings.setValue("batch/pending", FILES)
+    w._resume_checked = False
+    asked = []
+    monkeypatch.setattr(QMessageBox, "question", staticmethod(lambda *a, **k: asked.append(a) or QMessageBox.Yes))
+    w.offer_resume()
+    assert asked and len(w.entries) == 2
+    wait(app, w)
+    assert all(e.result is not None for e in w.entries.values())
+    assert w.settings.value("batch/pending") is None        # tudo convertido: nada pendente
+    # desligado: não pergunta
+    w.settings.setValue("batch/pending", FILES)
+    w.settings.setValue("batch/resume", False)
+    asked.clear()
+    w.offer_resume()
+    assert not asked
+
+
+def test_salvar_todos_de_novo_nao_duplica(win, tmp_path, monkeypatch):
+    from PySide6.QtWidgets import QDialog, QMessageBox
+
+    import markinho.gui as g
+
+    app, w = win
+    w._resume_checked = True
+    w.add_paths(FILES[:1])
+    w.convert_queue(False)
+    wait(app, w)
+    out = tmp_path / "saida"
+
+    class FakeDialog:
+        def __init__(self, *a, **k):
+            from PySide6.QtWidgets import QLineEdit
+
+            from markinho.naming import NamingOptions
+
+            self.folder = QLineEdit(str(out))
+            self.naming = type("N", (), {"options": staticmethod(lambda: NamingOptions())})()
+
+        def exec(self):
+            return QDialog.Accepted
+
+    monkeypatch.setattr(g, "SaveAllDialog", FakeDialog)
+    monkeypatch.setattr(QMessageBox, "information", staticmethod(lambda *a, **k: None))
+    w.save_all()
+    w.save_all()                                         # de novo (ex.: depois de uma queda): mesmo arquivo
+    assert sorted(p.name for p in out.glob("*.md")) == ["relatorio.md"]
+    assert (out / ".markinho-lote.json").is_file()

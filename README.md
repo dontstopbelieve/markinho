@@ -135,6 +135,7 @@ python run.py
 | **Word no padrão ABNT** | **Exportar** > DOCX > Modelo do Word: **ABNT** — Times New Roman 12, margens 3/2 cm, espaçamento 1,5, recuo de parágrafo, citações longas recuadas, seções numeradas e número de página |
 | **PDFs de tribunais e órgãos públicos** | Remove a faixa vertical “Assinado eletronicamente por…”, códigos verificadores e endereços de conferência do PJe, SEI, eproc, e-SAJ (também a faixa lateral dos artigos do arXiv). Pode ser desligado nas opções do motor Nativo |
 | **Páginas a revisar** | Quando o OCR tem baixa confiança ou uma página fica sem texto, aparece uma faixa amarela com as páginas; clique numa delas para ver o original ao lado |
+| **Retomar lotes interrompidos** | Fechou ou travou no meio? Ao abrir, o Markinho oferece continuar de onde parou; botão direito, pasta monitorada e terminal pulam o que já está pronto. Veja [Retomar lotes interrompidos](#retomar-lotes-interrompidos) |
 | **Progresso e Parar** | PDFs grandes mostram “página 12 de 80” na lista; **Parar** (Esc) interrompe na próxima página |
 | **Pasta monitorada** | Ferramentas > Pasta monitorada: todo arquivo novo que cair na pasta (Downloads, scanner…) é convertido sozinho enquanto o Markinho estiver aberto |
 | **Exportar como skill para IA** | Ferramentas > Exportar como skill para IA: o documento vira um índice + um arquivo por capítulo que o assistente consulta só onde precisa (veja [Skills para assistentes de IA](#skills-para-assistentes-de-ia)) |
@@ -176,7 +177,7 @@ mantém as suas configurações. Vale para atualizar (3.0 → 3.1) e para subir 
 | **Pandoc** | DOCX, ODT, EPUB, LaTeX, RST, RTF, Jupyter e dezenas de outros | GPL-2.0 (programa separado) | PADRÃO e COMPLETA |
 | **Docling** | IA de layout: ordem de leitura, tabelas, fórmulas, OCR | MIT | COMPLETA |
 | **MarkItDown** | Microsoft; amplo suporte a Office, HTML e Outlook (.msg) | MIT | COMPLETA |
-| **Marker** | PDF de alta precisão com OCR e equações | GPL-3.0 + modelos com restrição comercial | não incluído (o usuário pode instalar) |
+| **Marker** | PDF de alta precisão com OCR e equações | Apache-2.0 (código) + modelos com restrição comercial | não incluído (o usuário pode instalar) |
 | **PyMuPDF4LLM** | PDF muito rápido em CPU | **AGPL-3.0** | não incluído (o usuário pode instalar) |
 
 **Uso offline:** a edição COMPLETA já traz os modelos do Docling e funciona sem internet.
@@ -223,6 +224,26 @@ divide o Markdown em **pedaços** e grava em JSONL (um por linha) ou JSON:
 
 Na interface: **Exportar…** > “Pedaços para RAG / IA”. No terminal:
 `markinho manual.pdf --chunks -o manual.jsonl --chunk-size 1000 --chunk-overlap 100`.
+
+## Retomar lotes interrompidos
+
+Se o Markinho fechar, travar ou o computador desligar no meio de um lote, ele **continua de onde parou** —
+sem refazer o que já estava pronto. Vale para tudo (Configurações > Desempenho > **Retomar lotes
+interrompidos**, ligado por padrão):
+
+| Onde | O que acontece |
+|---|---|
+| **Janela** | Ao abrir de novo, o Markinho avisa que o último lote não terminou e oferece colocar de volta na fila os arquivos que faltavam. **Salvar todos** numa pasta onde já salvou grava por cima do mesmo arquivo (sem criar `_2`) |
+| **Botão direito** (vários arquivos) | Arquivos já convertidos para aquela pasta, com as mesmas configurações e sem mudanças, são pulados; o que ficou pela metade ou deu erro é refeito |
+| **Pasta monitorada** | Ao abrir o Markinho, converte o que chegou na pasta enquanto ele estava fechado e o que ficou pela metade; os arquivos que já estavam lá quando a monitoração começou continuam ignorados |
+| **Terminal** | `--retomar` (veja acima) |
+
+Como funciona: na pasta de saída fica um registro (`.markinho-lote.json`) com a **impressão digital
+(SHA-256)** de cada arquivo e das configurações usadas. Se o arquivo de origem ou as configurações mudarem,
+ele é convertido de novo. Os arquivos são gravados de forma **atômica** (primeiro num temporário, depois
+trocados): uma queda nunca deixa um arquivo pela metade. Por privacidade, o registro **não guarda o nome nem
+o caminho dos arquivos originais** (só impressões digitais), então a pasta de saída pode ser compartilhada,
+inclusive depois de anonimizar.
 
 ## Skills para assistentes de IA
 
@@ -384,11 +405,7 @@ imagens e incluir metadados; converter vários arquivos com o perfil “Texto pa
 Pandoc com outro dialeto; converter PDF → Markdown → Word; descrever imagens com o Ollama;
 criar uma skill para assistentes de IA; listar motores, OCR e formatos disponíveis.
 
-**Lotes grandes que retomam de onde pararam:** com `--retomar`, o Markinho guarda na pasta de saída um
-registro (`.markinho-lote.json`) com a impressão digital (SHA-256) de cada arquivo, a configuração usada e o
-resultado. Se o lote cair no meio (queda de energia, computador desligado, erro), basta rodar o mesmo comando
-de novo: o que já está pronto e não mudou é pulado; só o que faltou, deu erro ou mudou (arquivo ou
-configuração) é refeito. Os arquivos são gravados de forma atômica (nunca fica um arquivo pela metade).
+**Lotes que retomam de onde pararam:** veja [Retomar lotes interrompidos](#retomar-lotes-interrompidos).
 
 ```bash
 markinho documentos/*.pdf -o saida/ --retomar

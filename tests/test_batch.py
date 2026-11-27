@@ -81,7 +81,9 @@ def test_erro_fica_registrado_e_e_refeito(lote, capsys):
     (src / "quebrado.pdf").write_bytes(b"%PDF-1.4 isto nao e um pdf")
     assert _run(src, out, "-e", "native") == 1
     reg = json.loads((out / batch.MANIFEST).read_text(encoding="utf-8"))["files"]
-    assert any(e["status"] == "erro" and e.get("error") for e in reg.values())
+    assert any(e["status"] == "erro" for e in reg.values())
+    texto = (out / batch.MANIFEST).read_text(encoding="utf-8")
+    assert "quebrado" not in texto and "entrada" not in texto and "doc0.docx" not in texto   # sem nomes de origem
     capsys.readouterr()
     _run(src, out, "-e", "native")
     err = capsys.readouterr().err

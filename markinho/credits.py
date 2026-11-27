@@ -82,7 +82,7 @@ INSPIRED_BY: tuple[Credit, ...] = (
            tr("A ideia original: converter vários formatos para Markdown pensando em IA")),
     Credit(tr("Docling"), tr("IBM Research"), "MIT", "https://github.com/docling-project/docling",
            tr("Análise de layout, tabelas e o acervo de documentos usado nos nossos testes")),
-    Credit(tr("Marker"), tr("Datalab"), "GPL-3.0", "https://github.com/datalab-to/marker",
+    Credit(tr("Marker"), tr("Datalab"), "Apache-2.0", "https://github.com/datalab-to/marker",
            tr("Remoção de cabeçalhos/rodapés e modos de OCR (não incluído no Markinho)")),
     Credit(tr("Pandoc"), tr("John MacFarlane"), "GPL-2.0", "https://pandoc.org", tr("Conversão entre dezenas de formatos")),
     Credit(tr("PyMuPDF4LLM"), tr("Artifex"), "AGPL-3.0", "https://github.com/pymupdf/pymupdf4llm",

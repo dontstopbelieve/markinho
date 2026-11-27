@@ -28,15 +28,44 @@ def test_convert_here_writes_next_to_original(tmp_path):
     r = convert_here(src, s)
     assert not r.error and r.output == tmp_path / "Relatório Final.md"
     assert r.output.read_text(encoding="utf-8").strip()
-    # de novo: não sobrescreve (padrão "acrescentar _2")
+    # de novo, sem mudanças: retomar (ligado por padrão) pula e não cria cópia
     r2 = convert_here(src, s)
-    assert r2.output.name == "Relatório Final_2.md"
-    assert summary([r, r2])[1].startswith("2 arquivo(s) convertido(s)")
+    assert r2.skipped and r2.unchanged and r2.output == r.output
+    assert not (tmp_path / "Relatório Final_2.md").exists()
+    assert "sem mudanças" in summary([r, r2])[1] and "não mudou" in summary([r2])[1]
+    # arquivo mudou: converte de novo, por cima do mesmo .md
+    with open(src, "ab") as f:
+        f.write(b"\0")
+    r3 = convert_here(src, s)
+    assert not r3.error and not r3.skipped and r3.output == r.output
+    # retomar desligado: comportamento antigo, não sobrescreve (padrão "acrescentar _2")
+    s.setValue("batch/resume", False)
+    r4 = convert_here(src, s)
+    assert r4.output.name == "Relatório Final_2.md"
+    assert summary([r, r4])[1].startswith("2 arquivo(s) convertido(s)")
+
+
+def test_convert_here_retoma_o_que_ficou_pela_metade(tmp_path, monkeypatch):
+    import markinho.core
+
+    src = shutil.copy(EX / "relatorio.docx", tmp_path / "a.docx")
+    s = _settings(tmp_path)
+    real = markinho.core.convert
+
+    def cai(*a, **k):
+        raise RuntimeError("energia caiu")
+
+    monkeypatch.setattr(markinho.core, "convert", cai)
+    assert convert_here(src, s).error
+    monkeypatch.setattr(markinho.core, "convert", real)
+    r = convert_here(src, s)
+    assert not r.error and r.output.name == "a.md"
 
 
 def test_convert_here_uses_saved_naming_and_skip(tmp_path):
     src = shutil.copy(EX / "relatorio.docx", tmp_path / "relatorio.docx")
-    s = _settings(tmp_path, naming__template="{n}_{nome}", naming__conflict="skip", naming__digits=2)
+    s = _settings(tmp_path, naming__template="{n}_{nome}", naming__conflict="skip", naming__digits=2,
+                  batch__resume=False)
     assert convert_here(src, s, index=0).output.name == "01_relatorio.md"
     assert convert_here(src, s, index=1).output.name == "02_relatorio.md"
     again = convert_here(src, s, index=0)
