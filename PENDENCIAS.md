@@ -33,6 +33,20 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
 
 ## Decisões que dependem do dono do projeto
 
+- [x] **Edições: de 3 para 2** (decidido em 27/11/2026): a LEVE foi juntada à PADRÃO (a diferença era só
+      OCR + Pandoc, ~50 MB, e a falta de OCR confundia). Ficam **PADRÃO** (recomendada) e **COMPLETA**.
+      Marcador antigo “leve” é lido como PADRÃO; o .deb da PADRÃO substitui o antigo `markinho-leve`.
+- [ ] **Destino da COMPLETA**: gerar no GitHub (Windows e Linux) para ver o tamanho real (limite de 2 GB
+      por arquivo nas Releases) e comparar a qualidade Docling × Nativo. Se o ganho for pequeno, ficar com
+      uma versão só.
+      **Comparação de 27/11/2026** (11 PDFs do acervo do Docling: artigos, jornal, relatório IBM, formulário):
+      - Achado: o Nativo **grudava palavras** em PDFs do LaTeX e jornais (espaço de ~1,5 pt; até 640 palavras
+        coladas num artigo). Corrigido: espaço proporcional à letra (`pdf.WORD_GAP`); agora 0–4 por documento.
+      - Corrigido também: seções numeradas em negrito (“1. Introdução”, “2.1 …”) viram títulos (`_SECTION_RE`).
+      - Depois disso o Nativo empata no texto (mesma quantidade de palavras) e é **5–15× mais rápido**
+        (artigo de 9 páginas: 4 s × 51 s). O Docling ainda ganha em **tabelas sem linhas** (artigo da
+        Elsevier: 3 × 0; formulário com tabela “desenhada como imagem”: 3 × 0) e em alguns subtítulos sem
+        negrito. Em escaneados, ambos dependem de OCR.
 - [x] **Nome do produto**: **Markinho — Conversor Markdown** (decidido em 13/11/2026).
       O nome provisório anterior já era usado por terceiros (um produto da Fraunhofer SIT e um
       projeto no GitHub), por isso foi trocado. Busca no INPI (13/11/2026): nenhuma marca

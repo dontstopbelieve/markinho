@@ -6,8 +6,8 @@ Lido automaticamente pelo Claude Code no início de cada sessão. Mantenha curto
 
 **Markinho — Conversor Markdown** (nome definido em 13/11/2026): conversor de documentos para
 Markdown e de Markdown para outros formatos, com interface gráfica (PySide6) e linha de comando.
-**Tudo roda no computador do usuário; nenhum documento vai para a internet.** Três edições (LEVE,
-PADRÃO, COMPLETA). **Decidido em 16/11/2026:** gratuito e aberto sob **AGPL-3.0** (aplicada: LICENSE, cabeçalho SPDX nos .py),
+**Tudo roda no computador do usuário; nenhum documento vai para a internet.** Duas edições (PADRÃO e
+COMPLETA; a LEVE foi juntada à PADRÃO em 27/11/2026). **Decidido em 16/11/2026:** gratuito e aberto sob **AGPL-3.0** (aplicada: LICENSE, cabeçalho SPDX nos .py),
 “como está”, sem obrigação de atualizações; **não aceita código de terceiros** (o dono é o único autor,
 para poder oferecer licença comercial no futuro).
 
@@ -56,7 +56,7 @@ markinho/
   mcp_server.py    servidor MCP local (pastas autorizadas)
   describe.py      texto alternativo via Ollama local
   models.py        modelos de IA offline (pasta do usuário / embutidos na COMPLETA)
-  edition.py       edições LEVE / PADRÃO / COMPLETA (marca gravada no build)
+  edition.py       edições PADRÃO / COMPLETA (marca gravada no build; “leve” antiga = PADRÃO)
   credits.py       créditos e textos de licença (Ajuda > Sobre)
   gui.py           interface: fila, comparar com original, configurações, exportar, MCP…
   quick.py         botão direito “Converter para Markdown aqui” (sem a janela; configurações salvas)
@@ -91,12 +91,12 @@ SEGURANCA.md       registro das verificações de segurança: acrescente uma ent
 ## Comandos
 
 ```bash
-pip install -r requirements-padrao.txt -r requirements-dev.txt   # leve | padrao | completa
+pip install -r requirements-padrao.txt -r requirements-dev.txt   # padrao | completa
 QT_QPA_PLATFORM=offscreen python -m pytest -q                    # ~270 testes, ~35 s
 QT_QPA_PLATFORM=offscreen python -m pytest -q --cov               # cobertura (mínimo em pyproject: fail_under)
 python run.py                                                    # interface
 python -m markinho arquivo.pdf -o saida.md                        # terminal
-python packaging/build.py --edition leve app zip deb             # instaladores (alvos: --help)
+python packaging/build.py --edition padrao app zip deb           # instaladores (alvos: --help)
 ```
 
 - Testes de interface rodam sem tela com `QT_QPA_PLATFORM=offscreen`.

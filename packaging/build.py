@@ -1,15 +1,14 @@
 """Gera os pacotes de instalação do Markinho, por edição.
 
-Uso:  python packaging/build.py [--edition leve|padrao|completa] <alvo> [<alvo> ...]
+Uso:  python packaging/build.py [--edition padrao|completa] <alvo> [<alvo> ...]
 
 Edições (padrão: padrao):
-  leve       motor nativo, correção, exportação DOCX/PDF/HTML/TXT
-  padrao     leve + Pandoc + OCR (Tesseract: português e inglês)
+  padrao     motor nativo, AnyDoc, correção, exportação, MCP, Pandoc e OCR (Tesseract: português e inglês)
   completa   padrao + Docling (IA de layout, modelos incluídos) + MarkItDown + RapidOCR
 
 Alvos:
   app        pasta do programa (PyInstaller)            -> build/dist-<edição>/Markinho/
-  onefile    executável único portátil (leve/padrão)    -> release/Markinho-<Edição>-<v>-<so>-<arq>-portatil(.exe)
+  onefile    executável único portátil (padrão)         -> release/Markinho-<Edição>-<v>-<so>-<arq>-portatil(.exe)
   zip        pasta do programa compactada (portátil)    -> release/…-portatil.zip / .tar.gz / macOS .zip
   inno       instalador .exe para Windows (Inno Setup)  -> release/…-windows-x64-setup.exe
   msi        instalador .msi para Windows (WiX 4/5)     -> release/…-windows-x64.msi
@@ -51,9 +50,9 @@ OS = {"win32": "windows", "darwin": "macos"}.get(sys.platform, "linux")
 ARCH = {"amd64": "x64", "x86_64": "x64", "arm64": "arm64", "aarch64": "arm64"}.get(platform.machine().lower(),
                                                                                    platform.machine().lower())
 EDITION = "padrao"
-EDITION_FILE = {"leve": "Leve", "padrao": "Padrao", "completa": "Completa"}     # nomes de arquivo sem acento
-EDITION_TITLE = {"leve": "LEVE", "padrao": "PADRÃO", "completa": "COMPLETA"}
-OCR_LANGS = {"leve": [], "padrao": ["por", "eng"], "completa": ["por", "eng"]}   # português (Brasil) e inglês
+EDITION_FILE = {"padrao": "Padrao", "completa": "Completa"}     # nomes de arquivo sem acento
+EDITION_TITLE = {"padrao": "PADRÃO", "completa": "COMPLETA"}
+OCR_LANGS = {"padrao": ["por", "eng"], "completa": ["por", "eng"]}   # português (Brasil) e inglês
 DEB_LANG = {"por": "por", "eng": "eng", "spa": "spa", "fra": "fra", "deu": "deu", "ita": "ita"}
 
 
@@ -158,20 +157,19 @@ def collect_licenses() -> Path:
             "pasta licenses/.\n", encoding="utf-8")
         count += 1
     # Pandoc (GPL): aviso e oferta do código-fonte da versão exata incluída
-    if EDITION != "leve":
-        try:
-            sys.path.insert(0, str(ROOT))
-            from markinho.engines import pandoc_version
+    try:
+        sys.path.insert(0, str(ROOT))
+        from markinho.engines import pandoc_version
 
-            ver = pandoc_version() or "?"
-        except Exception:  # noqa: BLE001
-            ver = "?"
-        (target / "Pandoc").mkdir(exist_ok=True)
-        (target / "Pandoc" / "LEIA-ME.txt").write_text(
-            f"O Markinho inclui o Pandoc {ver}, um programa separado de John MacFarlane e colaboradores,\n"
-            "distribuído sem modificações sob a GNU General Public License, versão 2 ou posterior.\n\n"
-            f"Código-fonte desta versão: https://github.com/jgm/pandoc/releases/tag/{ver}\n"
-            "Texto da licença: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html\n", encoding="utf-8")
+        ver = pandoc_version() or "?"
+    except Exception:  # noqa: BLE001
+        ver = "?"
+    (target / "Pandoc").mkdir(exist_ok=True)
+    (target / "Pandoc" / "LEIA-ME.txt").write_text(
+        f"O Markinho inclui o Pandoc {ver}, um programa separado de John MacFarlane e colaboradores,\n"
+        "distribuído sem modificações sob a GNU General Public License, versão 2 ou posterior.\n\n"
+        f"Código-fonte desta versão: https://github.com/jgm/pandoc/releases/tag/{ver}\n"
+        "Texto da licença: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html\n", encoding="utf-8")
     if (PKG / "vendor" / "tesseract").is_dir():
         (target / "Tesseract").mkdir(exist_ok=True)
         (target / "Tesseract" / "LEIA-ME.txt").write_text(
@@ -392,6 +390,7 @@ def build_deb() -> Path:
     if langs:   # OCR do sistema (Tesseract), com os idiomas da edição
         depends += ", tesseract-ocr, tesseract-ocr-por"
         recommends = "Recommends: " + ", ".join(f"tesseract-ocr-{DEB_LANG[x]}" for x in langs if x != "por") + "\n"
+    # “markinho-leve” continua aqui: o pacote da antiga LEVE é substituído ao instalar este
     others = [f"markinho-{e}" for e in ("leve", "padrao", "completa") if e != EDITION]
     (root / "DEBIAN" / "control").write_text(f"""Package: {pkg}
 Version: {VERSION}
@@ -470,7 +469,7 @@ def main(argv: list[str]) -> int:
         return 0
     if argv[0] == "--edition":
         if len(argv) < 2 or argv[1] not in EDITION_FILE:
-            print("edição inválida. Use: leve, padrao ou completa")
+            print("edição inválida. Use: padrao ou completa (a leve foi juntada à padrao)")
             return 2
         EDITION, argv = argv[1], argv[2:]
     targets = all_targets() if argv == ["all"] else argv

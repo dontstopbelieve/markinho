@@ -16,45 +16,42 @@ problemas mais comuns de conversão.
 
 ## Edições
 
-| | **LEVE** | **PADRÃO** | **COMPLETA** |
-|---|:---:|:---:|:---:|
-| Motor nativo: PDF (títulos, tabelas, colunas, código, imagens), Word, Excel, PowerPoint, HTML, EPUB, CSV… | ✔ | ✔ | ✔ |
-| AnyDoc: Word/Excel/PowerPoint antigos (.doc, .xls, .ppt), OpenDocument (.odt/.ods/.odp), RTF | ✔ | ✔ | ✔ |
-| Correção de caracteres, imagens (pasta/base64), frontmatter, perfis (GFM, Obsidian, IA…) | ✔ | ✔ | ✔ |
-| Exportação para DOCX, PDF, HTML e TXT | ✔ | ✔ | ✔ |
-| **Pedaços para RAG/IA** (JSON/JSONL), por título, página ou tamanho | ✔ | ✔ | ✔ |
-| **Servidor MCP local**: Claude Desktop, Cursor e VS Code convertem arquivos pelo Markinho | ✔ | ✔ | ✔ |
-| **Exportar como skill para IA** (índice + um arquivo por capítulo para Claude Code, Claude.ai, Codex…) | ✔ | ✔ | ✔ |
-| Interface em **português, inglês e espanhol** | ✔ | ✔ | ✔ |
-| Descrição de imagens com IA local (se o Ollama estiver instalado) | ✔ | ✔ | ✔ |
-| **Pandoc**: ~35 formatos de entrada e 21 de exportação (ODT, EPUB, LaTeX, RTF, PowerPoint…) | | ✔ | ✔ |
-| **OCR** (escaneados e imagens): português e inglês | | ✔ | ✔ |
-| **IA de layout (Docling)**, com modelos incluídos para funcionar **sem internet** | | | ✔ |
-| MarkItDown e RapidOCR | | | ✔ |
-| Tamanho aproximado do instalador | ~50–90 MB | ~100–150 MB | ~1–2 GB |
+| | **PADRÃO** | **COMPLETA** |
+|---|:---:|:---:|
+| Motor nativo: PDF (títulos, tabelas, colunas, código, imagens), Word, Excel, PowerPoint, HTML, EPUB, CSV… | ✔ | ✔ |
+| AnyDoc: Word/Excel/PowerPoint antigos (.doc, .xls, .ppt), OpenDocument (.odt/.ods/.odp), RTF | ✔ | ✔ |
+| **OCR** (escaneados, fotos e prints): português e inglês | ✔ | ✔ |
+| **Pandoc**: ~35 formatos de entrada e 21 de exportação (Word, PDF, ODT, EPUB, LaTeX, PowerPoint…) | ✔ | ✔ |
+| Correção de caracteres, imagens (pasta/base64), frontmatter, perfis (GFM, Obsidian, IA…) | ✔ | ✔ |
+| **Pedaços para RAG/IA** (JSON/JSONL), por título, página ou tamanho | ✔ | ✔ |
+| **Servidor MCP local**: Claude Desktop, Cursor e VS Code convertem arquivos pelo Markinho | ✔ | ✔ |
+| **Exportar como skill para IA** (índice + um arquivo por capítulo para Claude Code, Claude.ai, Codex…) | ✔ | ✔ |
+| Interface em **português, inglês e espanhol** | ✔ | ✔ |
+| Descrição de imagens com IA local (se o Ollama estiver instalado) | ✔ | ✔ |
+| **IA de layout (Docling)**, com modelos incluídos para funcionar **sem internet** | | ✔ |
+| MarkItDown e RapidOCR | | ✔ |
+| Tamanho aproximado do instalador | ~100–150 MB | ~1–2 GB |
 
 ### Qual edição escolher?
 
-Cada edição tem tudo o que a anterior tem, e mais um pouco. Todas funcionam 100% no computador.
-
 | Se você… | Edição |
 |---|---|
-| Só converte **arquivos digitais** (Word, planilhas, PDFs gerados no computador) | **LEVE** |
-| Também tem **escaneados, fotos de documentos ou prints**, ou quer exportar para muitos formatos | **PADRÃO** |
+| Converte documentos do dia a dia: Word, planilhas, PDFs, **escaneados, fotos e prints** | **PADRÃO** (recomendada) |
 | Trabalha com **PDFs difíceis** (artigos científicos, tabelas complicadas, fórmulas) e tem um computador bom | **COMPLETA** |
 
-- **LEVE — o essencial.** Converte PDF (títulos, tabelas, colunas, imagens), Word, Excel, PowerPoint,
-  HTML, EPUB e CSV, inclusive os formatos antigos (.doc, .xls, .ppt), do LibreOffice e RTF. Corrige
-  caracteres trocados, exporta para Word/PDF/HTML/TXT, gera pedaços para IA (RAG), tem o servidor MCP e o
-  menu do botão direito no Windows. **Não lê texto em imagens nem em PDFs escaneados.**
-- **PADRÃO — LEVE + OCR + Pandoc.** O **OCR** (português e inglês) lê PDFs escaneados, fotos e prints:
-  trata a imagem antes, endireita páginas tortas e gira as de cabeça para baixo (no Windows, o modo
-  *Máxima qualidade* usa modelos mais precisos). O **Pandoc** aceita ~35 formatos de entrada e exporta
-  para **21** (EPUB, ODT, PowerPoint, LaTeX, RTF…), contra 4 da LEVE.
+- **PADRÃO — tudo para o dia a dia.** Converte PDF (títulos, tabelas, colunas, imagens), Word, Excel,
+  PowerPoint, HTML, EPUB e CSV, inclusive os formatos antigos (.doc, .xls, .ppt), do LibreOffice e RTF.
+  O **OCR** (português e inglês) lê PDFs escaneados, fotos e prints: trata a imagem antes, endireita páginas
+  tortas e gira as de cabeça para baixo (no Windows, o modo *Máxima qualidade* usa modelos mais precisos).
+  O **Pandoc** exporta para **21** formatos (Word, PDF, EPUB, ODT, PowerPoint, LaTeX, RTF…). Tem ainda
+  correção de caracteres, pedaços e skills para IA, servidor MCP e o menu do botão direito no Windows.
 - **COMPLETA — PADRÃO + IA de layout.** O **Docling** entende a página como uma pessoa: ordem de leitura
   em layouts complexos, tabelas com células mescladas, fórmulas e código. Funciona **sem internet**
   (os modelos vêm no instalador — por isso o tamanho). Traz também o MarkItDown (Microsoft) e o RapidOCR
   (OCR reserva; o Tesseract continua o principal). É mais lenta em PDFs: a IA usa muito o processador.
+
+Até 27/11/2026 havia também uma edição LEVE (sem OCR nem Pandoc); como a diferença de tamanho era
+pequena e a falta de OCR confundia, ela foi juntada à PADRÃO.
 
 Para mudar de edição, instale a outra **por cima**: ela substitui a atual e as configurações
 são mantidas. Todas as edições são **gratuitas**. Os componentes incluídos têm licenças
@@ -63,15 +60,15 @@ permissivas (MIT, BSD, Apache, LGPL…; veja [THIRD_PARTY_LICENSES.md](THIRD_PAR
 ## Instalação
 
 Baixe o arquivo da edição e do sistema na página
-[**Releases**](https://github.com/dontstopbelieve/markinho/releases). `<Edição>` é `Leve`,
-`Padrao` ou `Completa`:
+[**Releases**](https://github.com/dontstopbelieve/markinho/releases). `<Edição>` é `Padrao` ou
+`Completa`:
 
 | Sistema | Arquivo | Para quem |
 |---|---|---|
 | **Windows** | `Markinho-<Edição>-…-windows-x64-setup.exe` | **Recomendado.** Instalador com atalhos, menu **Markinho** no botão direito (“Converter para Markdown aqui” e “Abrir no Markinho”) e desinstalador. Não precisa de senha de administrador |
 | Windows | `Markinho-<Edição>-…-windows-x64.msi` | Empresas e implantação em várias máquinas (GPO, Intune) |
 | Windows | `Markinho-<Edição>-…-windows-x64-portatil.zip` | Pasta portátil: descompacte e abra `Markinho.exe` |
-| Windows | `Markinho-<Edição>-…-windows-x64-portatil.exe` | Um arquivo só, sem instalar (LEVE e PADRÃO). Abre mais devagar |
+| Windows | `Markinho-<Edição>-…-windows-x64-portatil.exe` | Um arquivo só, sem instalar (PADRÃO). Abre mais devagar |
 | **macOS** | `Markinho-<Edição>-…-macos-arm64.dmg` (M1/M2/M3…) ou `…-macos-x64.dmg` (Intel) | Arraste para Aplicativos. Na primeira vez: botão direito no app > **Abrir** (o app não é assinado pela Apple) |
 | **Linux** | `markinho-<edição>_…_amd64.deb` | Ubuntu, Debian, Mint: `sudo apt install ./markinho-padrao_…_amd64.deb` |
 | Linux | `Markinho-<Edição>-…-x86_64.AppImage` | Qualquer distribuição: `chmod +x` e abra |
@@ -103,8 +100,7 @@ O assistente da primeira abertura também oferece essa opção. No Windows 11 o 
 paga). O Windows não deixa programas se fixarem sozinhos na barra de tarefas: abra o Markinho, clique com o
 botão direito no ícone dele na barra e escolha **Fixar na barra de tarefas**.
 
-No **Windows**, o OCR (Tesseract) já vem dentro do instalador das edições PADRÃO e
-COMPLETA. No **Linux**, o `.deb` instala o Tesseract do sistema automaticamente. No
+No **Windows**, o OCR (Tesseract) já vem dentro do instalador. No **Linux**, o `.deb` instala o Tesseract do sistema automaticamente. No
 **macOS** (e no AppImage/tar.gz), instale o Tesseract à parte para ter OCR com acentos (a
 COMPLETA também traz o RapidOCR, que funciona sem instalar nada, mas perde acentos):
 
@@ -115,7 +111,7 @@ brew install tesseract tesseract-lang
 ### Pelo código-fonte
 
 Precisa do Python 3.10 ou mais recente. Escolha a edição pelo arquivo de dependências
-(`requirements-leve.txt`, `requirements-padrao.txt` ou `requirements-completa.txt`):
+(`requirements-padrao.txt` ou `requirements-completa.txt`):
 
 ```bash
 pip install -r requirements-padrao.txt
@@ -151,7 +147,7 @@ python run.py
 **Atualizar ou trocar de edição:** basta rodar o instalador novo. Ele substitui a versão instalada no
 mesmo lugar (não fica um programa duplicado), apaga antes os arquivos internos da versão anterior e
 mantém as suas configurações. Vale para atualizar (3.0 → 3.1) e para subir ou descer de edição
-(LEVE ↔ PADRÃO ↔ COMPLETA). No `.msi` e no `.deb` funciona do mesmo jeito.
+(PADRÃO ↔ COMPLETA). No `.msi` e no `.deb` funciona do mesmo jeito.
 
 ## Problemas comuns e como o Markinho resolve
 
@@ -414,7 +410,7 @@ pip install -r requirements.txt -r requirements-dev.txt
 python packaging/build.py --edition padrao all
 ```
 
-`--edition` aceita `leve`, `padrao` ou `completa`; instale antes as dependências da
+`--edition` aceita `padrao` ou `completa`; instale antes as dependências da
 edição (`requirements-<edição>.txt`). `all` gera tudo o que o sistema atual permite.
 Também dá para pedir alvos específicos: `app`, `zip`, `onefile`, `inno`, `msi`, `dmg`,
 `deb`, `appimage`, `tessdata`, `models`, `wheel`. O `inno` precisa do Inno Setup, e o `msi`
@@ -448,7 +444,7 @@ markinho/
   presets.py      modos Rápido / Equilibrado / Máxima qualidade
   exporter.py     Markdown → DOCX/PDF/HTML/… (Pandoc ou nativo)
   models.py       modelos de IA para uso offline
-  edition.py      edições LEVE / PADRÃO / COMPLETA
+  edition.py      edições PADRÃO / COMPLETA
   credits.py      créditos (incluídos × inspiração) e textos de licença
   mcp_server.py   servidor MCP local (pastas autorizadas)
   i18n.py         idiomas da interface: tr() e locale/en.json, locale/es.json

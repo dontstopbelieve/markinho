@@ -1,16 +1,16 @@
 name: Instaladores
 
-# Gera os instaladores das edições LEVE, PADRÃO e COMPLETA em Windows, macOS e Linux.
+# Gera os instaladores das edições PADRÃO e COMPLETA em Windows, macOS e Linux.
 # - Manualmente: aba Actions > Instaladores > Run workflow (os arquivos ficam em "Artifacts" da execução,
-#   guardados por 5 dias). Para economizar a cota gratuita, comece só com a edição "leve".
-# - Ao criar uma tag v* (ex.: v3.0.0): gera as 3 edições e publica uma Release com todos os arquivos.
+#   guardados por 5 dias).
+# - Ao criar uma tag v* (ex.: v3.0.0): gera as edições e publica uma Release com todos os arquivos.
 # Atenção (repositório privado, plano gratuito): 2.000 min/mês; macOS conta 10× e Windows 2×.
 on:
   workflow_dispatch:
     inputs:
       editions:
-        description: "Edições (separadas por vírgula): leve, padrao, completa"
-        default: "leve"
+        description: "Edições (separadas por vírgula): padrao, completa"
+        default: "padrao"
       sistemas:
         description: "Sistemas (separados por vírgula): windows, linux, macos (o macOS gasta 10× a cota)"
         default: "windows,linux"
@@ -43,20 +43,21 @@ jobs:
         # os campos digitados entram por variável de ambiente (nunca colados no comando) e só
         # valores conhecidos passam
         env:
-          IN_E: ${{ github.event.inputs.editions || 'leve,padrao,completa' }}
+          IN_E: ${{ github.event.inputs.editions || 'padrao,completa' }}
           IN_S: ${{ github.event.inputs.sistemas || 'windows,linux,macos' }}
           MAC_INTEL: ${{ github.event.inputs.mac_intel }}
           EVENT: ${{ github.event_name }}
         run: |
-          # aceita maiúsculas, espaços e acento (ex.: "Padrão, Leve"); recusa valores desconhecidos
+          # aceita maiúsculas, espaços e acento (ex.: "Padrão, Completa"); “leve” (edição antiga) vira “padrao”;
+          # recusa valores desconhecidos
           tojson() { python3 -c 'import sys,json,unicodedata
           ok=set(sys.argv[1].split(","))
           t=unicodedata.normalize("NFKD",sys.stdin.read().lower()).encode("ascii","ignore").decode()
-          v=[x.strip() for x in t.split(",") if x.strip()]
+          v=list(dict.fromkeys({"leve":"padrao"}.get(x.strip(),x.strip()) for x in t.split(",") if x.strip()))
           bad=[x for x in v if x not in ok]
           if bad or not v: sys.exit("valor desconhecido: "+", ".join(bad or ["(vazio)"])+" (use: "+", ".join(sorted(ok))+")")
           print(json.dumps(v))' "$1"; }
-          EJ=$(printf '%s' "$IN_E" | tojson leve,padrao,completa)
+          EJ=$(printf '%s' "$IN_E" | tojson padrao,completa)
           SJ=$(printf '%s' "$IN_S" | tojson windows,linux,macos)
           echo "editions=$EJ" >> "$GITHUB_OUTPUT"
           echo "sistemas=$SJ" >> "$GITHUB_OUTPUT"
@@ -87,7 +88,6 @@ jobs:
       - name: Dependências da edição
         run: pip install -r requirements-${{ matrix.edition }}.txt pyinstaller
       - name: Tesseract (OCR) embutido, com os idiomas da edição
-        if: matrix.edition != 'leve'
         shell: pwsh
         run: |
           choco install tesseract -y --no-progress
@@ -235,13 +235,11 @@ jobs:
 
             | Edição | O que traz |
             |---|---|
-            | **LEVE** | Motor nativo (PDF, Word, Excel, PowerPoint, HTML, EPUB…), correção de caracteres, imagens, exportação para DOCX/PDF/HTML/TXT, pedaços para IA, skill para assistentes de IA, servidor MCP, botão direito no Windows |
-            | **PADRÃO** | LEVE + Pandoc (21 formatos de exportação) + OCR (português e inglês) com tratamento da imagem |
+            | **PADRÃO** | Motor nativo (PDF, Word, Excel, PowerPoint, HTML, EPUB…), OCR (português e inglês) para escaneados e fotos, Pandoc (21 formatos de exportação), correção de caracteres, imagens, pedaços para IA, skill para assistentes de IA, servidor MCP, botão direito no Windows |
             | **COMPLETA** | PADRÃO + IA de layout (Docling, funciona offline) + MarkItDown + RapidOCR |
 
             **Qual escolher?**
-            - **LEVE**: só arquivos digitais (Word, planilhas, PDFs gerados no computador). Não lê escaneados.
-            - **PADRÃO**: também escaneados, fotos de documentos e prints (OCR em português e inglês, que endireita e gira páginas) e exportação para 21 formatos.
+            - **PADRÃO** (recomendada): para quase tudo — arquivos digitais, escaneados, fotos de documentos e prints, exportação para 21 formatos.
             - **COMPLETA**: PDFs difíceis (artigos, tabelas complicadas, fórmulas), com IA de layout que funciona sem internet. Instalador grande e conversão mais lenta.
 
             Todas as edições: interface em português, inglês e espanhol. Tudo roda no seu computador: nenhum documento é enviado para a internet.

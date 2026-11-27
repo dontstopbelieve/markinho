@@ -1484,7 +1484,7 @@ class EnginesDialog(QDialog):
         lay = QVBoxLayout(self)
         ed = current()
         if ed is not None:
-            nxt = {"leve": EDITIONS["padrao"], "padrao": EDITIONS["completa"]}.get(ed.id)
+            nxt = {"padrao": EDITIONS["completa"]}.get(ed.id)
             more = ""
             if nxt is not None:
                 extra_feats = [f for f in nxt.features if f not in ed.features]

@@ -1,4 +1,25 @@
-# Edição PADRÃO: LEVE + Pandoc + OCR com Tesseract
--r requirements-leve.txt
+# Edição PADRÃO: interface, motor nativo, AnyDoc, correção, exportação, MCP, Pandoc e OCR (Tesseract)
+PySide6>=6.6
+pypdf>=6.21.4          # versões anteriores têm falhas conhecidas (pip-audit, 14/11/2026)
+pdfplumber>=0.11.4          # x_tolerance_ratio (espaço entre palavras proporcional à letra)
+python-docx>=1.1
+openpyxl>=3.1
+python-pptx>=0.6.23
+beautifulsoup4>=4.12
+soupsieve>=4.0         # usado pelo Beautiful Soup; versões antigas têm falhas conhecidas
+Pillow>=13.0           # imagens: versões antigas têm falhas conhecidas
+markdownify>=0.12
+markdown>=3.5
+pygments>=2.17          # código colorido na visualização (BSD-2-Clause)
+xlrd>=2.0
+ftfy>=6.1
+mdformat>=0.7
+mdformat-gfm>=0.3
+# AnyDoc (MIT): .doc/.xls/.ppt antigos, OpenDocument, RTF — versão fixada (projeto novo, API pode mudar)
+firecrawl-anydoc>=0.2.4,<0.3
+# Servidor MCP local (assistentes de IA usam o Markinho) — SDK oficial, MIT
+mcp>=2.3,<3
+opentelemetry-api>=1.45.2   # dependência do MCP; versão anterior com falha conhecida
+# Pandoc (programa separado, GPL) e OCR com Tesseract
 pypandoc_binary>=1.13
 pytesseract>=0.3.10

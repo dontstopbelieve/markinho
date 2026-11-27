@@ -12,7 +12,7 @@ empresas citados, cujos nomes e marcas pertencem aos respectivos donos. Projetos
 inspiraram ideias (markitdown, Marker, PyMuPDF4LLM, Unstructured, file2markdown) estão em
 **Ajuda > Créditos**; nenhum código deles foi copiado.
 
-## Todas as edições (LEVE, PADRÃO, COMPLETA)
+## Todas as edições (PADRÃO e COMPLETA)
 
 | Componente | Licença | Observação |
 |---|---|---|
@@ -41,7 +41,7 @@ inspiraram ideias (markitdown, Marker, PyMuPDF4LLM, Unstructured, file2markdown)
 | Dependências do MCP: starlette, sse-starlette, uvicorn, httpx2, httpcore2, click, idna | BSD-3-Clause | PyPI |
 | Dependências do MCP: opentelemetry-api, python-multipart | Apache-2.0 | PyPI |
 
-## PADRÃO e COMPLETA
+## Pandoc e OCR (todas as edições)
 
 | Componente | Licença | Observação |
 |---|---|---|

@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 # Receita do PyInstaller. Gere com:  python packaging/build.py --edition padrao app
-#   MARKINHO_EDITION = leve | padrao | completa   (padrão: padrao)
+#   MARKINHO_EDITION = padrao | completa   (padrão: padrao)
 #   MARKINHO_ONEFILE = 1  -> um único executável portátil (só a interface)
 import os
 import sys
@@ -12,7 +12,8 @@ ROOT = Path(SPECPATH).parent
 EDITION = os.environ.get("MARKINHO_EDITION", "padrao")
 ONEFILE = os.environ.get("MARKINHO_ONEFILE") == "1"
 ICON = str(ROOT / "packaging" / "icons" / ("markinho.ico" if sys.platform == "win32" else "markinho.icns"))
-assert EDITION in ("leve", "padrao", "completa"), EDITION
+EDITION = "padrao" if EDITION == "leve" else EDITION      # a LEVE foi juntada à PADRÃO (27/11/2026)
+assert EDITION in ("padrao", "completa"), EDITION
 
 # marca da edição dentro do pacote (lida por markinho/edition.py)
 marker_dir = ROOT / "build" / f"edition-{EDITION}"
@@ -60,76 +61,73 @@ AI_STACK = ["torch", "torchvision", "transformers", "docling", "docling_core", "
             "easyocr", "scipy", "pandas", "markitdown", "magika", "rapidocr_onnxruntime", "rapidocr", "onnxruntime",
             "cv2", "shapely", "pyclipper", "cuda", "accelerate", "safetensors", "tokenizers", "huggingface_hub"]
 
-if EDITION == "leve":
-    excludes += AI_STACK + ["pypandoc", "pytesseract", "numpy"]
-else:
-    datas += collect_data_files("pypandoc")          # executável do Pandoc (pypandoc_binary)
-    hidden += ["pypandoc", "pytesseract"]
-    tess = ROOT / "packaging" / "vendor" / "tesseract"   # Tesseract embutido (o CI do Windows coloca aqui)
-    if tess.is_dir():
-        datas.append((str(tess), "tesseract"))
-    if EDITION == "padrao":
-        excludes += AI_STACK + ["numpy"]
-    else:  # completa: IA de layout e motores extras
-        for pkg in ("docling", "docling_core", "docling_parse", "docling_ibm_models", "markitdown", "magika",
-                    "rapidocr_onnxruntime", "rapidocr", "transformers", "tokenizers", "safetensors", "huggingface_hub"):
-            try:
-                d, b, h = collect_all(pkg)
-            except Exception as exc:  # noqa: BLE001
-                print(f"aviso: não foi possível coletar {pkg}: {exc}")
+datas += collect_data_files("pypandoc")          # executável do Pandoc (pypandoc_binary)
+hidden += ["pypandoc", "pytesseract"]
+tess = ROOT / "packaging" / "vendor" / "tesseract"   # Tesseract embutido (o CI do Windows coloca aqui)
+if tess.is_dir():
+    datas.append((str(tess), "tesseract"))
+if EDITION == "padrao":
+    excludes += AI_STACK + ["numpy"]
+else:  # completa: IA de layout e motores extras
+    for pkg in ("docling", "docling_core", "docling_parse", "docling_ibm_models", "markitdown", "magika",
+                "rapidocr_onnxruntime", "rapidocr", "transformers", "tokenizers", "safetensors", "huggingface_hub"):
+        try:
+            d, b, h = collect_all(pkg)
+        except Exception as exc:  # noqa: BLE001
+            print(f"aviso: não foi possível coletar {pkg}: {exc}")
+            continue
+        datas += d
+        binaries += b
+        hidden += h
+    # Toda a árvore de dependências: arquivos de dados (ex.: tabelas do latex2mathml) e
+    # metadados (várias bibliotecas conferem a versão das outras ao iniciar).
+    from importlib.metadata import PackageNotFoundError, distribution, packages_distributions
+
+    from packaging.requirements import Requirement
+    from PyInstaller.utils.hooks import copy_metadata
+
+    top_of = {}
+    for top, dists in packages_distributions().items():
+        for dname in dists:
+            top_of.setdefault(dname.lower().replace("_", "-"), []).append(top)
+    seen = set()
+
+    def walk(name, extras=frozenset()):
+        # segue também os "extras" (ex.: docling -> docling-slim[feat-ocr-rapidocr-onnx])
+        key = (name.lower().replace("_", "-"), extras)
+        if key in seen:
+            return
+        seen.add(key)
+        try:
+            dist = distribution(name)
+        except PackageNotFoundError:
+            return
+        for req in dist.requires or []:
+            r = Requirement(req)
+            envs = [{"extra": ""}] + [{"extra": e} for e in extras]
+            if r.marker is None or any(r.marker.evaluate(env) for env in envs):
+                walk(r.name, frozenset(r.extras))
+
+    for root in ("docling", "markitdown", "rapidocr-onnxruntime"):
+        walk(root)
+    seen = {k for k, _ in seen}
+    skip = {"torch", "nvidia", "triton", "PySide6", "shiboken6"}
+    for dname in sorted(seen):
+        try:
+            datas += copy_metadata(dname)
+        except Exception:  # noqa: BLE001
+            pass
+        for top in top_of.get(dname, []):
+            if top in skip or top.startswith("_"):
                 continue
-            datas += d
-            binaries += b
-            hidden += h
-        # Toda a árvore de dependências: arquivos de dados (ex.: tabelas do latex2mathml) e
-        # metadados (várias bibliotecas conferem a versão das outras ao iniciar).
-        from importlib.metadata import PackageNotFoundError, distribution, packages_distributions
-
-        from packaging.requirements import Requirement
-        from PyInstaller.utils.hooks import copy_metadata
-
-        top_of = {}
-        for top, dists in packages_distributions().items():
-            for dname in dists:
-                top_of.setdefault(dname.lower().replace("_", "-"), []).append(top)
-        seen = set()
-
-        def walk(name, extras=frozenset()):
-            # segue também os "extras" (ex.: docling -> docling-slim[feat-ocr-rapidocr-onnx])
-            key = (name.lower().replace("_", "-"), extras)
-            if key in seen:
-                return
-            seen.add(key)
             try:
-                dist = distribution(name)
-            except PackageNotFoundError:
-                return
-            for req in dist.requires or []:
-                r = Requirement(req)
-                envs = [{"extra": ""}] + [{"extra": e} for e in extras]
-                if r.marker is None or any(r.marker.evaluate(env) for env in envs):
-                    walk(r.name, frozenset(r.extras))
-
-        for root in ("docling", "markitdown", "rapidocr-onnxruntime"):
-            walk(root)
-        seen = {k for k, _ in seen}
-        skip = {"torch", "nvidia", "triton", "PySide6", "shiboken6"}
-        for dname in sorted(seen):
-            try:
-                datas += copy_metadata(dname)
+                datas += collect_data_files(top)
             except Exception:  # noqa: BLE001
                 pass
-            for top in top_of.get(dname, []):
-                if top in skip or top.startswith("_"):
-                    continue
-                try:
-                    datas += collect_data_files(top)
-                except Exception:  # noqa: BLE001
-                    pass
-        # bibliotecas da NVIDIA (GPU) ficam de fora: o instalador usa o PyTorch para processador.
-        # MARKINHO_KEEP_GPU=1 mantém (só para testar localmente com um PyTorch de GPU instalado).
-        if os.environ.get("MARKINHO_KEEP_GPU") != "1":
-            excludes += ["nvidia", "triton"]
+    # bibliotecas da NVIDIA (GPU) ficam de fora: o instalador usa o PyTorch para processador.
+    # MARKINHO_KEEP_GPU=1 mantém (só para testar localmente com um PyTorch de GPU instalado).
+    if os.environ.get("MARKINHO_KEEP_GPU") != "1":
+        excludes += ["nvidia", "triton"]
 
 
 # Partes do Qt que o Markinho não usa, mas que entram por dependência de plugins (~20 MB)

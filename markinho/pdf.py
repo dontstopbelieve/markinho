@@ -27,6 +27,11 @@ _BOLD_RE = re.compile(r"bold|black|heavy|semibold|demi", re.I)
 NO_TEXT = (tr("_Nenhum texto encontrado. O PDF provavelmente é uma imagem escaneada e não há OCR "
            "disponível — instale o Tesseract ou use o motor **Docling**/**Marker**._"))
 
+# Espaço entre palavras proporcional ao tamanho da letra (10% da altura): PDFs gerados pelo LaTeX
+# e jornais usam espaços estreitos (~1,5 pt) que a tolerância fixa padrão (3 pt) colava
+# (“Despitethesubstantial…”). Testado em artigos, jornais e relatórios (27/11/2026).
+WORD_GAP = {"x_tolerance_ratio": 0.10}
+
 
 # --------------------------------------------------------------------------- #
 # Utilidades
@@ -277,10 +282,13 @@ def blocks_to_markdown(pages: list[tuple[int, list[dict]]], body: float | None =
                         and 0 <= b["top"] - prev["bottom"] < b["size"] * 0.5)
             lvl = level_of(b["size"])
             inferred = False
+            section = _SECTION_RE.match(text) if b.get("bold") else None
             if lvl is None and b.get("bold") and len(text) < 90 and not text.endswith((".", ",", ";", ":")) \
                     and body * 0.92 < b["size"] < (levels[-1] * 0.96 if levels else body * 1.6) \
-                    and not re.match(r"^[•\-–*]|\d+[.)]\s", text):
+                    and not re.match(r"^[•\-–*]", text) and (section or not re.match(r"\d+[.)]\s", text)):
                 lvl = len(levels) + 1 + offset   # negrito (corpo ou um pouco maior), sozinho na linha = subtítulo
+                if section:                      # seção numerada: “4.1. Título” fica um nível abaixo de “4. Título”
+                    lvl += section.group(1).count(".")
                 inferred = True
             if lvl and not _can_be_heading(text, b, nxt, inferred, cont, body):
                 lvl = None
@@ -314,6 +322,8 @@ def blocks_to_markdown(pages: list[tuple[int, list[dict]]], body: float | None =
     return parts
 
 
+# seção numerada em negrito (“1. Introdução”, “4.2 Resultados”): número curto + título curto sem ponto final
+_SECTION_RE = re.compile(r"^(\d{1,2}(?:\.\d{1,2}){0,3})\.?\s+[A-ZÀ-Ý][^.!?;:]{1,70}$")
 _NOT_HEADING = re.compile(r"@|https?://|www\.|\.(?:br|com|org|net|gov)(?:/|\b)", re.I)
 
 
@@ -464,7 +474,7 @@ def _layout_pdf(path: Path) -> str:
             tables = page.find_tables() if option("pdf_tables", True) else []
             bboxes = []
             for t in tables:
-                rows = t.extract()
+                rows = t.extract(**WORD_GAP)
                 if rows and max(len(r) for r in rows) >= 2 and len(rows) >= 2:
                     bboxes.append(t.bbox)
                     blocks.append({"kind": "table", "text": md_table(rows), "x0": t.bbox[0], "x1": t.bbox[2],
@@ -476,7 +486,7 @@ def _layout_pdf(path: Path) -> str:
                 return any(b[0] <= x <= b[2] and b[1] <= y <= b[3] for b in _b)
 
             words = [w for w in page.extract_words(extra_attrs=["size", "fontname", "upright"],
-                                                   keep_blank_chars=False) if not inside(w)]
+                                                   keep_blank_chars=False, **WORD_GAP) if not inside(w)]
             if strip_stamps:
                 # texto vertical nas laterais (faixa “Assinado eletronicamente por…” do PJe/SEI, carimbo do
                 # arXiv): só quando forma uma frase longa — rótulos curtos de gráficos ficam

@@ -1,6 +1,6 @@
 ﻿; Instalador do Markinho para Windows (Inno Setup 6).
 ; Gere com: python packaging/build.py --edition padrao inno
-; As três edições usam o mesmo AppId: instalar uma edição por cima de outra a substitui.
+; As edições usam o mesmo AppId: instalar uma edição por cima de outra a substitui.
 
 #ifndef AppVersion
   #define AppVersion "3.0.0"
@@ -384,7 +384,7 @@ Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.markdown\shell\Mark
 [InstallDelete]
 ; Atualizar ou trocar de edição: o instalador substitui a versão atual no mesmo lugar (mesmo AppId).
 ; Antes de copiar, apaga a pasta interna do programa anterior, para não sobrar biblioteca de outra edição
-; (ex.: IA da COMPLETA ao voltar para a LEVE). As configurações do usuário ficam na pasta do perfil
+; (ex.: IA da COMPLETA ao voltar para a PADRÃO). As configurações do usuário ficam na pasta do perfil
 ; (não aqui) e são mantidas.
 Type: filesandordirs; Name: "{app}\_internal"
 ; modelos de IA embutidos (COMPLETA); os baixados pelo usuário ficam na pasta do perfil e não são apagados
