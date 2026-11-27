@@ -192,6 +192,46 @@ def find_gutter(blocks: list[dict], width: float) -> float | None:
     return None
 
 
+# cara de cabeçalho/rodapé: número de página, “Página 3 de 10”, site, DOI, volume/páginas de revista, ISSN, ©
+_FURNITURE = re.compile(
+    r"^(?:[-–—\s]*\d{1,4}[-–—\s]*|[ivxlcdm]{1,6}|p(?:á|a)g(?:ina)?\.?\s*\d+(?:\s*(?:de|of|/)\s*\d+)?|"
+    r"page\s+\d+(?:\s+of\s+\d+)?)$|www\.|https?://|\bdoi\b|\bvol\.?\s*\d|\bissn\b|\bisbn\b|©|\(\d+pp\)|"
+    r"\b\d+\s*[:(]\s*\d+[-–]\d+", re.I)
+
+
+def strip_page_furniture(blocks: list[dict], height: float) -> list[dict]:
+    """Cabeçalho e rodapé de UMA página (sem precisar que se repitam): no máximo 2 linhas curtas em cada beira
+    (8% de cima e de baixo), separadas do texto, com letra menor que a do texto ou com cara de rodapé
+    (número de página, site, DOI, “Vol. 19”…). Título (letra grande) e nota de rodapé (várias linhas) ficam."""
+    lines = [b for b in blocks if b["kind"] == "line"]
+    if len(lines) < 6:
+        return blocks
+    body = statistics.median(b["size"] for b in lines)
+    drop: set[int] = set()
+    for edge in ("top", "bottom"):
+        ordered = sorted(lines, key=lambda b: b["top"], reverse=(edge == "bottom"))
+        for k, b in enumerate(ordered[:2]):
+            in_margin = b["top"] < height * 0.09 if edge == "top" else b["bottom"] > height * 0.91
+            if not in_margin or len(b["text"]) > 90:
+                break
+            nxt = ordered[k + 1] if k + 1 < len(ordered) else None
+            gap = (nxt["top"] - b["bottom"]) if edge == "top" else (b["top"] - nxt["bottom"]) if nxt else 99
+            text = b["text"].strip()
+            small = b["size"] <= body * 0.92 and not b.get("bold")
+            looks = bool(_FURNITURE.search(text))
+            # com cara de rodapé (número, site, “Página 3 de 10”) basta estar separado; só pela letra menor, o
+            # vão precisa ser maior (protege a última linha de uma nota de rodapé)
+            # título corrido da revista/livro: a linha mais da beira, curta, do tamanho do texto, bem separada
+            running = (k == 0 and len(text) <= 70 and b["size"] <= body * 1.1 and gap >= b["size"] * 1.2
+                       and (b["top"] < height * 0.07 if edge == "top" else b["bottom"] > height * 0.94))
+            if running or (looks and b["size"] <= body * 1.25 and gap >= b["size"] * 0.3) or \
+                    (small and gap >= b["size"] * 0.8):
+                drop.add(id(b))
+            else:
+                break
+    return [b for b in blocks if id(b) not in drop]
+
+
 def borderless_tables(segs: list[dict], width: float) -> tuple[list[dict], list[dict]]:
     """Tabelas SEM linhas desenhadas, achadas pelo alinhamento: 3+ linhas seguidas com 2+ células curtas cada,
     cujas colunas caem nos mesmos lugares. Devolve (blocos de tabela, segmentos que sobraram).
@@ -652,6 +692,8 @@ def _layout_pdf(path: Path) -> str:
                                            "top": top, "bottom": bottom})
             for b in blocks:
                 b["margin"] = b["top"] < H * 0.08 or b["bottom"] > H * 0.92
+            if option("pdf_strip_headers", True):
+                blocks = strip_page_furniture(blocks, H)
             if strip_stamps:
                 kept = [b for b in blocks if not (b["kind"] == "line" and _is_stamp(b["text"])
                                                   and (b["margin"] or b["x0"] > W * 0.8 or b["x1"] < W * 0.2))]
