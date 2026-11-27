@@ -119,6 +119,9 @@ class NativeEngine(Engine):
                help=tr("Corta uma faixa fixa no topo de todas as páginas (0 = não cortar).")),
         Option("pdf_margin_bottom", tr("PDF: ignorar rodapé da página (%)"), "int", 0),
         Option("pdf_page_markers", tr("PDF: marcar início de cada página"), "bool", False),
+        Option("pdf_merge_tables", tr("PDF: juntar tabelas que continuam na página seguinte"), "bool", True,
+               help=tr("Uma tabela longa que quebra entre páginas vira uma tabela só (sem repetir o cabeçalho), "
+                       "inteira também nos pedaços para IA.")),
         Option("tables_html", tr("Tabelas mescladas viram HTML"), "bool", True,
                help=tr("Tabelas com células mescladas (rowspan/colspan) são gravadas em HTML, que o "
                     "Markdown aceita; sem isso, as células são repetidas numa tabela simples.")),

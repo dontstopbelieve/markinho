@@ -182,7 +182,7 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
       (fechadas), correção de caracteres resumida, painel começa fechado em telas < 1280 px, textos sem jargão.
 - [x] **UX nível C** (feito em 27/11/2026): tela vazia acolhedora com área grande para soltar arquivos, barra de etapas
       (Adicionar → Converter → Salvar), aba Visualização como inicial no modo simples.
-- [ ] **Testes de regressão com réplicas falsas** (plano de 16/11): tabela que quebra entre páginas,
+- [ ] **Testes de regressão com réplicas falsas** (plano de 16/11): ~~tabela que quebra entre páginas~~ (feito 27/11: `tests/test_tabela_paginas.py`),
       DOCX com caixas de texto/notas/comentários, XLSX com várias abas e células mescladas, PPTX com
       tabelas, página escaneada torta/invertida gerada no teste. Regra: defeito corrigido = teste novo
       com uma réplica do arquivo (nunca o documento real de terceiros).

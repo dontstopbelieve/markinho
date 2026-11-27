@@ -50,6 +50,7 @@ markinho/
   postprocess.py   frontmatter YAML, perfis (gfm, mdformat, obsidian, llm)
   textfix.py       correção de caracteres (mojibake, acentos, ligaduras…) com relatório
   chunker.py       pedaços para RAG (JSON/JSONL)
+  batch.py         --retomar: registro do lote (.markinho-lote.json, SHA-256 + configuração), gravação atômica
   naming.py        padrões de nome de saída ({nome} {n} {titulo} {data}…)
   presets.py       modos Rápido / Equilibrado / Máxima qualidade
   exporter.py      Markdown → DOCX/PDF/HTML/… (Pandoc ou nativo)

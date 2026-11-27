@@ -11,6 +11,7 @@ from __future__ import annotations
 from .i18n import tr
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -65,6 +66,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--skill", nargs="?", const="", default=None, metavar="NOME",
                     help=tr("cria uma skill para assistentes de IA (SKILL.md + capítulos) com todos os arquivos; "
                             "-o pasta ou -o arquivo.zip"))
+    ap.add_argument("--retomar", action="store_true",
+                    help=tr("lote que retoma de onde parou: guarda a impressão digital (SHA-256) de cada arquivo na "
+                            "pasta de saída e, ao rodar de novo, pula o que já está pronto e não mudou"))
     ap.add_argument("--chunk-size", type=int, default=1500, metavar="N", help=tr("tamanho máximo do pedaço (caracteres)"))
     ap.add_argument("--chunk-overlap", type=int, default=150, metavar="N", help=tr("sobreposição entre pedaços"))
     ap.add_argument("--chunk-by", default="title", choices=["title", "page", "basic"],
@@ -203,9 +207,39 @@ def cli(argv: list[str]) -> int:
     skill_docs: list[tuple[str, str]] = []
     if args.skill is not None:
         multi = False
+    manifest = cfg = None
+    counts = {"ok": 0, "pulados": 0, "erro": 0}
+    if args.retomar:
+        if args.skill is not None or not multi or out is None or (args.chunks and not args.output):
+            ap.error(tr("--retomar precisa de uma pasta de saída (-o pasta/) e não funciona com --skill"))
+        from .batch import Manifest, config_key, file_hash
+
+        out.mkdir(parents=True, exist_ok=True)
+        manifest = Manifest(out)
+        if manifest.corrupt:
+            print(tr("aviso: o registro do lote estava estragado; começando de novo"), file=sys.stderr)
+        anon_list = ""
+        if args.anonimizar_lista:
+            anon_list = file_hash(args.anonimizar_lista)
+        cfg = config_key({k: v for k, v in vars(args).items()
+                          if k not in ("arquivos", "output", "retomar", "report", "gui", "version")}
+                         | {"anon_list": anon_list})
     if multi and out:
         out.mkdir(parents=True, exist_ok=True)
     for index, f in enumerate(args.arquivos):
+        sha = ""
+        if manifest is not None:
+            try:
+                sha = file_hash(f)
+            except OSError as exc:
+                print(tr('erro: {0}').format(exc), file=sys.stderr)
+                status = 1
+                counts["erro"] += 1
+                continue
+            if manifest.is_done(f, sha, cfg):
+                print(tr("{0}: já convertido e sem mudanças — pulado").format(f), file=sys.stderr)
+                counts["pulados"] += 1
+                continue
         engine, eng_opts = args.engine, dict(opts)
         if args.modo and args.engine == "auto":      # o modo escolhe o motor, a menos que -e seja dado
             from .engines import ENGINES, pick_engine
@@ -219,6 +253,9 @@ def cli(argv: list[str]) -> int:
             res = convert(f, engine, eng_opts, fix, output, fallback=args.engine == "auto")
         except ConversionError as exc:
             print(tr('erro: {0}').format(exc), file=sys.stderr)
+            if manifest is not None:
+                manifest.fail(f, sha, cfg, str(exc))
+                counts["erro"] += 1
             if debug:
                 import traceback
 
@@ -251,11 +288,17 @@ def cli(argv: list[str]) -> int:
             ctx = NameContext.from_result(Path(f), title=res.metadata.get("title") or res.title, engine=res.engine)
             stem = render(ctx, index, naming)
             name, k = stem + ext, 2
-            while name.lower() in used_names or ((out / name).exists() and naming.conflict == "suffix"):
-                name, k = f"{stem}_{k}{ext}", k + 1
+            reserved = manifest.output_name(f, cfg) if manifest is not None else None
+            if reserved and reserved.lower() not in used_names:
+                name = reserved                  # retomando: grava por cima do que ficou pela metade
+            else:
+                while name.lower() in used_names or ((out / name).exists() and naming.conflict == "suffix"):
+                    name, k = f"{stem}_{k}{ext}", k + 1
             used_names.add(name.lower())
             target = out / name
-            if target.exists() and naming.conflict == "skip":
+            if manifest is not None:
+                manifest.start(f, sha, cfg, name)
+            elif target.exists() and naming.conflict == "skip":
                 print(tr('{0}: {1} já existe — pulado').format(f, target), file=sys.stderr)
                 continue
         else:
@@ -264,22 +307,36 @@ def cli(argv: list[str]) -> int:
         if args.to:
             import tempfile
 
+            partial = target.with_name(f".~{target.stem}{target.suffix}")    # trocado no fim: nunca fica pela metade
             try:
                 with tempfile.TemporaryDirectory() as tmp:
                     base = tmp if write_assets(res.markdown, res.assets, Path(tmp)) else Path(f).parent
-                    via = export(res.markdown, target, args.to,
+                    via = export(res.markdown, partial, args.to,
                                  {**export_opts, "source": Path(f).name, "metadata": res.metadata}, base_dir=base)
+                os.replace(partial, target)
             except Exception as exc:  # noqa: BLE001
+                partial.unlink(missing_ok=True)
                 print(tr('erro ao exportar {0}: {1}').format(f, exc), file=sys.stderr)
                 status = 1
+                if manifest is not None:
+                    manifest.finish(f, False, str(exc))
+                    counts["erro"] += 1
                 continue
             print(f"{f} -> {target} ({res.converter} → {via})", file=sys.stderr)
         else:
+            from .batch import atomic_write
+
             md, files = rename_assets(res.markdown, res.assets, target.stem)   # pasta de imagens acompanha o nome
-            target.write_text(md, encoding="utf-8")
+            atomic_write(target, md)
             n = write_assets(md, files, target.parent)
             extra = tr(', {0} imagem(ns)').format(n) if n else ""
             print(f"{f} -> {target} ({res.converter}{extra})", file=sys.stderr)
+        if manifest is not None:
+            manifest.finish(f, True)
+            counts["ok"] += 1
+    if manifest is not None:
+        print(tr("lote: {0} convertido(s), {1} pulado(s) sem mudanças, {2} com erro — registro em {3}").format(
+            counts["ok"], counts["pulados"], counts["erro"], manifest.path), file=sys.stderr)
     if args.skill is not None and skill_docs:
         status = max(status, _write_skill(skill_docs, args.skill, out))
     return status

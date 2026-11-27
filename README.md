@@ -153,6 +153,7 @@ mantém as suas configurações. Vale para atualizar (3.0 → 3.1) e para subir 
 
 | Problema | Solução no Markinho |
 |---|---|
+| **Tabela que continua na página seguinte** | Uma tabela longa que quebra entre páginas do PDF vira **uma tabela só**, sem repetir o cabeçalho — inteira também nos pedaços para IA (RAG). Pode ser desligado nas opções do motor Nativo |
 | **Tabelas quebradas** | Tabelas com linhas desenhadas no PDF são reconstruídas. Células **mescladas** (DOCX, PPTX, XLSX) viram tabela HTML com `rowspan`/`colspan`, que o Markdown aceita. Docling (IA) para tabelas difíceis |
 | **Imagens perdidas** | Extraídas de DOCX, PPTX e PDF: numa pasta `<nome>_assets/` ao lado do `.md`, **embutidas** (base64) ou removidas. Opcional: descrição automática (texto alternativo) com IA local via **Ollama** |
 | **Escaneados e prints** | **OCR local** automático nas páginas sem texto e em imagens (Tesseract, que mantém os acentos; ou RapidOCR). Docling e Marker têm OCR próprio |
@@ -160,6 +161,7 @@ mantém as suas configurações. Vale para atualizar (3.0 → 3.1) e para subir 
 | **Várias colunas** | O leitor de PDF acha o espaço entre as colunas e lê uma coluna inteira antes da outra |
 | **Cabeçalhos e rodapés** | Remove linhas repetidas no topo/rodapé das páginas e/ou corta uma margem fixa (%) |
 | **Código e fórmulas** | Texto em fonte monoespaçada vira bloco de código com a indentação preservada. Fórmulas em LaTeX: Docling (opção “fórmulas”) ou Marker |
+| **Palavras grudadas** | PDFs gerados pelo LaTeX (artigos científicos) e jornais usam espaços muito estreitos; o Markinho mede o espaço pelo tamanho da letra e separa as palavras certo |
 | **Caracteres trocados** | Correção de mojibake (`Ã§` → `ç`), acentos soltos, ligaduras, hifenização e mais, com relatório do antes e depois |
 | **Dialetos de Markdown** | Perfis de saída: GitHub (GFM), padronizado (mdformat), **Obsidian** e **Texto para IA** (sem imagens nem comentários, para economizar tokens) |
 | **Metadados** | Frontmatter YAML opcional com título, autor, datas, nº de páginas e arquivo de origem |
@@ -212,6 +214,7 @@ divide o Markdown em **pedaços** e grava em JSONL (um por linha) ou JSON:
 - **Por título** (padrão): cada seção vira um pedaço; seções longas são divididas e as muito
   pequenas são unidas. **Por página** (com as marcas de página do PDF) ou **só por tamanho**.
 - Tamanho máximo e **sobreposição** configuráveis.
+- Tabelas que continuam na página seguinte do PDF são juntadas antes, então não viram dois pedaços soltos.
 - **Tabelas e código nunca são cortados no meio**: tabelas grandes são divididas por linhas,
   repetindo o cabeçalho.
 - Cada pedaço traz `id`, `text`, `headings` (caminho de títulos, repetido no início do texto),
@@ -381,6 +384,16 @@ imagens e incluir metadados; converter vários arquivos com o perfil “Texto pa
 Pandoc com outro dialeto; converter PDF → Markdown → Word; descrever imagens com o Ollama;
 criar uma skill para assistentes de IA; listar motores, OCR e formatos disponíveis.
 
+**Lotes grandes que retomam de onde pararam:** com `--retomar`, o Markinho guarda na pasta de saída um
+registro (`.markinho-lote.json`) com a impressão digital (SHA-256) de cada arquivo, a configuração usada e o
+resultado. Se o lote cair no meio (queda de energia, computador desligado, erro), basta rodar o mesmo comando
+de novo: o que já está pronto e não mudou é pulado; só o que faltou, deu erro ou mudou (arquivo ou
+configuração) é refeito. Os arquivos são gravados de forma atômica (nunca fica um arquivo pela metade).
+
+```bash
+markinho documentos/*.pdf -o saida/ --retomar
+```
+
 **Como biblioteca:**
 
 ```python
@@ -436,6 +449,7 @@ markinho/
   describe.py     texto alternativo com IA local (Ollama)
   textfix.py      correção de caracteres
   chunker.py      pedaços para RAG (JSON/JSONL)
+  batch.py        lotes que retomam de onde pararam (--retomar)
   aitools.py      Copiar para IA: tokens e divisão em partes
   skillpack.py    Exportar como skill para IA (SKILL.md + capítulos)
   anonymize.py    anonimização de dados pessoais

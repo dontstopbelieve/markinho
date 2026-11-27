@@ -135,6 +135,15 @@ Revisão do pacote inteiro com a ferramenta de revisão do Claude Code. Corrigid
 - **Privacidade:** a janela e o texto de Privacidade avisam que, ao usar a skill ou o “Copiar para
   IA” num assistente on-line, o conteúdo vai para esse serviço.
 
+### 27/11/2026 — Lotes que retomam (--retomar) e tabelas entre páginas
+
+- O registro do lote (`.markinho-lote.json`) fica na pasta de saída e pode ser mexido por qualquer um: o
+  nome de saída guardado nele só é usado se for um nome de arquivo simples (sem barras, `..`, `:` nem ponto
+  inicial); senão o Markinho escolhe o nome normalmente. Registro estragado = recomeça, sem apagar nada.
+- Gravação atômica (temporário na mesma pasta + troca): queda no meio nunca deixa arquivo pela metade nem
+  temporário largado. Testes em `tests/test_batch.py` (inclusive “computador desligou no 2º arquivo”).
+- Página só com tabela não passa mais pelo OCR (antes o texto da tabela era repetido como texto solto).
+
 ## Rotina antes de cada versão
 
 1. `pip install pip-audit` e `pip-audit -r requirements-padrao.txt` (e as outras edições).

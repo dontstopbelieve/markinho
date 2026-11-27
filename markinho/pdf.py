@@ -477,7 +477,7 @@ def _layout_pdf(path: Path) -> str:
                 rows = t.extract(**WORD_GAP)
                 if rows and max(len(r) for r in rows) >= 2 and len(rows) >= 2:
                     bboxes.append(t.bbox)
-                    blocks.append({"kind": "table", "text": md_table(rows), "x0": t.bbox[0], "x1": t.bbox[2],
+                    blocks.append({"kind": "table", "text": md_table(rows), "rows": rows, "x0": t.bbox[0], "x1": t.bbox[2],
                                    "top": t.bbox[1], "bottom": t.bbox[3]})
 
             def inside(obj, _b=bboxes):
@@ -498,7 +498,9 @@ def _layout_pdf(path: Path) -> str:
                         gone = {id(w) for w in lateral}
                         words = [w for w in words if id(w) not in gone]
                         stamps.add(i)
-            n_chars = sum(len(w["text"]) for w in words)
+            # texto da página inclui o das tabelas: página só com tabela não é “escaneada” (senão o OCR
+            # repetia a tabela inteira como texto solto)
+            n_chars = sum(len(w["text"]) for w in words) + sum(len(b["text"]) for b in blocks if b["kind"] == "table")
             use_ocr = backend is not None and (mode == "force" or (mode == "auto" and n_chars < 25))
             if use_ocr:
                 from .safety import safe_resolution
@@ -568,6 +570,11 @@ def _layout_pdf(path: Path) -> str:
             pages = [(n, [b for b in bl if not (b["kind"] == "line" and b["margin"] and _key(b["text"]) in rep)])
                      for n, bl in pages]
 
+    if option("pdf_merge_tables", True):
+        pages, merged = merge_split_tables(pages)
+        if merged:
+            warn(tr("{0} tabela(s) que continuavam na página seguinte foram juntadas.").format(merged), info=True)
+
     starts: list = []
     parts = blocks_to_markdown(pages, page_markers=option("pdf_page_markers", False), page_starts=starts)
     from .core import record_page_starts
@@ -580,6 +587,60 @@ def _layout_pdf(path: Path) -> str:
     if ocr_pages:
         parts.append(f"<!-- Markinho: {ocr_pages} página(s) reconhecida(s) por OCR ({backend}) -->")
     return "\n\n".join(parts)
+
+
+# linhas que podem ficar entre os dois pedaços de uma tabela: número de página e avisos de continuação
+_TABLE_CONT = re.compile(r"^[\s\d/–-]*$|^\(?\s*(continua|continuação|cont\.|continued|continúa|continuación)\b",
+                         re.I)
+
+
+def _norm_row(row) -> tuple:
+    return tuple(re.sub(r"\s+", " ", str(c or "")).strip().lower() for c in row)
+
+
+def merge_split_tables(pages: list[tuple[int, list[dict]]]) -> tuple[list[tuple[int, list[dict]]], int]:
+    """Junta a tabela que termina uma página com a que começa a seguinte, quando têm o mesmo número de
+    colunas (uma tabela longa que quebrou entre páginas). O cabeçalho repetido no alto da página nova sai.
+    Assim a tabela fica inteira no Markdown e nos pedaços para IA (RAG). Devolve (páginas, nº de junções)."""
+    from .converters import md_table
+
+    def edge(blocks: list[dict], last: bool) -> int | None:
+        order = range(len(blocks) - 1, -1, -1) if last else range(len(blocks))
+        for k in order:
+            b = blocks[k]
+            if b["kind"] == "table":
+                return k if b.get("rows") else None
+            if b["kind"] == "line" and (b.get("margin") or _TABLE_CONT.match(b["text"].strip())):
+                continue                                  # rodapé, número de página, “(continua)”
+            return None
+        return None
+
+    def width(rows) -> int:
+        return max(len(r) for r in rows)
+
+    out = [(n, list(bl)) for n, bl in pages]
+    merged = 0
+    host: tuple[int, int] | None = None          # (página, bloco) da tabela que pode continuar
+    for k, (n, blocks) in enumerate(out):
+        j = edge(blocks, False) if host is not None and n == out[k - 1][0] + 1 else None
+        if j is not None:
+            hp, hi = host
+            top, cont = out[hp][1][hi]["rows"], blocks[j]["rows"]
+            if width(top) == width(cont):
+                if _norm_row(cont[0]) == _norm_row(top[0]):
+                    cont = cont[1:]                          # cabeçalho repetido na página nova
+                rows = top + cont
+                out[hp][1][hi] = {**out[hp][1][hi], "rows": rows, "text": md_table(rows)}
+                # sai a continuação e o que estava antes dela (rodapé, “continua”); imagens ficam
+                blocks = [b for x, b in enumerate(blocks) if x > j or (x < j and b["kind"] != "line")]
+                out[k] = (n, blocks)
+                merged += 1
+                if not any(b["kind"] != "line" or not (b.get("margin") or _TABLE_CONT.match(b["text"].strip()))
+                           for b in blocks):
+                    continue              # a página era só a continuação: a tabela pode seguir na próxima
+        i = edge(blocks, True)
+        host = (k, i) if i is not None else None
+    return out, merged
 
 
 def _pages_text(pages: list[int], limit: int = 12) -> str:
