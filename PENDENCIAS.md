@@ -207,7 +207,7 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
 - [ ] **Acessibilidade**: contraste, navegação por teclado, leitor de tela, fonte ampliada.
 - [ ] **Assinatura digital gratuita** para código aberto (ex.: SignPath Foundation; tem requisitos),
       depois de o repositório ficar público.
-- [ ] **Benchmark de qualidade** dos motores (texto, títulos e tabelas corretos, não só tempo).
+- [x] **Benchmark de qualidade** dos motores: feito com o olmOCR-bench em 27/11/2026 (ver “Teste público” acima).
 - [ ] **Anonimização — nomes sem pista (COMPLETA)**: hoje (16/11/2026) a anonimização acha nomes só
       por pistas (Sr., réu, paciente, assinatura…) e pela lista do usuário. Detectar qualquer nome exige
       um modelo de IA de reconhecimento de nomes; antes, conferir a licença do modelo (venda permitida).
