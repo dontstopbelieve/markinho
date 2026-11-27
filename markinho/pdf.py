@@ -117,7 +117,7 @@ def word_gutter(words: list[dict], width: float) -> float | None:
     return None
 
 
-def words_to_segments(words: list[dict], split_x: float | None = None) -> list[dict]:
+def words_to_segments(words: list[dict], split_x: float | None = None, gap: float | None = None) -> list[dict]:
     """Agrupa palavras em linhas e quebra a linha onde há um vão grande (colunas). `split_x`: corredor entre
     colunas (de `word_gutter`) — a linha é quebrada ali mesmo que o vão seja estreito."""
     words = sorted(words, key=lambda w: (round(w["top"]), w["x0"]))
@@ -139,7 +139,8 @@ def words_to_segments(words: list[dict], split_x: float | None = None) -> list[d
         for w in row[1:]:
             size = statistics.median([c.get("size", 10) or 10 for c in cur])
             crosses = split_x is not None and cur[-1]["x1"] <= split_x + 1 and w["x0"] >= split_x - 1
-            if crosses or w["x0"] - cur[-1]["x1"] > max(1.8 * size, 14):
+            limit = gap * size if gap else max(1.8 * size, 14)     # `gap`: separação mais fina (tabelas)
+            if crosses or w["x0"] - cur[-1]["x1"] > limit:
                 segs.append(_make_seg(cur))
                 cur = [w]
             else:
@@ -192,17 +193,31 @@ def find_gutter(blocks: list[dict], width: float) -> float | None:
     return None
 
 
-# cara de cabeçalho/rodapé: número de página, “Página 3 de 10”, site, DOI, volume/páginas de revista, ISSN, ©
+# número de página sozinho: “12”, “- 12 -”, “xii”, “Página 3 de 10”, “page 64”, “3 / 15”
+_PAGE_NO = re.compile(r"^(?:[-–—\s]*\d{1,4}[-–—\s]*|[ivxlcdm]{1,6}|p(?:á|a)g(?:ina)?\.?\s*\d+(?:\s*(?:de|of|/)\s*\d+)?|"
+                      r"page\s+\d+(?:\s+of\s+\d+)?|\d{1,4}\s*/\s*\d{1,4})$", re.I)
+# cara de cabeçalho/rodapé: site, DOI, ISSN/ISBN, volume/número de revista, ©, avisos de citação e impressão
 _FURNITURE = re.compile(
-    r"^(?:[-–—\s]*\d{1,4}[-–—\s]*|[ivxlcdm]{1,6}|p(?:á|a)g(?:ina)?\.?\s*\d+(?:\s*(?:de|of|/)\s*\d+)?|"
-    r"page\s+\d+(?:\s+of\s+\d+)?)$|www\.|https?://|\bdoi\b|\bvol\.?\s*\d|\bissn\b|\bisbn\b|©|\(\d+pp\)|"
-    r"\b\d+\s*[:(]\s*\d+[-–]\d+", re.I)
+    r"www\.|https?://|\bdoi\b|\bissn\b|\bisbn\b|\bvol(?:ume)?\.?\s*\d|\bissue\s*\d|\bno\.\s*\d|©|"
+    r"\(\d+pp\)|\b\d+\s*[:(]\s*\d+[-–]\d+|\d{4};\s*\d+\(|all rights reserved|todos os direitos|"
+    r"please cite|cite this article|downloaded from|terms of use|printed:|impresso em|\bet al\.\s*:|"
+    r"\bjournal\b|\brevista\b|\bproceedings\b|data de (?:edição|publicação)", re.I)
+
+
+def _flat_cell(text) -> str | None:
+    """Célula de tabela de PDF: a quebra de linha é só o texto que não coube na largura — junta as linhas e
+    emenda a palavra hifenizada (“Grund-⏎skola” → “Grundskola”)."""
+    if text is None:
+        return None
+    text = re.sub(r"(\w)-\n(?=[a-zà-ÿ])", r"\1", str(text))
+    return re.sub(r"\s*\n\s*", " ", text).strip()
 
 
 def strip_page_furniture(blocks: list[dict], height: float) -> list[dict]:
-    """Cabeçalho e rodapé de UMA página (sem precisar que se repitam): no máximo 2 linhas curtas em cada beira
-    (8% de cima e de baixo), separadas do texto, com letra menor que a do texto ou com cara de rodapé
-    (número de página, site, DOI, “Vol. 19”…). Título (letra grande) e nota de rodapé (várias linhas) ficam."""
+    """Cabeçalho e rodapé de UMA página (sem precisar que se repitam): a partir de cada beira (10% de cima e de
+    baixo), até 4 linhas seguidas que sejam número de página, tenham cara de rodapé (site, DOI, “Vol. 19”,
+    “Please cite…”), letra menor que a do texto ou sejam o título corrido bem separado do texto. Para na primeira
+    linha que é texto de verdade. Título (letra grande), nota de rodapé (“1 Ver…”) e o corpo ficam."""
     lines = [b for b in blocks if b["kind"] == "line"]
     if len(lines) < 6:
         return blocks
@@ -210,29 +225,59 @@ def strip_page_furniture(blocks: list[dict], height: float) -> list[dict]:
     drop: set[int] = set()
     for edge in ("top", "bottom"):
         ordered = sorted(lines, key=lambda b: b["top"], reverse=(edge == "bottom"))
-        for k, b in enumerate(ordered[:2]):
-            in_margin = b["top"] < height * 0.09 if edge == "top" else b["bottom"] > height * 0.91
-            if not in_margin or len(b["text"]) > 90:
+        for k, b in enumerate(ordered[:4]):
+            mid = (b["top"] + b["bottom"]) / 2
+            if not (mid < height * 0.1 if edge == "top" else mid > height * 0.9):
                 break
-            nxt = ordered[k + 1] if k + 1 < len(ordered) else None
-            gap = (nxt["top"] - b["bottom"]) if edge == "top" else (b["top"] - nxt["bottom"]) if nxt else 99
             text = b["text"].strip()
-            small = b["size"] <= body * 0.92 and not b.get("bold")
-            looks = bool(_FURNITURE.search(text))
-            # com cara de rodapé (número, site, “Página 3 de 10”) basta estar separado; só pela letra menor, o
-            # vão precisa ser maior (protege a última linha de uma nota de rodapé)
-            # título corrido da revista/livro: a linha mais da beira, curta, do tamanho do texto, bem separada
-            running = (k == 0 and len(text) <= 70 and b["size"] <= body * 1.1 and gap >= b["size"] * 1.2
-                       and (b["top"] < height * 0.07 if edge == "top" else b["bottom"] > height * 0.94))
-            if running or (looks and b["size"] <= body * 1.25 and gap >= b["size"] * 0.3) or \
-                    (small and gap >= b["size"] * 0.8):
+            nxt = ordered[k + 1] if k + 1 < len(ordered) else None
+            gap = ((nxt["top"] - b["bottom"]) if edge == "top" else (b["top"] - nxt["bottom"])) if nxt else 99
+            if _PAGE_NO.match(text):
+                drop.add(id(b))                       # número de página: qualquer tamanho
+                continue
+            looks = bool(_FURNITURE.search(text)) and len(text) <= 200 and b["size"] <= body * 1.4
+            small = b["size"] <= body * 0.92 and not b.get("bold") and len(text) <= 160
+            footnote = edge == "bottom" and bool(re.match(r"^[\d*†‡¹²³⁴⁵⁶⁷⁸⁹]{1,2}\s*\S", text)) and len(text) > 30
+            running = (k == 0 and len(text) <= 80 and b["size"] <= body * 1.1 and gap >= b["size"] * 1.2)
+            if looks or (running and not footnote) or (small and not footnote and gap >= b["size"] * 0.3):
                 drop.add(id(b))
             else:
                 break
+    if len(drop) > max(2, len(lines) // 4):           # cautela: nunca tira mais de 1/4 das linhas da página
+        return blocks
     return [b for b in blocks if id(b) not in drop]
 
 
-def borderless_tables(segs: list[dict], width: float) -> tuple[list[dict], list[dict]]:
+def _columns_from_words(words: list[dict], row_tops: list[float], box: tuple[float, float, float, float]):
+    """Refaz as células de uma tabela pelos corredores verticais das PALAVRAS da região inteira: colunas de
+    números a meio espaço de distância (“0.763 0.030”) não grudam. Devolve as linhas ou None."""
+    x0, x1, top, bottom = box
+    inner = [w for w in words if x0 - 1 <= (w["x0"] + w["x1"]) / 2 <= x1 + 1
+             and top - 1 <= (w["top"] + w["bottom"]) / 2 <= bottom + 1]
+    if len(inner) < 6:
+        return None
+    size = statistics.median(w.get("size", 10) or 10 for w in inner)
+    need = max(2.0, size * 0.35)
+    # junta os intervalos [x0, x1] das palavras (posições exatas, sem arredondar): os vãos que sobram, de
+    # cima a baixo da tabela, separam as colunas
+    seps, end = [], None
+    for x0, x1 in sorted((w["x0"], w["x1"]) for w in inner):
+        if end is not None and x0 - end >= need:
+            seps.append((end + x0) / 2)
+        end = x1 if end is None else max(end, x1)
+    if not 1 <= len(seps) <= 14:
+        return None
+    grid = [[[] for _ in range(len(seps) + 1)] for _ in row_tops]
+    for w in sorted(inner, key=lambda w: w["x0"]):
+        r = min(range(len(row_tops)), key=lambda k: abs(row_tops[k] - w["top"]))
+        c = sum(1 for sx in seps if (w["x0"] + w["x1"]) / 2 > sx)
+        grid[r][c].append(w["text"])
+    rows = [[" ".join(cell) for cell in r] for r in grid if any(r)]
+    return rows if len(rows) >= 2 else None
+
+
+def borderless_tables(segs: list[dict], width: float, fine: list[dict] | None = None,
+                      words: list[dict] | None = None) -> tuple[list[dict], list[dict]]:
     """Tabelas SEM linhas desenhadas, achadas pelo alinhamento: 3+ linhas seguidas com 2+ células curtas cada,
     cujas colunas caem nos mesmos lugares. Devolve (blocos de tabela, segmentos que sobraram).
     Texto em colunas (linhas compridas), listas de uma coluna e sumários com pontinhos ficam de fora."""
@@ -240,6 +285,11 @@ def borderless_tables(segs: list[dict], width: float) -> tuple[list[dict], list[
 
     if any(sg["kind"] == "line" and _TOC_RE.match(sg["text"].strip()) for sg in segs):
         return [], segs                       # página de índice/sumário: vira lista (blocks_to_markdown)
+    coarse = segs
+    if fine is not None:
+        # procura as tabelas nas linhas quebradas com vão mais fino (colunas a ~1 letra de distância);
+        # o texto que não for tabela continua com as linhas normais
+        segs = fine
     rows: list[list[dict]] = []
     for sg in sorted(segs, key=lambda x: (x["top"], x["x0"])):
         if rows and abs(sg["top"] - rows[-1][0]["top"]) <= 0.5 * max(sg["size"], 1):
@@ -259,11 +309,21 @@ def borderless_tables(segs: list[dict], width: float) -> tuple[list[dict], list[
             i += 1
             continue
         j = i + 1
-        while j < len(rows) and cell_row(rows[j]) and \
-                rows[j][0]["top"] - rows[j - 1][0]["bottom"] < 2.5 * max(rows[j][0]["size"], 1):
+        last_cells = i                        # última linha com 2+ células
+
+        def single(r):                        # linha de uma célula só: continuação de célula ou seção
+            return (len(r) == 1 and r[0]["kind"] == "line" and r[0]["x1"] - r[0]["x0"] < width * 0.3
+                    and not r[0].get("mono"))
+
+        while j < len(rows) and rows[j][0]["top"] - rows[j - 1][0]["bottom"] < 2.5 * max(rows[j][0]["size"], 1):
+            if cell_row(rows[j]):
+                last_cells = j
+            elif not (single(rows[j]) and j - last_cells <= 2):
+                break
             j += 1
+        j = last_cells + 1                    # a tabela não termina numa linha solta
         group = rows[i:j]
-        if len(group) >= 3:
+        if len(group) >= 3 and sum(1 for r in group if len(r) >= 2) >= 2:
             # colunas = faixas de x que algum segmento ocupa; os vãos que nenhum ocupa separam as colunas
             spans = sorted((sg["x0"], sg["x1"]) for r in group for sg in r)
             cols: list[list[float]] = []
@@ -277,9 +337,9 @@ def borderless_tables(segs: list[dict], width: float) -> tuple[list[dict], list[
                           for c in cols]
                 # células de tabela são curtas (poucas palavras) ou números; linhas de colunas de jornal são frases
                 texts = [sg["text"] for r in group for sg in r]
-                words = sorted(len(t.split()) for t in texts)
+                nwords = sorted(len(t.split()) for t in texts)
                 numeric = sum(1 for t in texts if re.fullmatch(r"[\d\s.,%$€£R()+\-–/:]+", t)) / max(1, len(texts))
-                short = words[len(words) // 2] <= 3 or numeric >= 0.3
+                short = nwords[len(nwords) // 2] <= 3 or numeric >= 0.3
                 # colunas de verdade aparecem na maioria das linhas (alinhamento consistente)
                 if short and sum(1 for f in filled if f >= len(group) * 0.6) >= 2:
                     table_rows = []
@@ -291,13 +351,26 @@ def borderless_tables(segs: list[dict], width: float) -> tuple[list[dict], list[
                                     else min(abs(mid - cols[c][0]), abs(mid - cols[c][1])))
                             cells[k] = (cells[k] + " " + sg["text"]).strip()
                         table_rows.append(cells)
+                    box = (min(sg["x0"] for r in group for sg in r), max(sg["x1"] for r in group for sg in r),
+                           group[0][0]["top"], max(sg["bottom"] for sg in group[-1]))
+                    if words is not None:   # células pelas colunas da tabela inteira (mais precisas)
+                        refined = _columns_from_words(words, [min(sg["top"] for sg in r) for r in group], box)
+                        if refined and len(refined[0]) >= len(table_rows[0]):
+                            table_rows = refined
                     tables.append({"kind": "table", "text": md_table(table_rows), "rows": table_rows,
                                    "x0": min(sg["x0"] for r in group for sg in r),
                                    "x1": max(sg["x1"] for r in group for sg in r),
                                    "top": group[0][0]["top"], "bottom": max(sg["bottom"] for sg in group[-1])})
                     used.update(id(sg) for r in group for sg in r)
         i = j
-    return tables, [sg for sg in segs if id(sg) not in used]
+    if fine is None:
+        return tables, [sg for sg in segs if id(sg) not in used]
+
+    def inside(sg) -> bool:
+        cx, cy = (sg["x0"] + sg["x1"]) / 2, (sg["top"] + sg["bottom"]) / 2
+        return any(t["x0"] - 1 <= cx <= t["x1"] + 1 and t["top"] - 1 <= cy <= t["bottom"] + 1 for t in tables)
+
+    return tables, [sg for sg in coarse if not inside(sg)]
 
 
 def reading_order(blocks: list[dict], width: float, columns: bool = True, gutter: float | None = None) -> list[dict]:
@@ -339,7 +412,9 @@ def blocks_to_markdown(pages: list[tuple[int, list[dict]]], body: float | None =
                        page_markers: bool = False, page_starts: list | None = None) -> list[str]:
     sizes = [b["size"] for _, bl in pages for b in bl if b["kind"] == "line" for _ in range(max(1, len(b["text"]) // 8))]
     if not sizes:
-        return []
+        if not any(bl for _, bl in pages):
+            return []
+        sizes = [10.0]                    # páginas só com tabelas/imagens (sem linha de texto solta)
     body = body or statistics.median(sizes)
     pages_of: dict[float, set[int]] = {}
     for n, bl in pages:
@@ -620,7 +695,7 @@ def _layout_pdf(path: Path) -> str:
             tables = page.find_tables() if option("pdf_tables", True) else []
             bboxes = []
             for t in tables:
-                rows = t.extract(**WORD_GAP)
+                rows = [[_flat_cell(c) for c in r] for r in (t.extract(**WORD_GAP) or [])]
                 if rows and max(len(r) for r in rows) >= 2 and len(rows) >= 2:
                     bboxes.append(t.bbox)
                     blocks.append({"kind": "table", "text": md_table(rows), "rows": rows, "x0": t.bbox[0], "x1": t.bbox[2],
@@ -670,8 +745,8 @@ def _layout_pdf(path: Path) -> str:
             else:
                 page_gutter = word_gutter(words, W) if columns else None
                 segs = words_to_segments(words, page_gutter)
-                if option("pdf_tables", True):
-                    found, segs = borderless_tables(segs, W)      # tabelas sem linhas desenhadas
+                if option("pdf_tables", True):                    # tabelas sem linhas desenhadas
+                    found, segs = borderless_tables(segs, W, words_to_segments(words, page_gutter, gap=1.0), words)
                     blocks += found
                 blocks += segs
                 if want_images:

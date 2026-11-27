@@ -121,3 +121,59 @@ def test_colunas_de_texto_nao_viram_tabela(tmp_path):
             y -= 10
     c.save()
     assert not _tables(convert(target, "native").markdown)
+
+
+def _numeros(target: Path) -> Path:
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    from reportlab.pdfgen.canvas import Canvas
+
+    c = Canvas(str(target))
+    data = [["Transição", "Média", "Erro", "Fonte"], ["DFS to DFS", "0.763", "0.030", "[18]"],
+            ["DFS to DM", "0.196", "0.030", "[18]"], ["DM to Death", "0.152", "0.021", "[17]"],
+            ["Recidiva", "0.081", "0.011", "[19]"]]
+    widths = [max(stringWidth(r[k], "Helvetica", 9) for r in data) for k in range(4)]
+    y = 700
+    for row in data:
+        x = 72
+        for k, cell in enumerate(row):
+            c.setFont("Helvetica", 9)
+            c.drawString(x, y, cell)
+            x += widths[k] + (30 if k == 0 else 4)                # números a só 4 pt uns dos outros
+        y -= 13
+    c.save()
+    return target
+
+
+def test_colunas_de_numeros_bem_juntas(tmp_path):
+    """Colunas de números a meio espaço de distância não grudam numa célula só (“0.763 0.030”)."""
+    tables = _tables(convert(_numeros(tmp_path / "numeros.pdf"), "native").markdown)
+    assert tables
+    body = "\n".join(tables[0])
+    assert "| DFS to DFS | 0.763 | 0.030 | [18] |" in body
+
+
+def test_rodape_de_revista_e_numero_de_pagina_saem(tmp_path):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfgen.canvas import Canvas
+
+    target = tmp_path / "artigo.pdf"
+    c = Canvas(str(target), pagesize=A4)
+    W, H = A4
+    c.setFont("Helvetica", 7)
+    c.drawString(72, H - 30, "Revista Brasileira de Testes Vol. 12, No. 3 (2024) 45-67")
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(72, H - 90, "Título do Artigo Científico")
+    c.setFont("Helvetica", 10)
+    y = H - 130
+    for i in range(30):
+        c.drawString(72, y, f"Linha {i} do corpo do artigo com bastante texto corrido para ocupar a página.")
+        y -= 14
+    c.setFont("Helvetica", 7)
+    c.drawString(72, 40, "Please cite this article as: Silva et al. https://doi.org/10.1000/teste")
+    c.setFont("Helvetica", 9)
+    c.drawString(W / 2, 25, "45")
+    c.save()
+    md = convert(target, "native").markdown
+    assert "Título do Artigo Científico" in md and "Linha 29 do corpo" in md
+    assert "Revista Brasileira" not in md and "Please cite" not in md
+    assert "\n45\n" not in f"\n{md}\n"
