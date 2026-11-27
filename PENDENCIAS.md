@@ -46,6 +46,12 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
 - [x] **Edições: de 3 para 2** (decidido em 27/11/2026): a LEVE foi juntada à PADRÃO (a diferença era só
       OCR + Pandoc, ~50 MB, e a falta de OCR confundia). Ficam **PADRÃO** (recomendada) e **COMPLETA**.
       Marcador antigo “leve” é lido como PADRÃO; o .deb da PADRÃO substitui o antigo `markinho-leve`.
+- [~] **Teste público olmOCR-bench** (Allen AI, licença ODC-BY; só medição, nada no repositório) — motor Nativo
+      (PADRÃO), avaliador oficial: **33,7% → 40,3%** em 27/11/2026 com 4 correções sem IA (OCR em paralelo,
+      colunas bem juntas, tabelas sem linhas, cabeçalho/rodapé de página única). Por categoria agora: texto da
+      página 99,5% · texto miúdo 59% · colunas 53% · cabeçalhos/rodapés 52% · tabelas 41% · escaneados antigos
+      19% · fórmulas 0% (não convertemos fórmulas em LaTeX; exige IA). Próximos alvos: escaneados (OCR melhor),
+      ordem de leitura com caixas/figuras. Comparação com o Docling (COMPLETA): em andamento.
 - [ ] **Destino da COMPLETA**: gerar no GitHub (Windows e Linux) para ver o tamanho real (limite de 2 GB
       por arquivo nas Releases) e comparar a qualidade Docling × Nativo. Se o ganho for pequeno, ficar com
       uma versão só.
