@@ -14,6 +14,8 @@ Resolve, com heurísticas geométricas, os problemas mais comuns de PDF → Mark
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import re
 import statistics
 from pathlib import Path
@@ -22,8 +24,8 @@ from .core import ConversionError, current_sink, option
 
 _MONO_RE = re.compile(r"mono|courier|consol|menlo|code|typewriter|fixed|inconsolata|source ?code|dejavusansm", re.I)
 _BOLD_RE = re.compile(r"bold|black|heavy|semibold|demi", re.I)
-NO_TEXT = ("_Nenhum texto encontrado. O PDF provavelmente é uma imagem escaneada e não há OCR "
-           "disponível — instale o Tesseract ou use o motor **Docling**/**Marker**._")
+NO_TEXT = (tr("_Nenhum texto encontrado. O PDF provavelmente é uma imagem escaneada e não há OCR "
+           "disponível — instale o Tesseract ou use o motor **Docling**/**Marker**._"))
 
 
 # --------------------------------------------------------------------------- #
@@ -45,7 +47,7 @@ def parse_pages(spec: str, total: int) -> list[int]:
             else:
                 pages.append(int(part) - 1)
         except ValueError as exc:
-            raise ConversionError(f"Intervalo de páginas inválido: '{spec}'") from exc
+            raise ConversionError(tr("Intervalo de páginas inválido: '{0}'").format(spec)) from exc
     return [p for p in dict.fromkeys(pages) if 0 <= p < total]
 
 
@@ -447,8 +449,8 @@ def _layout_pdf(path: Path) -> str:
     except Exception as exc:  # noqa: BLE001
         text = f"{type(exc).__name__} {exc!r} {exc.__context__!r} {exc.__cause__!r}".lower()
         if "password" in text or "encrypt" in text:
-            raise ConversionError("PDF protegido por senha: abra-o com a senha e salve uma cópia sem "
-                                  "proteção para converter.") from exc
+            raise ConversionError(tr("PDF protegido por senha: abra-o com a senha e salve uma cópia sem "
+                                  "proteção para converter.")) from exc
         raise
     with pdf:
         idx = parse_pages(option("pages", ""), len(pdf.pages))
@@ -515,7 +517,7 @@ def _layout_pdf(path: Path) -> str:
                                 resolution=safe_resolution(x1 - x0, bottom - top, 150)).original
                         except Exception:  # noqa: BLE001
                             continue
-                        ref = sink.add_pil(pil, f"Imagem da página {i + 1}")
+                        ref = sink.add_pil(pil, tr('Imagem da página {0}').format(i + 1))
                         if ref:
                             blocks.append({"kind": "image", "text": ref, "x0": x0, "x1": x1,
                                            "top": top, "bottom": bottom})
@@ -541,12 +543,12 @@ def _layout_pdf(path: Path) -> str:
     if weak_ocr:
         pg = [p for p, _ in weak_ocr]
         avg = sum(c for _, c in weak_ocr) / len(weak_ocr)
-        warn(f"OCR com baixa confiança ({avg:.0f}%) na(s) página(s) {_pages_text(pg)}: revise o texto.", pg)
+        warn(tr('OCR com baixa confiança ({0:.0f}%) na(s) página(s) {1}: revise o texto.').format(avg, _pages_text(pg)), pg)
     if empty_pages:
-        hint = "" if backend else " Escaneada? O OCR está desligado ou indisponível."
-        warn(f"Nenhum texto reconhecido na(s) página(s) {_pages_text(empty_pages)}.{hint}", empty_pages)
+        hint = "" if backend else tr(" Escaneada? O OCR está desligado ou indisponível.")
+        warn(tr('Nenhum texto reconhecido na(s) página(s) {0}.{1}').format(_pages_text(empty_pages), hint), empty_pages)
     if stamps:
-        warn(f"Carimbos/assinaturas eletrônicas repetidos (PJe, SEI…) removidos em {len(stamps)} página(s).",
+        warn(tr('Carimbos/assinaturas eletrônicas repetidos (PJe, SEI…) removidos em {0} página(s).').format(len(stamps)),
              info=True)
 
     if option("pdf_strip_headers", True):
@@ -572,7 +574,7 @@ def _layout_pdf(path: Path) -> str:
 
 def _pages_text(pages: list[int], limit: int = 12) -> str:
     txt = ", ".join(map(str, pages[:limit]))
-    return txt + (f" e mais {len(pages) - limit}" if len(pages) > limit else "")
+    return txt + (tr(' e mais {0}').format(len(pages) - limit) if len(pages) > limit else "")
 
 
 def _basic_pdf(path: Path) -> str:
@@ -584,7 +586,7 @@ def _basic_pdf(path: Path) -> str:
         try:
             reader.decrypt("")
         except Exception as exc:  # noqa: BLE001
-            raise ConversionError("PDF protegido por senha.") from exc
+            raise ConversionError(tr("PDF protegido por senha.")) from exc
     idx = parse_pages(option("pages", ""), len(reader.pages))
     texts = [(i, (reader.pages[i].extract_text() or "").strip()) for i in idx]
     rep = repeated_lines([t.splitlines() for _, t in texts]) if option("pdf_strip_headers", True) else set()
@@ -644,24 +646,23 @@ def convert_image(path: Path) -> str:
 
             rows = ocr.words_to_table(ocr.ocr_words(img, backend, lang))
             parts.append(md_table(rows) if len(rows) >= 1 and max(len(r) for r in rows) >= 2
-                         else "\n".join(" ".join(r) for r in rows) or "_Nenhum texto reconhecido na imagem._")
+                         else "\n".join(" ".join(r) for r in rows) or tr("_Nenhum texto reconhecido na imagem._"))
             continue
         if kind == "code":                        # “Ler imagem como código” (mantém espaços)
             code = ocr.ocr_code(img, backend, lang)
-            parts.append(f"```\n{code}\n```" if code.strip() else "_Nenhum texto reconhecido na imagem._")
+            parts.append(f"```\n{code}\n```" if code.strip() else tr("_Nenhum texto reconhecido na imagem._"))
             continue
         segs = ocr.ocr_segments(img, backend, lang, 1 / scale)
         if kind == "text":                        # texto corrido, sem detectar títulos
             text = "\n".join(s["text"] for s in sorted(segs, key=lambda s: (s["top"], s["x0"])))
-            parts.append(text or "_Nenhum texto reconhecido na imagem._")
+            parts.append(text or tr("_Nenhum texto reconhecido na imagem._"))
             continue
         conf = ocr.mean_confidence(segs)
         if conf is not None and conf < 70:
             from .core import warn
 
-            warn(f"OCR com baixa confiança ({conf:.0f}%) na imagem{f' {k + 1}' if len(frames) > 1 else ''}: "
-                 "revise o texto (foto tremida, escura ou com letras pequenas?).", [k + 1])
+            warn(tr('OCR com baixa confiança ({0:.0f}%) na imagem{1}: revise o texto (foto tremida, escura ou com letras pequenas?).').format(conf, f' {k + 1}' if len(frames) > 1 else ''), [k + 1])
         body = reading_order(segs, img.width / scale, option("pdf_columns", True))
         text = blocks_to_markdown([(k, body)])
-        parts += text or ["_Nenhum texto reconhecido na imagem._"]
+        parts += text or [tr("_Nenhum texto reconhecido na imagem._")]
     return "\n\n".join(parts)

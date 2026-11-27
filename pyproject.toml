@@ -63,7 +63,7 @@ Homepage = "https://github.com/dontstopbelieve/markinho"
 packages = ["markinho"]
 
 [tool.setuptools.package-data]
-markinho = ["resources/*"]
+markinho = ["resources/*", "locale/*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "markinho.__version__" }

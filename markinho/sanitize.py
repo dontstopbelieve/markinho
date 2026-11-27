@@ -12,6 +12,8 @@ Blocos de código (``` … ```) não são alterados: ali o texto é exibido, nã
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import re
 from pathlib import Path
 
@@ -68,10 +70,10 @@ def _clean_text(text: str, base_dir: Path | None, allowed: list[Path] | None, no
     def md_img(m: re.Match) -> str:
         alt, src = m.group(1), m.group(2)
         if _REMOTE.match(src):
-            notes.add("imagens da internet viraram links (nada é baixado)")
+            notes.add(tr("imagens da internet viraram links (nada é baixado)"))
             return f"[{alt or 'imagem'}]({src})"
         if allowed is not None and _outside(src, base_dir, allowed):
-            notes.add("imagens fora das pastas permitidas foram removidas")
+            notes.add(tr("imagens fora das pastas permitidas foram removidas"))
             return f"*[{alt or 'imagem'}]*"
         return m.group(0)
 
@@ -82,10 +84,10 @@ def _clean_text(text: str, base_dir: Path | None, allowed: list[Path] | None, no
             sm = _SRC.search(tag)
             src = next((g for g in sm.groups() if g is not None), "") if sm else ""
             if src and _REMOTE.match(src):
-                notes.add("imagens da internet viraram links (nada é baixado)")
+                notes.add(tr("imagens da internet viraram links (nada é baixado)"))
                 return f'<a href="{src}">[imagem]</a>'
             if src and allowed is not None and _outside(src, base_dir, allowed):
-                notes.add("imagens fora das pastas permitidas foram removidas")
+                notes.add(tr("imagens fora das pastas permitidas foram removidas"))
                 return "[imagem]"
         return tag
 

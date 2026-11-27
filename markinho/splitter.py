@@ -3,6 +3,8 @@
 """Dividir um Markdown longo em vários arquivos, um por título (capítulo/seção)."""
 from __future__ import annotations
 
+from .i18n import tr
+
 
 def split_by_headings(md: str, level: int = 1) -> list[tuple[str, str]]:
     """[(título, texto)] cortando nos títulos de nível ≤ `level` (fora de blocos de código).
@@ -19,7 +21,7 @@ def split_by_headings(md: str, level: int = 1) -> list[tuple[str, str]]:
             if 1 <= hashes <= level and s[hashes:hashes + 1] in (" ", "\t"):
                 if any(x.strip() for x in buf):
                     parts.append((title, buf))
-                title, buf = s[hashes:].strip().rstrip("#").strip() or "Sem título", [line]
+                title, buf = s[hashes:].strip().rstrip("#").strip() or tr("Sem título"), [line]
                 continue
         buf.append(line)
     if any(x.strip() for x in buf):

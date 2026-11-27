@@ -3,6 +3,8 @@
 """Interface gráfica do Markinho (PySide6)."""
 from __future__ import annotations
 
+from .i18n import tr
+
 import difflib
 import html
 import os
@@ -88,8 +90,8 @@ class _ConvertTask(QRunnable):
         except Exception as exc:  # noqa: BLE001
             import traceback
 
-            self._record(f"Erro inesperado: {exc}", traceback.format_exc())
-            self.signals.failed.emit(self.path, self.gen, f"Erro inesperado: {exc}")
+            self._record(tr('Erro inesperado: {0}').format(exc), traceback.format_exc())
+            self.signals.failed.emit(self.path, self.gen, tr('Erro inesperado: {0}').format(exc))
 
     def _record(self, message: str, tb: str = "") -> None:
         """Guarda o erro com a configuração usada nesta conversão (para o relatório de erro)."""
@@ -155,8 +157,8 @@ class FileList(QListWidget):
             p = QPainter(self.viewport())
             p.setPen(self.palette().placeholderText().color())
             p.drawText(self.viewport().rect(), Qt.AlignCenter | Qt.TextWordWrap,
-                       "Arraste arquivos ou pastas para cá\n(ou para qualquer lugar da janela)\n\n"
-                       "Eles ficam na fila; clique em “Converter” (F5)\nquando terminar de adicionar")
+                       tr("Arraste arquivos ou pastas para cá\n(ou para qualquer lugar da janela)\n\n"
+                       "Eles ficam na fila; clique em “Converter” (F5)\nquando terminar de adicionar"))
 
 
 class PreviewBrowser(QTextBrowser):
@@ -199,25 +201,25 @@ class FileViewer(QWidget):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         bar = QHBoxLayout()
-        self.title = QLabel("Nenhum arquivo")
+        self.title = QLabel(tr("Nenhum arquivo"))
         self.title.setStyleSheet("color: palette(window-text);")
         self.title.setMinimumWidth(40)
         from PySide6.QtWidgets import QSizePolicy
 
         self.title.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)   # não força a largura mínima
-        self.open_btn = QPushButton("Abrir")
-        self.open_btn.setToolTip("Abrir no aplicativo padrão do computador")
+        self.open_btn = QPushButton(tr("Abrir"))
+        self.open_btn.setToolTip(tr("Abrir no aplicativo padrão do computador"))
         self.open_btn.clicked.connect(self._open_external)
-        self.folder_btn = QPushButton("Pasta")
-        self.folder_btn.setToolTip("Abrir a pasta do arquivo")
+        self.folder_btn = QPushButton(tr("Pasta"))
+        self.folder_btn.setToolTip(tr("Abrir a pasta do arquivo"))
         self.folder_btn.clicked.connect(self._open_folder)
         self.zoom_out_btn = QPushButton("−")
         self.zoom_in_btn = QPushButton("+")
         self.zoom_label = QLabel("")
-        self.fit_btn = QPushButton("Largura")
-        for b, tip in ((self.zoom_out_btn, "Afastar (Ctrl + rodinha do mouse)"),
-                       (self.zoom_in_btn, "Aproximar (Ctrl + rodinha do mouse)"),
-                       (self.fit_btn, "Ajustar a página à largura")):
+        self.fit_btn = QPushButton(tr("Largura"))
+        for b, tip in ((self.zoom_out_btn, tr("Afastar (Ctrl + rodinha do mouse)")),
+                       (self.zoom_in_btn, tr("Aproximar (Ctrl + rodinha do mouse)")),
+                       (self.fit_btn, tr("Ajustar a página à largura"))):
             b.setToolTip(tip)
         self.zoom_out_btn.setFixedWidth(28)
         self.zoom_in_btn.setFixedWidth(28)
@@ -261,7 +263,7 @@ class FileViewer(QWidget):
             self.stack.addWidget(w)
         self._img_scroll = img_scroll
         lay.addWidget(self.stack, 1)
-        self.show_message("Selecione um arquivo.")
+        self.show_message(tr("Selecione um arquivo."))
 
     def eventFilter(self, obj, ev):
         from PySide6.QtCore import QEvent
@@ -318,7 +320,7 @@ class FileViewer(QWidget):
             from PySide6.QtPdfWidgets import QPdfView
 
             custom = self.pdf_view.zoomMode() == QPdfView.ZoomMode.Custom
-            self.zoom_label.setText(f"{self.pdf_view.zoomFactor() * 100:.0f}%" if custom else "Largura")
+            self.zoom_label.setText(f"{self.pdf_view.zoomFactor() * 100:.0f}%" if custom else tr("Largura"))
         else:
             z = getattr(self, "_img_zoom", None)
             self.zoom_label.setText(f"{z * 100:.0f}%" if z else "")
@@ -358,7 +360,7 @@ class FileViewer(QWidget):
         self.path = p
         if not p.is_file():
             self.title.setText(html.escape(p.name))
-            self.show_message("Documento sem arquivo de origem (escrito no programa).")
+            self.show_message(tr("Documento sem arquivo de origem (escrito no programa)."))
             return
         self.open_btn.setEnabled(True)
         self.folder_btn.setEnabled(True)
@@ -371,10 +373,10 @@ class FileViewer(QWidget):
                 if pages > 0:
                     self.stack.setCurrentWidget(self.pdf_view)
                     self._update_zoom_label()
-                    self.title.setText(f"{label} · {pages} página(s)")
+                    self.title.setText(tr('{0} · {1} página(s)').format(label, pages))
                     return
                 self.title.setText(label)
-                self.show_message("Não foi possível abrir este PDF (protegido por senha ou corrompido).")
+                self.show_message(tr("Não foi possível abrir este PDF (protegido por senha ou corrompido)."))
                 self.open_btn.setEnabled(True)
                 return
             if ext in self.IMG_EXTS:
@@ -408,11 +410,11 @@ class FileViewer(QWidget):
             finally:
                 QApplication.restoreOverrideCursor()
             self.stack.setCurrentWidget(self.html)
-            self.title.setText(f"{label} · prévia (o aspecto exato aparece no aplicativo padrão)"
+            self.title.setText(tr('{0} · prévia (o aspecto exato aparece no aplicativo padrão)').format(label)
                                + (f" · {html.escape(note)}" if note else ""))
         except Exception as exc:  # noqa: BLE001
             self.title.setText(label)
-            self.show_message(f"Não foi possível mostrar o arquivo aqui: {exc}")
+            self.show_message(tr('Não foi possível mostrar o arquivo aqui: {0}').format(exc))
             self.open_btn.setEnabled(True)
 
     @staticmethod
@@ -448,7 +450,7 @@ class FileViewer(QWidget):
 
 
 class FileViewerDialog(QDialog):
-    def __init__(self, parent, path: Path, title: str = "Arquivo exportado"):
+    def __init__(self, parent, path: Path, title: str = tr("Arquivo exportado")):
         super().__init__(parent)
         self.setWindowTitle(f"{title} — {path.name}")
         self.resize(900, 760)
@@ -456,7 +458,7 @@ class FileViewerDialog(QDialog):
         v = FileViewer(self)
         lay.addWidget(v)
         bb = QDialogButtonBox(QDialogButtonBox.Close)
-        bb.button(QDialogButtonBox.Close).setText("Fechar")
+        bb.button(QDialogButtonBox.Close).setText(tr("Fechar"))
         bb.rejected.connect(self.reject)
         lay.addWidget(bb)
         QTimer.singleShot(0, lambda: v.load(path))
@@ -488,19 +490,19 @@ class SettingsPanel(QWidget):
         # ---- modo: desempenho × qualidade ----
         from .presets import PRESETS
 
-        mbox = QGroupBox("Principal")
+        mbox = QGroupBox(tr("Principal"))
         mf = QFormLayout(mbox)
         self.mode = QComboBox()
         for pid, pr in PRESETS.items():
             self.mode.addItem(pr.label, pid)
             self.mode.setItemData(self.mode.count() - 1, pr.description, Qt.ToolTipRole)
-        self.mode.addItem("Personalizado", "custom")
-        self.mode.setItemData(self.mode.count() - 1, "Ajustes feitos à mão no motor e nas opções abaixo.",
+        self.mode.addItem(tr("Personalizado"), "custom")
+        self.mode.setItemData(self.mode.count() - 1, tr("Ajustes feitos à mão no motor e nas opções abaixo."),
                               Qt.ToolTipRole)
         self.mode.setCurrentIndex(max(0, self.mode.findData(self.settings.value("mode", "equilibrado"))))
-        self.mode.setToolTip("Rápido: lotes grandes de arquivos digitais. Equilibrado: o melhor para a maioria. "
-                             "Máxima qualidade: PDFs difíceis e escaneados (mais lento).")
-        mf.addRow("Velocidade:", self.mode)
+        self.mode.setToolTip(tr("Rápido: lotes grandes de arquivos digitais. Equilibrado: o melhor para a maioria. "
+                             "Máxima qualidade: PDFs difíceis e escaneados (mais lento)."))
+        mf.addRow(tr("Velocidade:"), self.mode)
         self.mode_info = QLabel()
         self.mode_info.setWordWrap(True)
         self.mode_info.setStyleSheet("color: palette(window-text); font-size: 12px;")
@@ -510,8 +512,8 @@ class SettingsPanel(QWidget):
         self.threads = QSpinBox()
         self.threads.setRange(1, max(2, (_os.cpu_count() or 2)))
         self.threads.setValue(int(self.settings.value("queue/threads", min(4, _os.cpu_count() or 2))))
-        self.threads.setToolTip("Quantos arquivos convertem ao mesmo tempo. Menos = usa menos memória e "
-                                "processador; mais = termina lotes mais rápido. A IA de layout sempre usa 1.")
+        self.threads.setToolTip(tr("Quantos arquivos convertem ao mesmo tempo. Menos = usa menos memória e "
+                                "processador; mais = termina lotes mais rápido. A IA de layout sempre usa 1."))
         self.threads.valueChanged.connect(lambda v: (self.settings.setValue("queue/threads", v),
                                                      self.threads_changed.emit(v)))
         self._mode_form = mf
@@ -521,20 +523,20 @@ class SettingsPanel(QWidget):
         from PySide6.QtWidgets import QToolButton as _QTB
 
         self.adv_toggle = _QTB()
-        self.adv_toggle.setText("Opções avançadas")
+        self.adv_toggle.setText(tr("Opções avançadas"))
         self.adv_toggle.setCheckable(True)
         self.adv_toggle.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.adv_toggle.setStyleSheet("QToolButton { border: none; font-weight: bold; padding: 4px 0; }")
-        self.adv_toggle.setToolTip("Motor de conversão, correção de caracteres, formato do Markdown, "
-                                   "metadados, descrição de imagens, aparência")
+        self.adv_toggle.setToolTip(tr("Motor de conversão, correção de caracteres, formato do Markdown, "
+                                   "metadados, descrição de imagens, aparência"))
         lay.addWidget(self.adv_toggle)
         self.advanced = QWidget()
         adv = QVBoxLayout(self.advanced)
         adv.setContentsMargins(0, 0, 0, 0)
         lay.addWidget(self.advanced)
-        perf = QGroupBox("Desempenho")
+        perf = QGroupBox(tr("Desempenho"))
         pf = QFormLayout(perf)
-        pf.addRow("Conversões ao mesmo tempo:", self.threads)
+        pf.addRow(tr("Conversões ao mesmo tempo:"), self.threads)
         self._perf_form = pf
         adv.addWidget(perf)
 
@@ -547,16 +549,16 @@ class SettingsPanel(QWidget):
         _adv(self.adv_toggle.isChecked())
 
         # ---- motor ----
-        box = QGroupBox("Motor de conversão")
+        box = QGroupBox(tr("Motor de conversão"))
         self.engine_box = box
         bl = QVBoxLayout(box)
         self.engine = QComboBox()
-        self.engine.addItem("Automático (melhor disponível)", AUTO)
+        self.engine.addItem(tr("Automático (melhor disponível)"), AUTO)
         for eng in ENGINES.values():
             ok, why = eng.available()
-            self.engine.addItem(eng.name + ("" if ok else "  (não instalado)"), eng.id)
+            self.engine.addItem(eng.name + ("" if ok else tr("  (não instalado)")), eng.id)
             idx = self.engine.count() - 1
-            self.engine.setItemData(idx, eng.description + ("" if ok else f"\n\nInstalar: {eng.install_hint}"),
+            self.engine.setItemData(idx, eng.description + ("" if ok else tr('\n\nInstalar: {0}').format(eng.install_hint)),
                                     Qt.ToolTipRole)
         bl.addWidget(self.engine)
         self.engine_info = QLabel()
@@ -570,16 +572,16 @@ class SettingsPanel(QWidget):
         adv.addWidget(box)
 
         # ---- correção de caracteres ----
-        self.fix_box = QGroupBox("Correção de caracteres")
+        self.fix_box = QGroupBox(tr("Correção de caracteres"))
         self.fix_box.setCheckable(True)
-        self.fix_box.setToolTip("Corrige caracteres perdidos ou trocados na extração "
-                                "(codificação errada, acentos soltos, ligaduras…).")
+        self.fix_box.setToolTip(tr("Corrige caracteres perdidos ou trocados na extração "
+                                "(codificação errada, acentos soltos, ligaduras…)."))
         fl_outer = QVBoxLayout(self.fix_box)
         frow = QHBoxLayout()
         self.fix_summary = QLabel()
         self.fix_summary.setStyleSheet("color: palette(window-text); font-size: 12px;")
         self.fix_more = _QTB()
-        self.fix_more.setText("Escolher quais")
+        self.fix_more.setText(tr("Escolher quais"))
         self.fix_more.setCheckable(True)
         self.fix_more.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.fix_more.setArrowType(Qt.RightArrow)
@@ -604,9 +606,9 @@ class SettingsPanel(QWidget):
             fl.addWidget(cb)
             self.fix_checks[key] = cb
         row = QHBoxLayout()
-        b_all = QPushButton("Todas")
+        b_all = QPushButton(tr("Todas"))
         b_all.clicked.connect(lambda: self._set_all_fix(True))
-        b_none = QPushButton("Nenhuma")
+        b_none = QPushButton(tr("Nenhuma"))
         b_none.clicked.connect(lambda: self._set_all_fix(False))
         row.addWidget(b_all)
         row.addWidget(b_none)
@@ -620,69 +622,69 @@ class SettingsPanel(QWidget):
         adv.addWidget(self.fix_box)
 
         # ---- saída ----
-        obox = QGroupBox("Formato e extras")
+        obox = QGroupBox(tr("Formato e extras"))
         of = QFormLayout(obox)
         of.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         self.images = QComboBox()
         for val, lbl in IMAGE_MODES:
             self.images.addItem(lbl, val)
         self.images.setCurrentIndex(max(0, self.images.findData(self.settings.value("out/images", "folder"))))
-        self.images.setToolTip("Imagens extraídas dos documentos. A pasta é gravada ao lado do .md ao salvar.")
-        mf.addRow("Imagens:", self.images)
+        self.images.setToolTip(tr("Imagens extraídas dos documentos. A pasta é gravada ao lado do .md ao salvar."))
+        mf.addRow(tr("Imagens:"), self.images)
         self.profile = QComboBox()
         for val, lbl in PROFILES:
             self.profile.addItem(lbl, val)
         self.profile.setCurrentIndex(max(0, self.profile.findData(self.settings.value("out/profile", "gfm"))))
-        self.profile.setToolTip("Dialeto do Markdown final: cada programa (GitHub, Obsidian, IAs) "
-                                "entende o Markdown de um jeito um pouco diferente.")
-        of.addRow("Formato do Markdown:", self.profile)
-        self.frontmatter = QCheckBox("Metadados no topo (frontmatter YAML)")
-        self.frontmatter.setToolTip("Título, autor, datas e arquivo de origem em um bloco --- no início do .md.")
+        self.profile.setToolTip(tr("Dialeto do Markdown final: cada programa (GitHub, Obsidian, IAs) "
+                                "entende o Markdown de um jeito um pouco diferente."))
+        of.addRow(tr("Formato do Markdown:"), self.profile)
+        self.frontmatter = QCheckBox(tr("Metadados no topo (frontmatter YAML)"))
+        self.frontmatter.setToolTip(tr("Título, autor, datas e arquivo de origem em um bloco --- no início do .md."))
         self.frontmatter.setChecked(self.settings.value("out/frontmatter", False, type=bool))
         of.addRow(self.frontmatter)
         arow = QHBoxLayout()
-        self.anon = QCheckBox("Anonimizar dados pessoais")
-        self.anon.setToolTip("Troca CPF, CNPJ, e-mails, telefones, nomes da sua lista e outros dados por marcadores "
+        self.anon = QCheckBox(tr("Anonimizar dados pessoais"))
+        self.anon.setToolTip(tr("Troca CPF, CNPJ, e-mails, telefones, nomes da sua lista e outros dados por marcadores "
                              "como [PESSOA 1]; tira autor e datas dos metadados e os dados escondidos das imagens. "
-                             "Tudo no seu computador. Revise o resultado: nunca é 100%.\n\n"
+                             "Tudo no seu computador. Revise o resultado: nunca é 100%.\n\n")
                              + __import__("markinho.anonymize", fromlist=["DISCLAIMER"]).DISCLAIMER)
         self.anon.setChecked(self.settings.value("anon/enabled", False, type=bool))
-        b_anon = QPushButton("Opções…")
-        b_anon.setToolTip("Escolher o que anonimizar e como")
+        b_anon = QPushButton(tr("Opções…"))
+        b_anon.setToolTip(tr("Escolher o que anonimizar e como"))
         b_anon.clicked.connect(self._anon_dialog)
         arow.addWidget(self.anon, 1)
         arow.addWidget(b_anon)
         mf.addRow(arow)
         from .gui_tools import anon_warning
 
-        self.anon_warn = anon_warning("Revise sempre o arquivo anonimizado antes de usar: o Markinho não se "
+        self.anon_warn = anon_warning(tr("Revise sempre o arquivo anonimizado antes de usar: o Markinho não se "
                                       "responsabiliza por dados não encontrados ou trocados por engano. Na sua "
                                       "lista, maiúsculas e acentos não importam, mas cada variação do nome "
-                                      "precisa ser escrita.")
+                                      "precisa ser escrita."))
         self.anon_warn.setVisible(self.anon.isChecked())
         mf.addRow(self.anon_warn)
         self.anon.toggled.connect(self._anon_toggled)
         self.anon.toggled.connect(self._output_toggled)
-        self.describe = QCheckBox("Descrever imagens com IA local (Ollama)")
-        self.describe.setToolTip("Gera o texto alternativo das imagens com um modelo de visão rodando no "
-                                 "seu computador (ex.: ollama pull qwen2.5vl:3b). Nada é enviado à internet.")
+        self.describe = QCheckBox(tr("Descrever imagens com IA local (Ollama)"))
+        self.describe.setToolTip(tr("Gera o texto alternativo das imagens com um modelo de visão rodando no "
+                                 "seu computador (ex.: ollama pull qwen2.5vl:3b). Nada é enviado à internet."))
         self.describe.setChecked(self.settings.value("out/describe", False, type=bool))
         of.addRow(self.describe)
         mrow = QHBoxLayout()
         self.ollama_model = QComboBox()
         self.ollama_model.setEditable(True)
-        self.ollama_model.setToolTip("Modelo de visão do Ollama. Vazio = o primeiro encontrado.")
+        self.ollama_model.setToolTip(tr("Modelo de visão do Ollama. Vazio = o primeiro encontrado."))
         saved_model = self.settings.value("out/ollama_model", "")
         if saved_model:
             self.ollama_model.addItem(saved_model)
         b_ref = QPushButton("↻")
         b_ref.setFixedWidth(32)
-        b_ref.setToolTip("Procurar modelos no Ollama")
+        b_ref.setToolTip(tr("Procurar modelos no Ollama"))
         b_ref.clicked.connect(self._refresh_ollama)
         mrow.addWidget(self.ollama_model, 1)
         mrow.addWidget(b_ref)
         self.ollama_refresh_btn = b_ref
-        self.ollama_label = QLabel("Modelo:")
+        self.ollama_label = QLabel(tr("Modelo:"))
         of.addRow(self.ollama_label, mrow)
         self.ollama_status = QLabel()
         self.ollama_status.setWordWrap(True)
@@ -723,30 +725,43 @@ class SettingsPanel(QWidget):
         adv.addWidget(obox)
 
         # ---- aparência ----
-        abox = QGroupBox("Aparência")
+        abox = QGroupBox(tr("Aparência"))
         af = QFormLayout(abox)
         self.theme = QComboBox()
-        for val, lbl in (("system", "Do sistema"), ("light", "Claro"), ("dark", "Escuro")):
+        for val, lbl in (("system", tr("Do sistema")), ("light", tr("Claro")), ("dark", tr("Escuro"))):
             self.theme.addItem(lbl, val)
         self.theme.setCurrentIndex(max(0, self.theme.findData(self.settings.value("theme", "system"))))
         self.theme.currentIndexChanged.connect(
             lambda _i: (self.settings.setValue("theme", self.theme.currentData()),
                         self.theme_changed.emit(self.theme.currentData())))
-        af.addRow("Tema:", self.theme)
+        af.addRow(tr("Tema:"), self.theme)
+        from .i18n import LANGUAGES
+
+        self.lang = QComboBox()
+        for val, lbl in LANGUAGES:
+            self.lang.addItem(tr("Automático (idioma do sistema)") if val == "auto" else lbl, val)   # cada idioma no próprio nome
+        self.lang.setCurrentIndex(max(0, self.lang.findData(str(self.settings.value("ui/lang", "auto")))))
+        self.lang_note = QLabel(tr("Vale ao abrir o Markinho de novo."))
+        self.lang_note.setStyleSheet("color:gray")
+        self.lang_note.setVisible(False)
+        self.lang.currentIndexChanged.connect(
+            lambda _i: (self.settings.setValue("ui/lang", self.lang.currentData()), self.lang_note.setVisible(True)))
+        af.addRow(tr("Idioma:"), self.lang)
+        af.addRow("", self.lang_note)
         adv.addWidget(abox)
 
         # ---- reconverter ----
         rl = QHBoxLayout()
-        b_sel = QPushButton("Reconverter selecionados")
+        b_sel = QPushButton(tr("Reconverter selecionados"))
         b_sel.clicked.connect(lambda: self.reconvert.emit(False))
-        b_allc = QPushButton("Reconverter todos")
+        b_allc = QPushButton(tr("Reconverter todos"))
         b_allc.clicked.connect(lambda: self.reconvert.emit(True))
         rl.addWidget(b_sel)
         rl.addWidget(b_allc)
         adv.addLayout(rl)
-        hint = QLabel("Mudanças no motor valem para os próximos arquivos; use “Reconverter” para "
+        hint = QLabel(tr("Mudanças no motor valem para os próximos arquivos; use “Reconverter” para "
                       "aplicá-las aos que já estão na lista. Correções, perfil, metadados e o modo das "
-                      "imagens são aplicados na hora.")
+                      "imagens são aplicados na hora."))
         hint.setWordWrap(True)
         hint.setStyleSheet("color: palette(window-text); font-size: 12px;")
         adv.addWidget(hint)
@@ -787,12 +802,12 @@ class SettingsPanel(QWidget):
 
         pid = self.mode.currentData()
         if pid == "custom":
-            self.mode_info.setText("Usando as escolhas feitas à mão abaixo.")
+            self.mode_info.setText(tr("Usando as escolhas feitas à mão abaixo."))
             return
         engine, _, _ = resolve(pid)
         text = PRESETS[pid].description
         if pid == "qualidade" and engine != "docling":
-            text += " — Docling não instalado (edição COMPLETA): usando o motor nativo com o OCR mais preciso nas páginas escaneadas."
+            text += tr(" — Docling não instalado (edição COMPLETA): usando o motor nativo com o OCR mais preciso nas páginas escaneadas.")
         self.mode_info.setText(text)
 
     def _mode_selected(self) -> None:
@@ -825,13 +840,13 @@ class SettingsPanel(QWidget):
         if eid == AUTO:
             avail = [e.name for e in ENGINES.values() if e.available()[0]]
             self.engine_info.setText(
-                "Escolhe sozinho o melhor motor instalado para cada tipo de arquivo (sem IA por padrão, "
-                "que é mais rápido). Instalados: " + ", ".join(avail) + ".")
+                tr("Escolhe sozinho o melhor motor instalado para cada tipo de arquivo (sem IA por padrão, "
+                "que é mais rápido). Instalados: ") + ", ".join(avail) + ".")
             return
         eng = ENGINES[eid]
         ok, why = eng.available()
         info = eng.description
-        info += f"\n✔ {why}" if ok else f"\n✖ {why}\nInstalar: {eng.install_hint}"
+        info += tr('\n✔ {0}').format(why) if ok else tr('\n✖ {0}\nInstalar: {1}').format(why, eng.install_hint)
         self.engine_info.setText(info)
         for opt in eng.options:
             key = f"opt/{eid}/{opt.key}"
@@ -875,7 +890,7 @@ class SettingsPanel(QWidget):
 
     def _update_fix_summary(self, *_):
         on = sum(cb.isChecked() for cb in self.fix_checks.values())
-        self.fix_summary.setText(f"{on} de {len(self.fix_checks)} correções ligadas")
+        self.fix_summary.setText(tr('{0} de {1} correções ligadas').format(on, len(self.fix_checks)))
 
     def reload_output(self) -> None:
         """Relê as opções de saída salvas (ex.: depois do assistente inicial)."""
@@ -933,13 +948,9 @@ class SettingsPanel(QWidget):
 
         if on and not self.settings.value("anon/ack", False, type=bool) and os.environ.get("MARKINHO_QUIET") != "1":
             box = QMessageBox(QMessageBox.Warning, "Anonimizar dados pessoais",
-                              "<b>Antes de usar a anonimização, leia:</b><br><br>"
-                              f"⚠ <b>{DISCLAIMER}</b><br><br>"
-                              "A anonimização automática nunca é 100%: nomes sem pista (como “Rosa”) só são "
-                              "trocados se estiverem na sua lista.<br><br>"
-                              f"<b>Sua lista:</b> {LIST_HELP}", parent=self)
-            ok = box.addButton("Li e entendi — anonimizar", QMessageBox.AcceptRole)
-            box.addButton("Cancelar", QMessageBox.RejectRole)
+                              tr('<b>Antes de usar a anonimização, leia:</b><br><br>⚠ <b>{0}</b><br><br>A anonimização automática nunca é 100%: nomes sem pista (como “Rosa”) só são trocados se estiverem na sua lista.<br><br><b>Sua lista:</b> {1}').format(DISCLAIMER, LIST_HELP), parent=self)
+            ok = box.addButton(tr("Li e entendi — anonimizar"), QMessageBox.AcceptRole)
+            box.addButton(tr("Cancelar"), QMessageBox.RejectRole)
             box.exec()
             if box.clickedButton() is not ok:
                 self.anon.blockSignals(True)
@@ -972,11 +983,11 @@ class SettingsPanel(QWidget):
     def conflict(self) -> tuple[str, str, str] | None:
         """(mensagem, texto do botão, ação) quando duas opções de saída se anulam."""
         if self.describe.isChecked() and self.profile.currentData() == "llm":
-            return ("⚠ <b>A descrição das imagens não vai aparecer:</b> o perfil “Texto para IA” remove as "
-                    "imagens do resultado.", "Usar o perfil GitHub (GFM)", "profile")
+            return (tr("⚠ <b>A descrição das imagens não vai aparecer:</b> o perfil “Texto para IA” remove as "
+                    "imagens do resultado."), tr("Usar o perfil GitHub (GFM)"), "profile")
         if self.describe.isChecked() and self.images.currentData() == "none":
-            return ("⚠ <b>A descrição das imagens não vai aparecer:</b> “Imagens: não incluir” descarta as "
-                    "imagens antes de descrevê-las.", "Incluir as imagens (pasta ao lado do .md)", "images")
+            return (tr("⚠ <b>A descrição das imagens não vai aparecer:</b> “Imagens: não incluir” descarta as "
+                    "imagens antes de descrevê-las."), tr("Incluir as imagens (pasta ao lado do .md)"), "images")
         return None
 
     def _fix_conflict(self) -> None:
@@ -989,7 +1000,7 @@ class SettingsPanel(QWidget):
     def _update_out_hint(self):
         notes = []
         if self.profile.currentData() == "llm" and not self.describe.isChecked():
-            notes.append("O perfil “Texto para IA” remove imagens e comentários para economizar tokens.")
+            notes.append(tr("O perfil “Texto para IA” remove imagens e comentários para economizar tokens."))
         self.out_hint.setText(" ".join(notes))
         self.out_hint.setVisible(bool(notes))
         c = self.conflict()
@@ -1011,7 +1022,7 @@ class SettingsPanel(QWidget):
     def _refresh_ollama(self):
         """Procura o Ollama em segundo plano (a janela não congela enquanto espera)."""
         self.ollama_refresh_btn.setEnabled(False)
-        self.ollama_status.setText("Procurando o Ollama neste computador…")
+        self.ollama_status.setText(tr("Procurando o Ollama neste computador…"))
         sig = self._ollama_sig
 
         class _Find(QRunnable):
@@ -1040,18 +1051,13 @@ class SettingsPanel(QWidget):
         self.ollama_model.blockSignals(False)
         how = ("<code>ollama pull qwen2.5vl:3b</code>")
         if not models:
-            self.ollama_model.lineEdit().setPlaceholderText("nenhum modelo encontrado")
+            self.ollama_model.lineEdit().setPlaceholderText(tr("nenhum modelo encontrado"))
             self.ollama_status.setText(
-                "⚠ <b>O Ollama não foi encontrado neste computador.</b> A descrição de imagens precisa dele — "
-                "é um programa gratuito que roda a IA aqui mesmo, sem internet. Para usar: "
-                "1) instale em <a href='https://ollama.com/download'>ollama.com</a>; 2) abra o Ollama; "
-                f"3) no Prompt de Comando, baixe um modelo de visão: {how}; 4) clique em ↻. "
-                "Sem o Ollama, as imagens ficam sem descrição (o resto da conversão funciona normalmente).")
+                tr("⚠ <b>O Ollama não foi encontrado neste computador.</b> A descrição de imagens precisa dele — é um programa gratuito que roda a IA aqui mesmo, sem internet. Para usar: 1) instale em <a href='https://ollama.com/download'>ollama.com</a>; 2) abra o Ollama; 3) no Prompt de Comando, baixe um modelo de visão: {0}; 4) clique em ↻. Sem o Ollama, as imagens ficam sem descrição (o resto da conversão funciona normalmente).").format(how))
         elif not vis:
-            self.ollama_status.setText("⚠ O Ollama está aberto, mas não há modelo de visão. No Prompt de "
-                                       f"Comando: {how} e depois clique em ↻.")
+            self.ollama_status.setText(tr('⚠ O Ollama está aberto, mas não há modelo de visão. No Prompt de Comando: {0} e depois clique em ↻.').format(how))
         else:
-            self.ollama_status.setText(f"✓ Ollama encontrado: {len(vis)} modelo(s) de visão.")
+            self.ollama_status.setText(tr('✓ Ollama encontrado: {0} modelo(s) de visão.').format(len(vis)))
 
     def _fix_toggled(self, *_):
         self.settings.setValue("fix/enabled", self.fix_box.isChecked())
@@ -1069,24 +1075,24 @@ class NamingWidget(QGroupBox):
     def __init__(self, settings: QSettings, contexts: list, show_ext: bool = True, ext: str = ".md"):
         from .naming import CONFLICTS, EXTENSIONS, PRESETS, TOKENS
 
-        super().__init__("Nomes dos arquivos")
+        super().__init__(tr("Nomes dos arquivos"))
         self.settings, self.contexts, self.fixed_ext, self.target_dir = settings, contexts, ext, None
         form = QFormLayout(self)
         form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         row = QHBoxLayout()
         self.template = QLineEdit(settings.value("naming/template", "{nome}"))
-        self.template.setToolTip("Marcadores: " + "  ".join("{" + t + "}" for t in TOKENS))
+        self.template.setToolTip(tr("Marcadores: ") + "  ".join("{" + t + "}" for t in TOKENS))
         self.presets = QComboBox()
-        self.presets.addItem("Modelos…", "")
+        self.presets.addItem(tr("Modelos…"), "")
         for tpl, lbl in PRESETS:
             self.presets.addItem(f"{lbl}  —  {tpl}", tpl)
         self.presets.currentIndexChanged.connect(self._preset)
         row.addWidget(self.template, 1)
         row.addWidget(self.presets)
-        form.addRow("Padrão:", row)
-        tokens = QLabel("{nome} nome original · {n} número na ordem da lista · {titulo} título do documento · "
+        form.addRow(tr("Padrão:"), row)
+        tokens = QLabel(tr("{nome} nome original · {n} número na ordem da lista · {titulo} título do documento · "
                         "{data} data de hoje · {original} nome com extensão · {pasta} pasta de origem · "
-                        "{motor} motor usado")
+                        "{motor} motor usado"))
         tokens.setWordWrap(True)
         tokens.setStyleSheet("color: palette(window-text); font-size: 12px;")
         form.addRow(tokens)
@@ -1097,35 +1103,35 @@ class NamingWidget(QGroupBox):
         self.digits = QSpinBox()
         self.digits.setRange(1, 9)
         self.digits.setValue(int(settings.value("naming/digits", 3)))
-        nums.addWidget(QLabel("Começar em"))
+        nums.addWidget(QLabel(tr("Começar em")))
         nums.addWidget(self.start)
-        nums.addWidget(QLabel("Dígitos"))
+        nums.addWidget(QLabel(tr("Dígitos")))
         nums.addWidget(self.digits)
         nums.addStretch()
-        form.addRow("Numeração {n}:", nums)
+        form.addRow(tr("Numeração {n}:"), nums)
         self.ext = QComboBox()
         for e in EXTENSIONS:
             self.ext.addItem(e, e)
         self.ext.setCurrentIndex(max(0, self.ext.findData(settings.value("naming/ext", ".md"))))
-        self.ext_label = QLabel("Extensão:")
+        self.ext_label = QLabel(tr("Extensão:"))
         form.addRow(self.ext_label, self.ext)
         self.ext.setVisible(show_ext)
         self.ext_label.setVisible(show_ext)
-        self.safe = QCheckBox("Nomes seguros: sem acentos nem espaços, em minúsculas (bom para indexação e servidores)")
+        self.safe = QCheckBox(tr("Nomes seguros: sem acentos nem espaços, em minúsculas (bom para indexação e servidores)"))
         self.safe.setChecked(settings.value("naming/safe", False, type=bool))
         form.addRow(self.safe)
         self.conflict = QComboBox()
         for val, lbl in CONFLICTS:
             self.conflict.addItem(lbl, val)
         self.conflict.setCurrentIndex(max(0, self.conflict.findData(settings.value("naming/conflict", "suffix"))))
-        form.addRow("Se já existir:", self.conflict)
+        form.addRow(tr("Se já existir:"), self.conflict)
         self.error = QLabel()
         self.error.setStyleSheet("color: #c0392b;")
         form.addRow(self.error)
         self.preview = QListWidget()
         self.preview.setMinimumHeight(110)
         self.preview.setSelectionMode(QAbstractItemView.NoSelection)
-        form.addRow("Prévia:", self.preview)
+        form.addRow(tr("Prévia:"), self.preview)
         for w in (self.template,):
             w.textChanged.connect(self.refresh)
         for w in (self.start, self.digits):
@@ -1167,11 +1173,11 @@ class NamingWidget(QGroupBox):
         self.error.setVisible(bool(err))
         self.preview.clear()
         planned = plan(self.contexts, self.options(), self.target_dir, self.current_ext())
-        marks = {"skip": "  (já existe: será pulado)", "overwrite": "  (já existe: será substituído)"}
+        marks = {"skip": tr("  (já existe: será pulado)"), "overwrite": tr("  (já existe: será substituído)")}
         for ctx, p in list(zip(self.contexts, planned))[:50]:
             self.preview.addItem(f"{ctx.original or ctx.stem}  →  {p.name}{marks.get(p.action, '')}")
         if len(self.contexts) > 50:
-            self.preview.addItem(f"… e mais {len(self.contexts) - 50}")
+            self.preview.addItem(tr('… e mais {0}').format(len(self.contexts) - 50))
 
     def save(self):
         o = self.options()
@@ -1195,14 +1201,14 @@ class SaveAllDialog(QDialog):
 
     def __init__(self, parent, settings: QSettings, contexts: list):
         super().__init__(parent)
-        self.setWindowTitle("Salvar todos como Markdown")
+        self.setWindowTitle(tr("Salvar todos como Markdown"))
         self.resize(640, 560)
         lay = QVBoxLayout(self)
         row = QHBoxLayout()
         self.folder = QLineEdit(recall_dir(settings, "save"))
-        b = QPushButton("Escolher…")
+        b = QPushButton(tr("Escolher…"))
         b.clicked.connect(self._pick)
-        row.addWidget(QLabel("Pasta de destino:"))
+        row.addWidget(QLabel(tr("Pasta de destino:")))
         row.addWidget(self.folder, 1)
         row.addWidget(b)
         lay.addLayout(row)
@@ -1210,21 +1216,21 @@ class SaveAllDialog(QDialog):
         self.naming.set_target(self.folder.text())
         self.folder.textChanged.connect(lambda t: self.naming.set_target(t))
         lay.addWidget(self.naming)
-        note = QLabel("As imagens de cada documento vão para a pasta <i>&lt;nome&gt;_assets</i>, acompanhando o "
-                      "novo nome, e os links dentro do .md são corrigidos.")
+        note = QLabel(tr("As imagens de cada documento vão para a pasta <i>&lt;nome&gt;_assets</i>, acompanhando o "
+                      "novo nome, e os links dentro do .md são corrigidos."))
         note.setWordWrap(True)
         note.setStyleSheet("color: palette(window-text); font-size: 12px;")
         lay.addWidget(note)
         bb = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
-        bb.button(QDialogButtonBox.Save).setText("Salvar")
-        bb.button(QDialogButtonBox.Cancel).setText("Cancelar")
+        bb.button(QDialogButtonBox.Save).setText(tr("Salvar"))
+        bb.button(QDialogButtonBox.Cancel).setText(tr("Cancelar"))
         bb.accepted.connect(self._accept)
         bb.rejected.connect(self.reject)
         lay.addWidget(bb)
         self.settings = settings
 
     def _pick(self):
-        f = QFileDialog.getExistingDirectory(self, "Pasta de destino", self.folder.text() or recall_dir(self.settings))
+        f = QFileDialog.getExistingDirectory(self, tr("Pasta de destino"), self.folder.text() or recall_dir(self.settings))
         if f:
             self.folder.setText(f)
 
@@ -1232,7 +1238,7 @@ class SaveAllDialog(QDialog):
         from .naming import validate
 
         if err := validate(self.naming.template.text()):
-            QMessageBox.warning(self, "Nomes", err)
+            QMessageBox.warning(self, tr("Nomes"), err)
             return
         if not self.folder.text().strip():
             return
@@ -1248,7 +1254,7 @@ class SaveAllDialog(QDialog):
 class ExportDialog(QDialog):
     def __init__(self, parent, settings: QSettings, n_current: int, n_all: int, contexts: list | None = None):
         super().__init__(parent)
-        self.setWindowTitle("Exportar Markdown para outro formato")
+        self.setWindowTitle(tr("Exportar Markdown para outro formato"))
         self.contexts = contexts or []
         self.settings = settings
         lay = QVBoxLayout(self)
@@ -1257,28 +1263,28 @@ class ExportDialog(QDialog):
         self.fmt = QComboBox()
         for f in available_formats():
             backs = format_backends(f)
-            self.fmt.addItem(f"{f.label}   [{' / '.join('Pandoc' if b == 'pandoc' else 'nativo' for b in backs)}]", f.id)
+            self.fmt.addItem(f"{f.label}   [{' / '.join('Pandoc' if b == 'pandoc' else tr('Nativo') for b in backs)}]", f.id)
         self.fmt.setCurrentIndex(max(0, self.fmt.findData(settings.value("export/fmt", "docx"))))
-        form.addRow("Formato:", self.fmt)
+        form.addRow(tr("Formato:"), self.fmt)
 
         self.backend = QComboBox()
-        form.addRow("Exportador:", self.backend)
+        form.addRow(tr("Exportador:"), self.backend)
 
         self.title = QLineEdit()
-        self.title.setPlaceholderText("(opcional) título do documento")
-        form.addRow("Título:", self.title)
+        self.title.setPlaceholderText(tr("(opcional) título do documento"))
+        form.addRow(tr("Título:"), self.title)
 
         self.template = QComboBox()
-        self.template.addItem("Padrão", "")
-        self.template.addItem("ABNT (trabalhos acadêmicos)", "abnt")
-        self.template.setItemData(1, "Times New Roman 12, margens 3/2 cm, espaçamento 1,5, recuo de parágrafo, "
-                                     "citações longas recuadas, seções numeradas e número de página.",
+        self.template.addItem(tr("Padrão"), "")
+        self.template.addItem(tr("ABNT (trabalhos acadêmicos)"), "abnt")
+        self.template.setItemData(1, tr("Times New Roman 12, margens 3/2 cm, espaçamento 1,5, recuo de parágrafo, "
+                                     "citações longas recuadas, seções numeradas e número de página."),
                                   Qt.ToolTipRole)
         self.template.setCurrentIndex(max(0, self.template.findData(settings.value("export/template", ""))))
-        self.template_label = QLabel("Modelo do Word:")
+        self.template_label = QLabel(tr("Modelo do Word:"))
         form.addRow(self.template_label, self.template)
-        self.toc = QCheckBox("Incluir sumário")
-        self.numbers = QCheckBox("Numerar seções")
+        self.toc = QCheckBox(tr("Incluir sumário"))
+        self.numbers = QCheckBox(tr("Numerar seções"))
         form.addRow(self.toc)
         form.addRow(self.numbers)
         self.template.currentIndexChanged.connect(
@@ -1287,61 +1293,61 @@ class ExportDialog(QDialog):
 
         ref_row = QHBoxLayout()
         self.ref = QLineEdit(settings.value("export/ref", ""))
-        self.ref.setPlaceholderText("modelo .docx/.odt/.pptx com seus estilos (opcional)")
+        self.ref.setPlaceholderText(tr("modelo .docx/.odt/.pptx com seus estilos (opcional)"))
         b = QPushButton("…")
         b.setFixedWidth(32)
         b.clicked.connect(self._pick_ref)
         ref_row.addWidget(self.ref)
         ref_row.addWidget(b)
-        self.ref_label = QLabel("Modelo de estilos:")
+        self.ref_label = QLabel(tr("Modelo de estilos:"))
         form.addRow(self.ref_label, ref_row)
 
         self.pdf_engine = QComboBox()
         for e in available_pdf_engines():
             self.pdf_engine.addItem(e, e)
-        self.pdf_label = QLabel("Motor de PDF:")
+        self.pdf_label = QLabel(tr("Motor de PDF:"))
         form.addRow(self.pdf_label, self.pdf_engine)
         lay.addLayout(form)
 
         # opções dos pedaços para RAG
         from .chunker import STRATEGIES
 
-        self.chunk_box = QGroupBox("Pedaços para RAG / IA")
+        self.chunk_box = QGroupBox(tr("Pedaços para RAG / IA"))
         cf = QFormLayout(self.chunk_box)
         self.chunk_by = QComboBox()
         for val, lbl in STRATEGIES:
             self.chunk_by.addItem(lbl, val)
         self.chunk_by.setCurrentIndex(max(0, self.chunk_by.findData(settings.value("export/chunk_by", "title"))))
-        self.chunk_by.setToolTip("“Por página” precisa das marcas de página (opção do motor Nativo para PDF); "
-                                 "sem elas, divide por título.")
-        cf.addRow("Dividir:", self.chunk_by)
+        self.chunk_by.setToolTip(tr("“Por página” precisa das marcas de página (opção do motor Nativo para PDF); "
+                                 "sem elas, divide por título."))
+        cf.addRow(tr("Dividir:"), self.chunk_by)
         self.chunk_size = QSpinBox()
         self.chunk_size.setRange(200, 20000)
         self.chunk_size.setSingleStep(100)
-        self.chunk_size.setSuffix(" caracteres")
+        self.chunk_size.setSuffix(tr(" caracteres"))
         self.chunk_size.setValue(int(settings.value("export/chunk_size", 1500)))
-        self.chunk_size.setToolTip("Tamanho máximo de cada pedaço. 1500 caracteres ≈ 375 tokens.")
-        cf.addRow("Tamanho máximo:", self.chunk_size)
+        self.chunk_size.setToolTip(tr("Tamanho máximo de cada pedaço. 1500 caracteres ≈ 375 tokens."))
+        cf.addRow(tr("Tamanho máximo:"), self.chunk_size)
         self.chunk_overlap = QSpinBox()
         self.chunk_overlap.setRange(0, 5000)
         self.chunk_overlap.setSingleStep(50)
-        self.chunk_overlap.setSuffix(" caracteres")
+        self.chunk_overlap.setSuffix(tr(" caracteres"))
         self.chunk_overlap.setValue(int(settings.value("export/chunk_overlap", 150)))
-        self.chunk_overlap.setToolTip("Quanto do fim de um pedaço é repetido no início do seguinte, "
-                                      "quando um texto longo é dividido.")
-        cf.addRow("Sobreposição:", self.chunk_overlap)
-        self.chunk_headings = QCheckBox("Repetir o caminho de títulos em cada pedaço")
+        self.chunk_overlap.setToolTip(tr("Quanto do fim de um pedaço é repetido no início do seguinte, "
+                                      "quando um texto longo é dividido."))
+        cf.addRow(tr("Sobreposição:"), self.chunk_overlap)
+        self.chunk_headings = QCheckBox(tr("Repetir o caminho de títulos em cada pedaço"))
         self.chunk_headings.setChecked(settings.value("export/chunk_headings", True, type=bool))
         cf.addRow(self.chunk_headings)
         lay.addWidget(self.chunk_box)
 
-        scope = QGroupBox("O que exportar")
+        scope = QGroupBox(tr("O que exportar"))
         sl = QVBoxLayout(scope)
         self.scope = QButtonGroup(self)
         for i, (txt, enabled) in enumerate([
-            ("Documento atual", n_current > 0),
-            (f"Todos os documentos — um arquivo para cada ({n_all})", n_all > 0),
-            (f"Todos juntos em um único arquivo ({n_all})", n_all > 1),
+            (tr("Documento atual"), n_current > 0),
+            (tr('Todos os documentos — um arquivo para cada ({0})').format(n_all), n_all > 0),
+            (tr('Todos juntos em um único arquivo ({0})').format(n_all), n_all > 1),
         ]):
             rb = QRadioButton(txt)
             rb.setEnabled(enabled)
@@ -1361,7 +1367,7 @@ class ExportDialog(QDialog):
         lay.addWidget(self.note)
 
         bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.button(QDialogButtonBox.Ok).setText("Exportar…")
+        bb.button(QDialogButtonBox.Ok).setText(tr("Exportar…"))
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         lay.addWidget(bb)
@@ -1370,8 +1376,8 @@ class ExportDialog(QDialog):
         self._fmt_changed()
 
     def _pick_ref(self):
-        f, _ = QFileDialog.getOpenFileName(self, "Modelo de estilos", recall_dir(self.settings, "ref"),
-                                           "Documentos (*.docx *.odt *.pptx)")
+        f, _ = QFileDialog.getOpenFileName(self, tr("Modelo de estilos"), recall_dir(self.settings, "ref"),
+                                           tr("Documentos (*.docx *.odt *.pptx)"))
         if f:
             remember_dir(self.settings, f, "ref")
         if f:
@@ -1382,7 +1388,7 @@ class ExportDialog(QDialog):
         self.backend.blockSignals(True)
         self.backend.clear()
         for b in format_backends(FORMATS_BY_ID[fid]):
-            self.backend.addItem("Pandoc" if b == "pandoc" else "Nativo (sem Pandoc)", b)
+            self.backend.addItem(tr("Pandoc") if b == "pandoc" else tr("Nativo (sem Pandoc)"), b)
         self.backend.blockSignals(False)
         self._update_visibility()
 
@@ -1410,11 +1416,11 @@ class ExportDialog(QDialog):
         if is_chunks:
             self.numbers.setEnabled(False)
         notes = {
-            ("chunks_jsonl", "native"): "Um pedaço por linha (JSON Lines), com títulos, página e origem — "
-                                        "pronto para bancos vetoriais (LangChain, LlamaIndex, Chroma…).",
-            ("chunks_json", "native"): "Um único JSON com os metadados do documento e a lista de pedaços.",
-            ("pdf", "native"): "PDF gerado pelo motor de texto do Qt — não precisa de LaTeX.",
-            ("pptx", "pandoc"): "Cada título de nível 1/2 vira um slide.",
+            ("chunks_jsonl", "native"): tr("Um pedaço por linha (JSON Lines), com títulos, página e origem — "
+                                        "pronto para bancos vetoriais (LangChain, LlamaIndex, Chroma…)."),
+            ("chunks_json", "native"): tr("Um único JSON com os metadados do documento e a lista de pedaços."),
+            ("pdf", "native"): tr("PDF gerado pelo motor de texto do Qt — não precisa de LaTeX."),
+            ("pptx", "pandoc"): tr("Cada título de nível 1/2 vira um slide."),
         }
         self.note.setText(notes.get((fid, be), ""))
 
@@ -1458,9 +1464,9 @@ class _ModelTask(QRunnable):
 
         try:
             target = download_models(self.which, progress=lambda *_: None)
-            self.signals.done.emit(self.which, f"Modelos baixados em {target}")
+            self.signals.done.emit(self.which, tr('Modelos baixados em {0}').format(target))
         except Exception as exc:  # noqa: BLE001
-            self.signals.done.emit(self.which, f"Erro: {exc}")
+            self.signals.done.emit(self.which, tr('Erro: {0}').format(exc))
 
 
 class EnginesDialog(QDialog):
@@ -1472,7 +1478,7 @@ class EnginesDialog(QDialog):
         from .edition import EDITIONS, current
         from .models import models_dir, status
 
-        self.setWindowTitle("Motores de conversão")
+        self.setWindowTitle(tr("Motores de conversão"))
         self.resize(900, 560)
         self.main = parent
         lay = QVBoxLayout(self)
@@ -1482,28 +1488,28 @@ class EnginesDialog(QDialog):
             more = ""
             if nxt is not None:
                 extra_feats = [f for f in nxt.features if f not in ed.features]
-                more = (f"<br><b>A edição {nxt.name} acrescenta:</b> " + "; ".join(html.escape(f) for f in extra_feats)
-                        + ". Basta instalá-la por cima desta.")
-            head = QLabel(f"<b>Sua edição: {ed.name}</b> — {html.escape(ed.summary)}{more}")
+                more = (tr('<br><b>A edição {0} acrescenta:</b> ').format(nxt.name) + "; ".join(html.escape(f) for f in extra_feats)
+                        + tr(". Basta instalá-la por cima desta."))
+            head = QLabel(tr('<b>Sua edição: {0}</b> — {1}{2}').format(ed.name, html.escape(ed.summary), more))
             head.setWordWrap(True)
             lay.addWidget(head)
-        how = QLabel("<b>Escolha o motor:</b> clique em <b>Usar</b> na linha desejada. <b>Automático</b> escolhe "
+        how = QLabel(tr("<b>Escolha o motor:</b> clique em <b>Usar</b> na linha desejada. <b>Automático</b> escolhe "
                      "sozinho o melhor para cada tipo de arquivo (recomendado). A escolha também fica no painel "
-                     "Configurações › Motor de conversão.")
+                     "Configurações › Motor de conversão."))
         how.setWordWrap(True)
         lay.addWidget(how)
-        rows = [(AUTO, "Automático (recomendado)", "Escolhe o melhor motor instalado para cada arquivo.", True, "")]
+        rows = [(AUTO, tr("Automático (recomendado)"), tr("Escolhe o melhor motor instalado para cada arquivo."), True, "")]
         for eng in ENGINES.values():
             ok, why = eng.available()
             desc = eng.description.split(". ")[0].rstrip(".") + "."
             rows.append((eng.id, eng.name, desc, ok, "" if ok else why))
         t = QTableWidget(len(rows), 4)
-        t.setHorizontalHeaderLabels(["", "Motor", "O que faz", "Licença / situação"])
+        t.setHorizontalHeaderLabels(["", tr("Motor"), tr("O que faz"), tr("Licença / situação")])
         t.verticalHeader().setVisible(False)
         self.use_btns: dict[str, QPushButton] = {}
         for r, (eid, name, desc, ok, why) in enumerate(rows):
             if ok:
-                b = QPushButton("Usar")
+                b = QPushButton(tr("Usar"))
                 b.clicked.connect(lambda _c=False, e=eid: self._use(e))
                 t.setCellWidget(r, 0, b)
                 self.use_btns[eid] = b
@@ -1514,7 +1520,7 @@ class EnginesDialog(QDialog):
             t.setItem(r, 1, name_it)
             d = QTableWidgetItem(desc)
             if eid != AUTO and ok:
-                d.setToolTip("Formatos de entrada: " + " ".join(sorted(ENGINES[eid].extensions())))
+                d.setToolTip(tr("Formatos de entrada: ") + " ".join(sorted(ENGINES[eid].extensions())))
             t.setItem(r, 2, d)
             lic = "" if eid == AUTO else (ENGINES[eid].license or "—")
             t.setItem(r, 3, QTableWidgetItem(lic if ok else f"{lic} — {why}"))
@@ -1531,14 +1537,14 @@ class EnginesDialog(QDialog):
         self._refresh_use()
         pdfs = available_pdf_engines()
         lines = [f"<b>OCR</b>: {html.escape(ocr.describe_status())}",
-                 f"<b>Exportação</b>: {len(available_formats())} formatos. Pandoc: {pandoc_version() or 'não incluído'}."
-                 + (f" Motores de PDF: {', '.join(pdfs)}." if pdfs else "")]
+                 tr("<b>Exportação</b>: {0} formatos. Pandoc: {1}.").format(len(available_formats()), pandoc_version() or tr("não incluído"))
+                 + (tr(' Motores de PDF: {0}.').format(', '.join(pdfs)) if pdfs else "")]
         ai = [w for w in ("docling", "marker") if ENGINES[w].available()[0]]
         if ai:
             st = status()
-            lines.append(f"<b>Modelos de IA</b> (pasta: {html.escape(str(models_dir()))}): "
+            lines.append(tr('<b>Modelos de IA</b> (pasta: {0}): ').format(html.escape(str(models_dir())))
                          + "; ".join(f"{w.capitalize()} — {html.escape(st[w])}" for w in ai)
-                         + ". Para usar <b>sem internet</b>, baixe-os aqui uma vez.")
+                         + tr(". Para usar <b>sem internet</b>, baixe-os aqui uma vez."))
         extra = QLabel("<br>".join(lines))
         extra.setWordWrap(True)
         extra.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -1546,7 +1552,7 @@ class EnginesDialog(QDialog):
         row = QHBoxLayout()
         self.btns = {}
         for which in ai:                       # só aparece o que dá para usar nesta edição
-            b = QPushButton(f"Baixar modelos do {which.capitalize()}")
+            b = QPushButton(tr('Baixar modelos do {0}').format(which.capitalize()))
             b.clicked.connect(lambda _c=False, w=which: self._download(w))
             row.addWidget(b)
             self.btns[which] = b
@@ -1556,7 +1562,7 @@ class EnginesDialog(QDialog):
         self.msg.setWordWrap(True)
         lay.addWidget(self.msg)
         bb = QDialogButtonBox(QDialogButtonBox.Close)
-        bb.button(QDialogButtonBox.Close).setText("Fechar")
+        bb.button(QDialogButtonBox.Close).setText(tr("Fechar"))
         bb.rejected.connect(self.reject)
         lay.addWidget(bb)
         self._task = None
@@ -1568,7 +1574,7 @@ class EnginesDialog(QDialog):
     def _refresh_use(self) -> None:
         cur = self._current_engine()
         for eid, b in self.use_btns.items():
-            b.setText("✓ Em uso" if eid == cur else "Usar")
+            b.setText(tr("✓ Em uso") if eid == cur else tr("Usar"))
             f = b.font()
             f.setBold(eid == cur)                 # destacado em negrito (desativado ficaria cinza e ilegível)
             b.setFont(f)
@@ -1579,13 +1585,12 @@ class EnginesDialog(QDialog):
             return
         panel.engine.setCurrentIndex(max(0, panel.engine.findData(eid)))
         self._refresh_use()
-        name = "Automático" if eid == AUTO else ENGINES[eid].name
-        self.msg.setText(f"Motor escolhido: <b>{html.escape(name)}</b>. Vale para as próximas conversões; "
-                         "use “Reconverter” para aplicar aos arquivos já convertidos.")
+        name = tr("Automático") if eid == AUTO else ENGINES[eid].name
+        self.msg.setText(tr('Motor escolhido: <b>{0}</b>. Vale para as próximas conversões; use “Reconverter” para aplicar aos arquivos já convertidos.').format(html.escape(name)))
 
     def _download(self, which: str):
         self.btns[which].setEnabled(False)
-        self.msg.setText(f"Baixando modelos do {which.capitalize()}… isso pode levar vários minutos.")
+        self.msg.setText(tr('Baixando modelos do {0}… isso pode levar vários minutos.').format(which.capitalize()))
         self._task = _ModelTask(which)
         self._task.setAutoDelete(False)
         self._task.signals.done.connect(self._downloaded)
@@ -1606,18 +1611,18 @@ class McpDialog(QDialog):
         from . import mcp_server as ms
 
         self.ms = ms
-        self.setWindowTitle("Assistentes de IA (MCP)")
+        self.setWindowTitle(tr("Assistentes de IA (MCP)"))
         self.resize(720, 560)
         lay = QVBoxLayout(self)
         intro = QLabel(
-            "Deixe assistentes de IA como <b>Claude Desktop</b>, <b>Cursor</b> e <b>VS Code</b> converterem "
+            tr("Deixe assistentes de IA como <b>Claude Desktop</b>, <b>Cursor</b> e <b>VS Code</b> converterem "
             "documentos usando o Markinho instalado. <b>Tudo roda no seu computador</b>: o assistente pede a "
             "conversão e o Markinho devolve o Markdown.<br><br>"
-            "Por segurança, o assistente <b>só lê arquivos dentro das pastas abaixo</b>.")
+            "Por segurança, o assistente <b>só lê arquivos dentro das pastas abaixo</b>."))
         intro.setWordWrap(True)
         lay.addWidget(intro)
 
-        box = QGroupBox("Pastas autorizadas")
+        box = QGroupBox(tr("Pastas autorizadas"))
         bl = QVBoxLayout(box)
         self.folders = QListWidget()
         cfg = ms.load_config()
@@ -1625,35 +1630,33 @@ class McpDialog(QDialog):
             self.folders.addItem(f)
         bl.addWidget(self.folders)
         row = QHBoxLayout()
-        b_add = QPushButton("Adicionar pasta…")
+        b_add = QPushButton(tr("Adicionar pasta…"))
         b_add.clicked.connect(self._add)
-        b_rem = QPushButton("Remover")
+        b_rem = QPushButton(tr("Remover"))
         b_rem.clicked.connect(lambda: [self.folders.takeItem(self.folders.row(i)) for i in self.folders.selectedItems()])
         row.addWidget(b_add)
         row.addWidget(b_rem)
         row.addStretch()
         bl.addLayout(row)
-        self.allow_write = QCheckBox("Permitir que o assistente salve arquivos nessas pastas (.md, DOCX, PDF…)")
-        self.allow_write.setToolTip("Sem isso, o assistente só lê e converte. Arquivos existentes nunca são "
-                                    "substituídos sem um pedido explícito.")
+        self.allow_write = QCheckBox(tr("Permitir que o assistente salve arquivos nessas pastas (.md, DOCX, PDF…)"))
+        self.allow_write.setToolTip(tr("Sem isso, o assistente só lê e converte. Arquivos existentes nunca são "
+                                    "substituídos sem um pedido explícito."))
         self.allow_write.setChecked(bool(cfg.get("allow_write")))
         bl.addWidget(self.allow_write)
         lay.addWidget(box)
 
-        cbox = QGroupBox("Conectar a um assistente")
+        cbox = QGroupBox(tr("Conectar a um assistente"))
         cl = QVBoxLayout(cbox)
-        b_claude = QPushButton("Configurar no Claude Desktop")
+        b_claude = QPushButton(tr("Configurar no Claude Desktop"))
         b_claude.clicked.connect(self._install_claude)
-        b_copy = QPushButton("Copiar configuração (Claude Desktop / Cursor)")
+        b_copy = QPushButton(tr("Copiar configuração (Claude Desktop / Cursor)"))
         b_copy.clicked.connect(lambda: self._copy("claude"))
-        b_vscode = QPushButton("Copiar configuração (VS Code)")
+        b_vscode = QPushButton(tr("Copiar configuração (VS Code)"))
         b_vscode.clicked.connect(lambda: self._copy("vscode"))
         for b in (b_claude, b_copy, b_vscode):
             cl.addWidget(b)
         cmd, args = ms.server_command()
-        how = QLabel(f"Comando do servidor: <code>{html.escape(cmd)} {html.escape(' '.join(args))}</code><br>"
-                     "No Cursor, cole a configuração em <code>.cursor/mcp.json</code>; no VS Code, em "
-                     "<code>.vscode/mcp.json</code>. Depois de configurar, reinicie o assistente.")
+        how = QLabel(tr('Comando do servidor: <code>{0} {1}</code><br>No Cursor, cole a configuração em <code>.cursor/mcp.json</code>; no VS Code, em <code>.vscode/mcp.json</code>. Depois de configurar, reinicie o assistente.').format(html.escape(cmd), html.escape(' '.join(args))))
         how.setWordWrap(True)
         how.setTextInteractionFlags(Qt.TextSelectableByMouse)
         how.setStyleSheet("color: palette(window-text); font-size: 12px;")
@@ -1664,26 +1667,26 @@ class McpDialog(QDialog):
         self.msg.setWordWrap(True)
         lay.addWidget(self.msg)
         bb = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Close)
-        bb.button(QDialogButtonBox.Save).setText("Salvar")
-        bb.button(QDialogButtonBox.Close).setText("Fechar")
+        bb.button(QDialogButtonBox.Save).setText(tr("Salvar"))
+        bb.button(QDialogButtonBox.Close).setText(tr("Fechar"))
         bb.accepted.connect(self._save_and_close)
         bb.rejected.connect(self.reject)
         lay.addWidget(bb)
         try:
             import mcp  # noqa: F401
         except ImportError:
-            self.msg.setText("⚠ O pacote do MCP não está instalado (pip install mcp). A configuração é salva, "
-                             "mas o servidor não vai iniciar.")
+            self.msg.setText(tr("⚠ O pacote do MCP não está instalado (pip install mcp). A configuração é salva, "
+                             "mas o servidor não vai iniciar."))
 
     def _add(self):
-        f = QFileDialog.getExistingDirectory(self, "Pasta que o assistente pode usar",
+        f = QFileDialog.getExistingDirectory(self, tr("Pasta que o assistente pode usar"),
                                              recall_dir(QSettings("Markinho", "Markinho")))
         if f:
             remember_dir(QSettings("Markinho", "Markinho"), f)
         if f and not self.folders.findItems(f, Qt.MatchExactly):
             if Path(f).resolve() == Path.home().resolve() or len(Path(f).resolve().parts) <= 1:
-                if QMessageBox.question(self, "Pasta ampla", "Autorizar a pasta inteira do usuário (ou a raiz) dá "
-                                        "ao assistente acesso a todos os seus arquivos. Continuar?") != QMessageBox.Yes:
+                if QMessageBox.question(self, tr("Pasta ampla"), tr("Autorizar a pasta inteira do usuário (ou a raiz) dá "
+                                        "ao assistente acesso a todos os seus arquivos. Continuar?")) != QMessageBox.Yes:
                     return
             self.folders.addItem(f)
 
@@ -1698,22 +1701,21 @@ class McpDialog(QDialog):
 
     def _install_claude(self):
         if not self._save():
-            QMessageBox.warning(self, "Assistentes de IA", "Adicione ao menos uma pasta autorizada antes.")
+            QMessageBox.warning(self, tr("Assistentes de IA"), tr("Adicione ao menos uma pasta autorizada antes."))
             return
         try:
             path = self.ms.install_claude_desktop()
         except Exception as exc:  # noqa: BLE001
-            QMessageBox.critical(self, "Claude Desktop", str(exc))
+            QMessageBox.critical(self, tr("Claude Desktop"), str(exc))
             return
-        self.msg.setText(f"✔ Configurado em {html.escape(str(path))}. <b>Feche e abra o Claude Desktop</b> "
-                         "para ativar. Pergunte, por exemplo: “Liste os documentos que o Markinho pode ler”.")
+        self.msg.setText(tr('✔ Configurado em {0}. <b>Feche e abra o Claude Desktop</b> para ativar. Pergunte, por exemplo: “Liste os documentos que o Markinho pode ler”.').format(html.escape(str(path))))
 
     def _copy(self, kind: str):
         import json as _json
 
         self._save()
         QGuiApplication.clipboard().setText(_json.dumps(self.ms.client_config(kind), indent=2, ensure_ascii=False))
-        self.msg.setText("✔ Configuração copiada para a área de transferência.")
+        self.msg.setText(tr("✔ Configuração copiada para a área de transferência."))
 
 
 # --------------------------------------------------------------------------- #
@@ -1725,7 +1727,7 @@ class AboutDialog(QDialog):
         from .edition import label as edition_label
 
         super().__init__(parent)
-        self.setWindowTitle("Sobre o Markinho")
+        self.setWindowTitle(tr("Sobre o Markinho"))
         self.resize(820, 640)
         lay = QVBoxLayout(self)
         tabs = QTabWidget()
@@ -1738,22 +1740,8 @@ class AboutDialog(QDialog):
         logo = f'<img src="{ip.as_uri()}" width="96" height="96">' if ip else ""
         engines = ", ".join(e.name for e in ENGINES.values() if e.available()[0])
         about.setHtml(
-            f'<table><tr><td>{logo}</td><td style="padding-left:16px">'
-            f'<h1 style="margin:0">Markinho</h1><h3 style="margin:2px 0 8px 0;color:gray">Conversor Markdown</h3>'
-            f"Versão {__version__} · edição {html.escape(edition_label())}</td></tr></table>"
-            "<p>Converte documentos <b>para Markdown</b> (PDF, Word, Excel, PowerPoint, OpenDocument, HTML, EPUB, "
-            "imagens com OCR, Office antigo…) e Markdown <b>para outros formatos</b>. "
-            "<b>Tudo roda no seu computador</b>: nenhum documento é enviado para a internet.</p>"
-            f"<p><b>Motores disponíveis:</b> {html.escape(engines)}<br>"
-            f"<b>Formatos de exportação:</b> {len(available_formats())}</p>"
-            '<p><a href="https://github.com/dontstopbelieve/markinho">github.com/dontstopbelieve/markinho</a></p>'
-            "<p><b>Software livre e gratuito</b>, sob a licença GNU AGPL-3.0, fornecido “como está”, sem "
-            "garantia de qualquer tipo. Projeto pessoal, sem garantia de atualizações ou suporte. "
-            "Copyright © 2026 dontstopbelieve.</p>"
-            "<p>Feito com a ajuda de muitos projetos de código aberto — veja a aba <b>Créditos</b>. "
-            "Obrigado a todos os desenvolvedores e desenvolvedoras!</p>"
-            f'<p style="color:gray;font-size:small">{html.escape(DISCLAIMER)}</p>')
-        tabs.addTab(about, "Sobre")
+            tr('<table><tr><td>{0}</td><td style="padding-left:16px"><h1 style="margin:0">Markinho</h1><h3 style="margin:2px 0 8px 0;color:gray">Conversor Markdown</h3>Versão {1} · edição {2}</td></tr></table><p>Converte documentos <b>para Markdown</b> (PDF, Word, Excel, PowerPoint, OpenDocument, HTML, EPUB, imagens com OCR, Office antigo…) e Markdown <b>para outros formatos</b>. <b>Tudo roda no seu computador</b>: nenhum documento é enviado para a internet.</p><p><b>Motores disponíveis:</b> {3}<br><b>Formatos de exportação:</b> {4}</p><p><a href="https://github.com/dontstopbelieve/markinho">github.com/dontstopbelieve/markinho</a></p><p><b>Software livre e gratuito</b>, sob a licença GNU AGPL-3.0, fornecido “como está”, sem garantia de qualquer tipo. Projeto pessoal, sem garantia de atualizações ou suporte. Copyright © 2026 dontstopbelieve.</p><p>Feito com a ajuda de muitos projetos de código aberto — veja a aba <b>Créditos</b>. Obrigado a todos os desenvolvedores e desenvolvedoras!</p><p style="color:gray;font-size:small">{5}</p>').format(logo, __version__, html.escape(edition_label()), html.escape(engines), len(available_formats()), html.escape(DISCLAIMER)))
+        tabs.addTab(about, tr("Sobre"))
 
         # --- Créditos ---
         cred = QTextBrowser()
@@ -1767,20 +1755,20 @@ class AboutDialog(QDialog):
         insp = "".join(f'<tr><td><a href="{c.url}">{html.escape(c.name)}</a></td><td>{html.escape(c.author)}</td>'
                        f"<td>{html.escape(c.role)}</td></tr>" for c in INSPIRED_BY)
         cred.setHtml(
-            "<h3>Obrigado!</h3><p>O Markinho existe graças ao trabalho generoso destas pessoas e projetos.</p>"
+            tr("<h3>Obrigado!</h3><p>O Markinho existe graças ao trabalho generoso destas pessoas e projetos.</p>"
             "<h4>Componentes incluídos</h4>"
             "<p style='color:gray'>✔ = presente nesta edição. Usados conforme suas licenças (textos na aba "
             "<b>Licenças</b>).</p>"
             "<table cellspacing='0' cellpadding='4' border='1' style='border-collapse:collapse'>"
-            "<tr><th></th><th>Projeto</th><th>Autores</th><th>Licença</th><th>Para quê</th></tr>"
-            + "".join(rows) + "</table>"
+            "<tr><th></th><th>Projeto</th><th>Autores</th><th>Licença</th><th>Para quê</th></tr>")
+            + "".join(rows) + tr("</table>"
             "<h4>Projetos que inspiraram ideias</h4>"
             "<p style='color:gray'>Ideias e funcionalidades que estudamos; o código do Markinho foi escrito do zero, "
             "sem copiar código destes projetos.</p>"
             "<table cellspacing='0' cellpadding='4' border='1' style='border-collapse:collapse'>"
-            "<tr><th>Projeto</th><th>Autores</th><th>Ideia</th></tr>" + insp + "</table>"
+            "<tr><th>Projeto</th><th>Autores</th><th>Ideia</th></tr>") + insp + "</table>"
             f'<p style="color:gray;font-size:small">{html.escape(DISCLAIMER)}</p>')
-        tabs.addTab(cred, "Créditos")
+        tabs.addTab(cred, tr("Créditos"))
 
         # --- Licenças (textos completos) ---
         lic = QWidget()
@@ -1800,12 +1788,12 @@ class AboutDialog(QDialog):
         ll.addWidget(split)
         if self._files:
             self._list.setCurrentRow(0)
-        tabs.addTab(lic, f"Licenças ({len(self._files)})")
+        tabs.addTab(lic, tr('Licenças ({0})').format(len(self._files)))
         tabs.setCurrentIndex(tab)
 
         bb = QDialogButtonBox(QDialogButtonBox.Close)
-        bb.button(QDialogButtonBox.Close).setText("Fechar")
-        b_sup = bb.addButton("Gostou? Apoie o Markinho ❤", QDialogButtonBox.ActionRole)
+        bb.button(QDialogButtonBox.Close).setText(tr("Fechar"))
+        b_sup = bb.addButton(tr("Gostou? Apoie o Markinho ❤"), QDialogButtonBox.ActionRole)
         b_sup.clicked.connect(lambda: __import__("markinho.gui_tools", fromlist=["SupportDialog"])
                               .SupportDialog(self).exec())
         bb.rejected.connect(self.reject)
@@ -1821,7 +1809,7 @@ class MainWindow(QMainWindow):
         from .edition import current
 
         ed = current()
-        self.setWindowTitle(f"Markinho {__version__}{' ' + ed.name if ed else ''} — Conversor Markdown")
+        self.setWindowTitle(tr('Markinho {0}{1} — Conversor Markdown').format(__version__, ' ' + ed.name if ed else ''))
         self.resize(1320, 800)
         self.settings = QSettings("Markinho", "Markinho")
         self.pool = QThreadPool.globalInstance()
@@ -1857,44 +1845,44 @@ class MainWindow(QMainWindow):
             tb.addAction(a)
             return a
 
-        self.act_add = action("Adicionar", QStyle.SP_FileIcon, self.add_files_dialog, QKeySequence.Open,
-                              tip="Adicionar arquivos à fila (Ctrl+O) — também dá para arrastá-los para a janela. "
-                                  "A setinha ao lado tem: adicionar uma pasta inteira e escrever do zero.")
-        self.act_folder = QAction(st.standardIcon(QStyle.SP_DirIcon), "Adicionar pasta…", self)
+        self.act_add = action(tr("Adicionar"), QStyle.SP_FileIcon, self.add_files_dialog, QKeySequence.Open,
+                              tip=tr("Adicionar arquivos à fila (Ctrl+O) — também dá para arrastá-los para a janela. "
+                                  "A setinha ao lado tem: adicionar uma pasta inteira e escrever do zero."))
+        self.act_folder = QAction(st.standardIcon(QStyle.SP_DirIcon), tr("Adicionar pasta…"), self)
         self.act_folder.triggered.connect(self.add_folder_dialog)
-        self.act_new = QAction(draw_icon("write"), "Escrever do zero (novo .md)", self)
+        self.act_new = QAction(draw_icon("write"), tr("Escrever do zero (novo .md)"), self)
         self.act_new.setShortcut(QKeySequence.New)
-        self.act_new.setToolTip("Escrever ou colar Markdown para exportar a outro formato")
+        self.act_new.setToolTip(tr("Escrever ou colar Markdown para exportar a outro formato"))
         self.act_new.triggered.connect(self.new_document)
         self.addAction(self.act_new)
         from PySide6.QtWidgets import QMenu as _QMenu, QToolButton as _QToolButton
 
         add_menu = _QMenu(self)
-        add_menu.addAction(st.standardIcon(QStyle.SP_FileIcon), "Adicionar arquivos…", self.add_files_dialog)
+        add_menu.addAction(st.standardIcon(QStyle.SP_FileIcon), tr("Adicionar arquivos…"), self.add_files_dialog)
         add_menu.addAction(self.act_folder)
         add_menu.addAction(self.act_new)
         add_btn_tb = tb.widgetForAction(self.act_add)
         if isinstance(add_btn_tb, _QToolButton):
             add_btn_tb.setMenu(add_menu)
             add_btn_tb.setPopupMode(_QToolButton.MenuButtonPopup)
-        self.act_paste = action("Colar", QStyle.SP_DialogOpenButton, self.paste_as_markdown, "Ctrl+Shift+V",
-                                tip="Colar e converter (Ctrl+Shift+V): texto de uma página da web, do Word ou de um "
-                                    "e-mail vira Markdown; uma imagem copiada passa pelo OCR")
+        self.act_paste = action(tr("Colar"), QStyle.SP_DialogOpenButton, self.paste_as_markdown, tr("Ctrl+Shift+V"),
+                                tip=tr("Colar e converter (Ctrl+Shift+V): texto de uma página da web, do Word ou de um "
+                                    "e-mail vira Markdown; uma imagem copiada passa pelo OCR"))
         tb.addSeparator()
-        self.act_convert = action("Converter", QStyle.SP_MediaPlay, lambda: self.convert_queue(False), "F5",
-                                  tip="Converter os arquivos da fila (F5). Com um arquivo já convertido (✔) "
-                                      "selecionado, converte de novo — útil depois de mudar o modo ou as opções.")
-        conv_sel = QAction("Converter selecionados", self)
+        self.act_convert = action(tr("Converter"), QStyle.SP_MediaPlay, lambda: self.convert_queue(False), "F5",
+                                  tip=tr("Converter os arquivos da fila (F5). Com um arquivo já convertido (✔) "
+                                      "selecionado, converte de novo — útil depois de mudar o modo ou as opções."))
+        conv_sel = QAction(tr("Converter selecionados"), self)
         conv_sel.setShortcut("Shift+F5")
         conv_sel.triggered.connect(lambda: self.convert_queue(True))
         self.addAction(conv_sel)
-        self.act_cancel = action("Parar", QStyle.SP_MediaStop, self.cancel_conversions, "Esc",
-                                 tip="Parar as conversões (Esc): as que estão em andamento param na próxima página "
-                                     "e voltam para a fila")
-        self.act_auto = QCheckBox("Converter ao adicionar")
+        self.act_cancel = action(tr("Parar"), QStyle.SP_MediaStop, self.cancel_conversions, "Esc",
+                                 tip=tr("Parar as conversões (Esc): as que estão em andamento param na próxima página "
+                                     "e voltam para a fila"))
+        self.act_auto = QCheckBox(tr("Converter ao adicionar"))
         self.act_auto.setChecked(self.settings.value("queue/auto", False, type=bool))
-        self.act_auto.setToolTip("Ligado: converte assim que o arquivo entra. Desligado: acumula na fila e "
-                                 "converte quando você clicar em “Converter” (F5).")
+        self.act_auto.setToolTip(tr("Ligado: converte assim que o arquivo entra. Desligado: acumula na fila e "
+                                 "converte quando você clicar em “Converter” (F5)."))
         self.act_auto.toggled.connect(lambda v: self.settings.setValue("queue/auto", v))
         tb.addSeparator()
 
@@ -1908,25 +1896,25 @@ class MainWindow(QMainWindow):
             self.addAction(a)
             return a
 
-        self.act_remove = menu_action("Remover da lista", QStyle.SP_TrashIcon, self.remove_selected,
+        self.act_remove = menu_action(tr("Remover da lista"), QStyle.SP_TrashIcon, self.remove_selected,
                                       QKeySequence.Delete)
-        self.act_clear = menu_action("Limpar a lista", QStyle.SP_DialogResetButton, self.clear_all)
-        self.act_copy = action("Copiar", QStyle.SP_DialogApplyButton, self.copy_current, "Ctrl+Shift+C",
-                               tip="Copiar o Markdown do documento aberto (Ctrl+Shift+C)")
+        self.act_clear = menu_action(tr("Limpar a lista"), QStyle.SP_DialogResetButton, self.clear_all)
+        self.act_copy = action(tr("Copiar"), QStyle.SP_DialogApplyButton, self.copy_current, tr("Ctrl+Shift+C"),
+                               tip=tr("Copiar o Markdown do documento aberto (Ctrl+Shift+C)"))
         self.act_copy.setIcon(draw_icon("copy"))
-        self.act_ai = action("Para IA", QStyle.SP_MessageBoxQuestion, self.copy_for_ai, "Ctrl+Alt+C",
-                             tip="Copiar para IA: texto enxuto, contagem de tokens e divisão em partes para "
-                                 "ChatGPT, Claude, Gemini…")
+        self.act_ai = action(tr("Para IA"), QStyle.SP_MessageBoxQuestion, self.copy_for_ai, tr("Ctrl+Alt+C"),
+                             tip=tr("Copiar para IA: texto enxuto, contagem de tokens e divisão em partes para "
+                                 "ChatGPT, Claude, Gemini…"))
         self.act_ai.setIcon(draw_icon("ai"))
-        self.act_save = action("Salvar .md", QStyle.SP_DialogSaveButton, self.save_current, QKeySequence.Save,
-                               tip="Salvar o documento aberto como .md (Ctrl+S)")
-        self.act_save_all = action("Salvar todos", QStyle.SP_DriveHDIcon, self.save_all, "Ctrl+Shift+S",
-                                   tip="Salvar um .md para cada documento numa pasta")
-        self.act_merge = menu_action("Juntar todos em um .md…", QStyle.SP_FileDialogDetailedView,
-                                     self.save_merged, tip="Juntar todos em um único .md")
+        self.act_save = action(tr("Salvar .md"), QStyle.SP_DialogSaveButton, self.save_current, QKeySequence.Save,
+                               tip=tr("Salvar o documento aberto como .md (Ctrl+S)"))
+        self.act_save_all = action(tr("Salvar todos"), QStyle.SP_DriveHDIcon, self.save_all, tr("Ctrl+Shift+S"),
+                                   tip=tr("Salvar um .md para cada documento numa pasta"))
+        self.act_merge = menu_action(tr("Juntar todos em um .md…"), QStyle.SP_FileDialogDetailedView,
+                                     self.save_merged, tip=tr("Juntar todos em um único .md"))
         tb.addSeparator()
-        self.act_export = action("Exportar…", QStyle.SP_ArrowRight, self.export_dialog, "Ctrl+E",
-                                 tip="Converter o Markdown para Word, PDF, HTML, ODT, EPUB, LaTeX… (Ctrl+E)")
+        self.act_export = action(tr("Exportar…"), QStyle.SP_ArrowRight, self.export_dialog, tr("Ctrl+E"),
+                                 tip=tr("Converter o Markdown para Word, PDF, HTML, ODT, EPUB, LaTeX… (Ctrl+E)"))
         self.act_export.setIcon(draw_icon("export"))
         self.act_convert.setIcon(draw_icon("convert"))
         self._toolbar = tb
@@ -1943,49 +1931,49 @@ class MainWindow(QMainWindow):
         from PySide6.QtWidgets import QMenu, QToolButton
 
         tools = QMenu(self)
-        tools.addAction(st.standardIcon(QStyle.SP_ComputerIcon), "Motores de conversão…",
+        tools.addAction(st.standardIcon(QStyle.SP_ComputerIcon), tr("Motores de conversão…"),
                         lambda: EnginesDialog(self).exec())
-        a_mcp = tools.addAction(st.standardIcon(QStyle.SP_DriveNetIcon), "Assistentes de IA (MCP)…",
+        a_mcp = tools.addAction(st.standardIcon(QStyle.SP_DriveNetIcon), tr("Assistentes de IA (MCP)…"),
                                 lambda: McpDialog(self).exec())
-        a_mcp.setToolTip("Deixar Claude Desktop, Cursor ou VS Code converterem arquivos pelo Markinho")
+        a_mcp.setToolTip(tr("Deixar Claude Desktop, Cursor ou VS Code converterem arquivos pelo Markinho"))
         tools.addSeparator()
-        extra = [("Pasta monitorada…", self.watch_dialog), ("Dividir por títulos…", self.split_current),
-                 ("Relatório do lote…", self.batch_report)]
+        extra = [(tr("Pasta monitorada…"), self.watch_dialog), (tr("Dividir por títulos…"), self.split_current),
+                 (tr("Relatório do lote…"), self.batch_report)]
         tools.addAction(self.act_merge)
         for text, slot in extra:
             tools.addAction(text, slot)
-        self.act_simple = QAction("Modo simples", self, checkable=True)
+        self.act_simple = QAction(tr("Modo simples"), self, checkable=True)
         self.act_simple.setChecked(self.settings.value("ui/simple", False, type=bool))
-        self.act_simple.setToolTip("Esconde os motores e as opções avançadas")
+        self.act_simple.setToolTip(tr("Esconde os motores e as opções avançadas"))
         self.act_simple.toggled.connect(self._set_simple)
         tools.addAction(self.act_simple)
         from . import winshell
 
-        self.act_shell = QAction("Botão direito do Windows (menu Markinho)", self, checkable=True)
-        self.act_shell.setToolTip("Liga/desliga o menu “Markinho” ao clicar com o botão direito nos arquivos. "
-                                  "Funciona também na versão ZIP, sem senha de administrador.")
+        self.act_shell = QAction(tr("Botão direito do Windows (menu Markinho)"), self, checkable=True)
+        self.act_shell.setToolTip(tr("Liga/desliga o menu “Markinho” ao clicar com o botão direito nos arquivos. "
+                                  "Funciona também na versão ZIP, sem senha de administrador."))
         self.act_shell.setVisible(winshell.available())
         if winshell.available():
             self.act_shell.setChecked(winshell.is_registered())
         self.act_shell.toggled.connect(self._toggle_shell)
         tools.addAction(self.act_shell)
-        tools.addAction("Assistente inicial…", self.first_run)
+        tools.addAction(tr("Assistente inicial…"), self.first_run)
         tools.addSeparator()
         self._tools_menu = tools
-        tools.addAction(st.standardIcon(QStyle.SP_MessageBoxInformation), "Sobre o Markinho", self.about)
+        tools.addAction(st.standardIcon(QStyle.SP_MessageBoxInformation), tr("Sobre o Markinho"), self.about)
         # barra de menus: Ajuda > Sobre (no macOS, “Sobre” vai para o menu do app)
-        help_menu = self.menuBar().addMenu("Ajuda")
-        a_about = help_menu.addAction("Sobre o Markinho", self.about)
+        help_menu = self.menuBar().addMenu(tr("Ajuda"))
+        a_about = help_menu.addAction(tr("Sobre o Markinho"), self.about)
         a_about.setMenuRole(QAction.AboutRole)
-        help_menu.addAction("Créditos", lambda: self.about(1))
-        help_menu.addAction("Licenças de terceiros", lambda: self.about(2))
+        help_menu.addAction(tr("Créditos"), lambda: self.about(1))
+        help_menu.addAction(tr("Licenças de terceiros"), lambda: self.about(2))
         help_menu.addSeparator()
-        help_menu.addAction("Privacidade e relatório de erro", self.privacy)
-        help_menu.addAction("Gerar relatório de erro…", self.error_report)
-        help_menu.addAction("Página do projeto", self.open_project_page)
+        help_menu.addAction(tr("Privacidade e relatório de erro"), self.privacy)
+        help_menu.addAction(tr("Gerar relatório de erro…"), self.error_report)
+        help_menu.addAction(tr("Página do projeto"), self.open_project_page)
         help_menu.addSeparator()
-        help_menu.addAction("Apoie o Markinho ❤…", self.support)
-        edit_menu = self.menuBar().addMenu("Editar")
+        help_menu.addAction(tr("Apoie o Markinho ❤…"), self.support)
+        edit_menu = self.menuBar().addMenu(tr("Editar"))
         edit_menu.addAction(self.act_paste)
         edit_menu.addAction(self.act_copy)
         edit_menu.addAction(self.act_ai)
@@ -1993,21 +1981,21 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.act_remove)
         edit_menu.addAction(self.act_clear)
         self.menuBar().insertMenu(help_menu.menuAction(), edit_menu)
-        tool_menu = self.menuBar().addMenu("Ferramentas")
-        tool_menu.addAction("Motores de conversão…", lambda: EnginesDialog(self).exec())
-        tool_menu.addAction("Assistentes de IA (MCP)…", lambda: McpDialog(self).exec())
+        tool_menu = self.menuBar().addMenu(tr("Ferramentas"))
+        tool_menu.addAction(tr("Motores de conversão…"), lambda: EnginesDialog(self).exec())
+        tool_menu.addAction(tr("Assistentes de IA (MCP)…"), lambda: McpDialog(self).exec())
         tool_menu.addSeparator()
-        tool_menu.addAction("Anonimizar um arquivo Markdown…", self.anonymize_file)
-        tool_menu.addAction("Comparar duas versões…", self.compare_versions)
+        tool_menu.addAction(tr("Anonimizar um arquivo Markdown…"), self.anonymize_file)
+        tool_menu.addAction(tr("Comparar duas versões…"), self.compare_versions)
         for text, slot in extra:
             tool_menu.addAction(text, slot)
         tool_menu.addSeparator()
         tool_menu.addAction(self.act_shell)
-        tool_menu.addAction("Assistente inicial…", self.first_run)
+        tool_menu.addAction(tr("Assistente inicial…"), self.first_run)
         self.menuBar().insertMenu(help_menu.menuAction(), tool_menu)
         # menus Arquivo e Exibir (Arquivo é o primeiro, como em todo programa)
-        file_menu = QMenu("Arquivo", self)
-        a_addf = QAction(st.standardIcon(QStyle.SP_FileIcon), "Adicionar arquivos…", self)
+        file_menu = QMenu(tr("Arquivo"), self)
+        a_addf = QAction(st.standardIcon(QStyle.SP_FileIcon), tr("Adicionar arquivos…"), self)
         a_addf.triggered.connect(self.add_files_dialog)
         file_menu.addAction(a_addf)
         file_menu.addAction(self.act_folder)
@@ -2023,24 +2011,24 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self.act_merge)
         file_menu.addAction(self.act_export)
         file_menu.addSeparator()
-        a_quit = QAction("Sair", self)
+        a_quit = QAction(tr("Sair"), self)
         a_quit.setShortcut(QKeySequence.Quit)
         a_quit.triggered.connect(self.close)
         a_quit.setMenuRole(QAction.QuitRole)
         file_menu.addAction(a_quit)
         self.menuBar().insertMenu(edit_menu.menuAction(), file_menu)
-        self._view_menu = QMenu("Exibir", self)
+        self._view_menu = QMenu(tr("Exibir"), self)
         self.menuBar().insertMenu(tool_menu.menuAction(), self._view_menu)
 
         # ---- esquerda: arquivos ----
         self.list = FileList()
         self.list.files_dropped.connect(self.add_paths)
         self.list.order_changed.connect(lambda: self.statusBar().showMessage(
-            "Ordem alterada — ela define a numeração dos nomes de saída.", 4000))
-        for text, slot, key in (("Converter selecionados", lambda: self.convert_queue(True), None),
-                                ("Converter de novo", lambda: self.reconvert(False), None),
-                                ("Renomear saída…", self.rename_selected, "F2"),
-                                ("Remover da lista", self.remove_selected, None)):
+            tr("Ordem alterada — ela define a numeração dos nomes de saída."), 4000))
+        for text, slot, key in ((tr("Converter selecionados"), lambda: self.convert_queue(True), None),
+                                (tr("Converter de novo"), lambda: self.reconvert(False), None),
+                                (tr("Renomear saída…"), self.rename_selected, "F2"),
+                                (tr("Remover da lista"), self.remove_selected, None)):
             a = QAction(text, self.list)
             a.triggered.connect(slot)
             if key:
@@ -2051,8 +2039,8 @@ class MainWindow(QMainWindow):
         sep = QAction(self.list)
         sep.setSeparator(True)
         self.list.addAction(sep)
-        for text, mode in (("Ler esta imagem como tabela", "table"), ("Ler esta imagem como código", "code"),
-                           ("Ler esta imagem como texto corrido", "text"), ("Ler esta imagem automaticamente", "auto")):
+        for text, mode in ((tr("Ler esta imagem como tabela"), "table"), (tr("Ler esta imagem como código"), "code"),
+                           (tr("Ler esta imagem como texto corrido"), "text"), (tr("Ler esta imagem automaticamente"), "auto")):
             a = QAction(text, self.list)
             a.triggered.connect(lambda _c=False, m=mode: self.read_image_as(m))
             self.list.addAction(a)
@@ -2062,16 +2050,15 @@ class MainWindow(QMainWindow):
         left = QWidget()
         lv = QVBoxLayout(left)
         lv.setContentsMargins(6, 6, 6, 6)
-        head = QLabel("<b>Arquivos</b> (arraste para reordenar · F2 renomeia)")
+        head = QLabel(tr("<b>Arquivos</b> (arraste para reordenar · F2 renomeia)"))
         head.setWordWrap(True)                 # sem isso a coluna não encolhia
         lv.addWidget(head)
         lv.addWidget(self.list, 1)
-        add_btn = QPushButton("Adicionar arquivos…")
+        add_btn = QPushButton(tr("Adicionar arquivos…"))
         add_btn.clicked.connect(self.add_files_dialog)
         lv.addWidget(add_btn)
         lv.addWidget(self.act_auto)
-        fmt = QLabel(f"Lê {len(all_input_extensions())} tipos de arquivo: PDF, Word, Excel, PowerPoint, "
-                     "páginas da web, e-books, fotos e escaneados…")
+        fmt = QLabel(tr('Lê {0} tipos de arquivo: PDF, Word, Excel, PowerPoint, páginas da web, e-books, fotos e escaneados…').format(len(all_input_extensions())))
         fmt.setWordWrap(True)
         fmt.setStyleSheet("color: palette(window-text); font-size: 12px;")
         lv.addWidget(fmt)
@@ -2081,9 +2068,9 @@ class MainWindow(QMainWindow):
         mono.setStyleHint(QFont.Monospace)
         self.editor = QPlainTextEdit()
         self.editor.setFont(mono)
-        self.editor.setPlaceholderText("Para começar: arraste documentos para a janela ou clique em “Adicionar”. "
+        self.editor.setPlaceholderText(tr("Para começar: arraste documentos para a janela ou clique em “Adicionar”. "
                                        "Depois clique em “Converter” — o texto aparece aqui, pronto para "
-                                       "salvar, copiar ou exportar (você pode editá-lo antes).")
+                                       "salvar, copiar ou exportar (você pode editá-lo antes)."))
         self.editor.textChanged.connect(self._editor_changed)
         self.editor.setAcceptDrops(False)       # arquivos soltos aqui vão para a fila, não para o texto
         self.preview = PreviewBrowser()
@@ -2092,17 +2079,17 @@ class MainWindow(QMainWindow):
         self.fixes.setOpenLinks(False)
         self.fixes.anchorClicked.connect(self._fix_link)
         self.tabs = QTabWidget()
-        self.tabs.addTab(self.editor, "Markdown")
-        self.tabs.addTab(self.preview, "Visualização")
-        self.tabs.addTab(self.fixes, "Correções")
+        self.tabs.addTab(self.editor, tr("Markdown"))
+        self.tabs.addTab(self.preview, tr("Visualização"))
+        self.tabs.addTab(self.fixes, tr("Correções"))
         self.tabs.currentChanged.connect(lambda _: self._refresh_views())
         zoom_box = QWidget()
         zl = QHBoxLayout(zoom_box)
         zl.setContentsMargins(0, 0, 4, 0)
-        for text, step, tip in (("A−", -1, "Diminuir o texto (Ctrl −)"), ("A+", 1, "Aumentar o texto (Ctrl +)")):
+        for text, step, tip in (("A−", -1, tr("Diminuir o texto (Ctrl −)")), ("A+", 1, tr("Aumentar o texto (Ctrl +)"))):
             b = QPushButton(text)
             b.setFixedWidth(34)
-            b.setToolTip(tip + " — também com Ctrl + rodinha do mouse")
+            b.setToolTip(tip + tr(" — também com Ctrl + rodinha do mouse"))
             b.clicked.connect(lambda _c=False, st=step: self.text_zoom(st))
             zl.addWidget(b)
         self.tabs.setCornerWidget(zoom_box, Qt.TopRightCorner)
@@ -2119,25 +2106,25 @@ class MainWindow(QMainWindow):
         cv = QVBoxLayout(center)
         cv.setContentsMargins(6, 6, 6, 6)
         top = QHBoxLayout()
-        self.info = QLabel("Nenhum arquivo selecionado")
+        self.info = QLabel(tr("Nenhum arquivo selecionado"))
         self.info.setStyleSheet("color: palette(window-text);")
         self.info.setWordWrap(True)
-        self.compare_btn = QPushButton("Ver original ao lado")
+        self.compare_btn = QPushButton(tr("Ver original ao lado"))
         self.compare_btn.setCheckable(True)
         self.compare_btn.setShortcut("Ctrl+D")
-        self.compare_btn.setToolTip("Mostra o arquivo original ao lado do texto convertido, para conferir (Ctrl+D). "
+        self.compare_btn.setToolTip(tr("Mostra o arquivo original ao lado do texto convertido, para conferir (Ctrl+D). "
                                     "Em PDFs, as páginas acompanham a leitura: role o texto e o PDF vai junto "
-                                    "(e vice-versa). Não é uma comparação palavra por palavra.")
+                                    "(e vice-versa). Não é uma comparação palavra por palavra."))
         self.compare_btn.toggled.connect(self._toggle_compare)
-        self.space_btn = QPushButton("Mais espaço")
+        self.space_btn = QPushButton(tr("Mais espaço"))
         self.space_btn.setCheckable(True)
-        self.space_btn.setToolTip("Esconde a lista de arquivos e o painel de configurações enquanto confere")
+        self.space_btn.setToolTip(tr("Esconde a lista de arquivos e o painel de configurações enquanto confere"))
         self.space_btn.toggled.connect(self._toggle_space)
         self.space_btn.setVisible(False)
-        self.follow_cb = QCheckBox("Rolar junto")
-        self.follow_cb.setToolTip("Ligado: rolar o texto leva o PDF à página do trecho que está no topo, e vice-versa. "
+        self.follow_cb = QCheckBox(tr("Rolar junto"))
+        self.follow_cb.setToolTip(tr("Ligado: rolar o texto leva o PDF à página do trecho que está no topo, e vice-versa. "
                                   "Ao ligar, os dois lados se alinham na hora (pela página, não pela posição da "
-                                  "barra), mesmo que estejam desencontrados.")
+                                  "barra), mesmo que estejam desencontrados."))
         self.follow_cb.setChecked(self.settings.value("ui/follow", True, type=bool))
         self.follow_cb.toggled.connect(self._toggle_follow)
         self.follow_cb.setVisible(False)
@@ -2164,11 +2151,11 @@ class MainWindow(QMainWindow):
         self.settings_bar_label = QLabel()
         self.settings_bar_label.setWordWrap(True)
         sb.addWidget(self.settings_bar_label, 1)
-        self.btn_redo_one = QPushButton("Converter de novo este arquivo")
+        self.btn_redo_one = QPushButton(tr("Converter de novo este arquivo"))
         self.btn_redo_one.clicked.connect(self._redo_current)
-        self.btn_redo_all = QPushButton("Todos")
+        self.btn_redo_all = QPushButton(tr("Todos"))
         self.btn_redo_all.clicked.connect(lambda: (self.settings_bar.setVisible(False), self.reconvert(True)))
-        later = QPushButton("Agora não")
+        later = QPushButton(tr("Agora não"))
         later.clicked.connect(lambda: self.settings_bar.setVisible(False))
         for b in (self.btn_redo_one, self.btn_redo_all, later):
             sb.addWidget(b)
@@ -2189,7 +2176,7 @@ class MainWindow(QMainWindow):
         self.compare_split.setStretchFactor(1, 1)
         # ---- sumário (títulos clicáveis) à esquerda do texto ----
         self.outline = QListWidget()
-        self.outline.setToolTip("Sumário: clique num título para ir até ele no texto")
+        self.outline.setToolTip(tr("Sumário: clique num título para ir até ele no texto"))
         self.outline.itemClicked.connect(self._go_heading)
         self.outline.setMinimumWidth(120)
         ow = QWidget()
@@ -2226,29 +2213,29 @@ class MainWindow(QMainWindow):
             logo.setPixmap(QPixmap(str(ip)).scaled(96, 96, Qt.KeepAspectRatio, Qt.SmoothTransformation))
             logo.setAlignment(Qt.AlignCenter)
             wl.addWidget(logo)
-        wt = QLabel("<h2>Arraste seus documentos para cá</h2>"
+        wt = QLabel(tr("<h2>Arraste seus documentos para cá</h2>"
                     "<p>PDF, Word, Excel, PowerPoint, páginas da web, e-books, fotos e escaneados.<br>"
-                    "O Markinho transforma em texto limpo, pronto para salvar, copiar para a IA ou exportar.</p>")
+                    "O Markinho transforma em texto limpo, pronto para salvar, copiar para a IA ou exportar.</p>"))
         wt.setAlignment(Qt.AlignCenter)
         wt.setWordWrap(True)
         wl.addWidget(wt)
         brow = QHBoxLayout()
         brow.addStretch(1)
-        b_pick = QPushButton("  Escolher arquivos…  ")
+        b_pick = QPushButton(tr("  Escolher arquivos…  "))
         b_pick.setStyleSheet("QPushButton { background: #1565C0; color: white; font-weight: bold; padding: 10px 18px;"
                              " border-radius: 6px; font-size: 14px; } QPushButton:hover { background: #0D47A1; }")
         b_pick.clicked.connect(self.add_files_dialog)
         brow.addWidget(b_pick)
-        b_folder = QPushButton("Uma pasta inteira…")
+        b_folder = QPushButton(tr("Uma pasta inteira…"))
         b_folder.clicked.connect(self.add_folder_dialog)
         brow.addWidget(b_folder)
-        b_write = QPushButton("Escrever do zero")
+        b_write = QPushButton(tr("Escrever do zero"))
         b_write.clicked.connect(self.new_document)
         brow.addWidget(b_write)
         brow.addStretch(1)
         wl.addLayout(brow)
-        tips = QLabel("Dicas: <b>Ctrl+Shift+V</b> cola e converte um texto ou imagem copiados · no Windows, clique "
-                      "com o botão direito num arquivo › <b>Markinho</b> · 🔒 nada sai do seu computador")
+        tips = QLabel(tr("Dicas: <b>Ctrl+Shift+V</b> cola e converte um texto ou imagem copiados · no Windows, clique "
+                      "com o botão direito num arquivo › <b>Markinho</b> · 🔒 nada sai do seu computador"))
         tips.setAlignment(Qt.AlignCenter)
         tips.setWordWrap(True)
         tips.setStyleSheet("color: palette(window-text); font-size: 12px; margin-top: 18px;")
@@ -2296,29 +2283,29 @@ class MainWindow(QMainWindow):
         for combo in self.panel.findChildren(QComboBox):             # listas encolhem em vez de alargar o painel
             combo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
             combo.setMinimumContentsLength(8)
-        dock = QDockWidget("Configurações", self)
+        dock = QDockWidget(tr("Configurações"), self)
         self._dock = dock
         dock.setWidget(scroll)
         dock.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         view_toggle = dock.toggleViewAction()
-        view_toggle.setText("Painel de configurações")
+        view_toggle.setText(tr("Painel de configurações"))
         view_toggle.setShortcut("F9")
         vm = self._view_menu
         vm.addAction(view_toggle)
-        a_cmp = QAction("Ver original ao lado", self, checkable=True)
+        a_cmp = QAction(tr("Ver original ao lado"), self, checkable=True)
         a_cmp.toggled.connect(self.compare_btn.setChecked)
         self.compare_btn.toggled.connect(a_cmp.setChecked)
         vm.addAction(a_cmp)
-        self.act_outline = QAction("Sumário", self, checkable=True)
+        self.act_outline = QAction(tr("Sumário"), self, checkable=True)
         self.act_outline.setShortcut("Ctrl+Shift+O")
-        self.act_outline.setToolTip("Mostra os títulos do documento; clique para ir até eles")
+        self.act_outline.setToolTip(tr("Mostra os títulos do documento; clique para ir até eles"))
         self.act_outline.setChecked(self.settings.value("ui/outline", True, type=bool))
         self.act_outline.toggled.connect(lambda v: (self.settings.setValue("ui/outline", v), self._refresh_outline()))
         vm.addAction(self.act_outline)
         vm.addSeparator()
-        for text, step, key in (("Aumentar o texto", 1, "Ctrl++"), ("Diminuir o texto", -1, "Ctrl+-"),
-                                ("Tamanho normal do texto", 0, "Ctrl+0")):
+        for text, step, key in ((tr("Aumentar o texto"), 1, "Ctrl++"), (tr("Diminuir o texto"), -1, "Ctrl+-"),
+                                (tr("Tamanho normal do texto"), 0, "Ctrl+0")):
             a_z = QAction(text, self)
             a_z.triggered.connect(lambda _c=False, st_=step: self.text_zoom(st_))
             a_z.setShortcut(key)
@@ -2343,13 +2330,13 @@ class MainWindow(QMainWindow):
         self.watch_label = QLabel()
         self.watch_label.setStyleSheet("color: palette(window-text);")
         self.statusBar().addPermanentWidget(self.watch_label)
-        self.offline_label = QLabel("🔒 Offline — seus documentos não saem do computador")
+        self.offline_label = QLabel(tr("🔒 Offline — seus documentos não saem do computador"))
         self.offline_label.setStyleSheet("color: #1b5e20; font-weight: bold; padding: 0 8px;")
-        self.offline_label.setToolTip("Toda a conversão, o OCR, a anonimização e a exportação acontecem aqui, no "
+        self.offline_label.setToolTip(tr("Toda a conversão, o OCR, a anonimização e a exportação acontecem aqui, no "
                                       "seu computador. O Markinho não envia documentos, textos nem nomes de "
-                                      "arquivos para a internet. Detalhes em Ajuda > Privacidade.")
+                                      "arquivos para a internet. Detalhes em Ajuda > Privacidade."))
         self.statusBar().addPermanentWidget(self.offline_label)
-        self.statusBar().showMessage("Pronto")
+        self.statusBar().showMessage(tr("Pronto"))
         self.setAcceptDrops(True)               # soltar arquivos em qualquer lugar da janela
         self.panel.set_simple(self.act_simple.isChecked())
         self._watcher = None
@@ -2374,14 +2361,14 @@ class MainWindow(QMainWindow):
     def add_files_dialog(self) -> None:
         exts = " ".join(f"*{e}" for e in all_input_extensions())
         files, _ = QFileDialog.getOpenFileNames(
-            self, "Escolher arquivos", recall_dir(self.settings, "open"),
-            f"Documentos suportados ({exts});;Todos os arquivos (*)")
+            self, tr("Escolher arquivos"), recall_dir(self.settings, "open"),
+            tr('Documentos suportados ({0});;Todos os arquivos (*)').format(exts))
         if files:
             remember_dir(self.settings, files[0], "open")
             self.add_paths(files)
 
     def add_folder_dialog(self) -> None:
-        folder = QFileDialog.getExistingDirectory(self, "Escolher pasta", recall_dir(self.settings, "open"))
+        folder = QFileDialog.getExistingDirectory(self, tr("Escolher pasta"), recall_dir(self.settings, "open"))
         if folder:
             remember_dir(self.settings, folder, "open")
             self.add_paths([folder])
@@ -2411,7 +2398,7 @@ class MainWindow(QMainWindow):
         if added and self.list.currentItem() is None:
             self.list.setCurrentRow(self.list.count() - added)
         if not added and paths:
-            self.statusBar().showMessage("Nenhum arquivo novo compatível encontrado.", 4000)
+            self.statusBar().showMessage(tr("Nenhum arquivo novo compatível encontrado."), 4000)
         self._update_progress()
         self._update_buttons()
 
@@ -2420,10 +2407,10 @@ class MainWindow(QMainWindow):
         while f"<novo {n}>" in self.entries:
             n += 1
         key = f"<novo {n}>"
-        md = "# Novo documento\n\nEscreva ou cole seu Markdown aqui e use **Exportar…**.\n"
-        res = ConversionResult(Path(f"novo_{n}.md"), md, "Editor", raw_markdown=md, engine="editor")
+        md = tr("# Novo documento\n\nEscreva ou cole seu Markdown aqui e use **Exportar…**.\n")
+        res = ConversionResult(Path(tr('novo_{0}.md').format(n)), md, tr("Editor"), raw_markdown=md, engine="editor")
         self.entries[key] = Entry(key, res, text=md, busy=False, edited=True)
-        item = QListWidgetItem(f"Novo documento {n}.md")
+        item = QListWidgetItem(tr('Novo documento {0}.md').format(n))
         item.setData(ROLE_PATH, key)
         self.list.addItem(item)
         self._decorate(item)
@@ -2478,14 +2465,14 @@ class MainWindow(QMainWindow):
                     if not it.data(ROLE_PATH).startswith("<") and self.entries[it.data(ROLE_PATH)].result is not None]
             if done:
                 self.reconvert(False)
-                self.statusBar().showMessage(f"Convertendo de novo {len(done)} arquivo(s)…", 3000)
+                self.statusBar().showMessage(tr('Convertendo de novo {0} arquivo(s)…').format(len(done)), 3000)
                 return
-            self.statusBar().showMessage("Nada na fila para converter. Adicione arquivos ou selecione um já "
-                                         "convertido para converter de novo.", 4000)
+            self.statusBar().showMessage(tr("Nada na fila para converter. Adicione arquivos ou selecione um já "
+                                         "convertido para converter de novo."), 4000)
             return
         for k in keys:
             self._start(k)
-        self.statusBar().showMessage(f"Convertendo {len(keys)} arquivo(s)…")
+        self.statusBar().showMessage(tr('Convertendo {0} arquivo(s)…').format(len(keys)))
 
     def cancel_conversions(self) -> None:
         """Tira da fila do processador as conversões que ainda não começaram; elas voltam a aguardar.
@@ -2506,7 +2493,7 @@ class MainWindow(QMainWindow):
         self._update_progress()
         self._update_buttons()
         if n:
-            self.statusBar().showMessage(f"{n} conversão(ões) cancelada(s).", 4000)
+            self.statusBar().showMessage(tr('{0} conversão(ões) cancelada(s).').format(n), 4000)
 
     def rename_selected(self) -> None:
         from PySide6.QtWidgets import QInputDialog
@@ -2516,9 +2503,9 @@ class MainWindow(QMainWindow):
             return
         e = self.entries[item.data(ROLE_PATH)]
         current = e.custom or self._stem(e)
-        text, ok = QInputDialog.getText(self, "Renomear saída",
-                                        "Nome do arquivo de saída (sem extensão).\n"
-                                        "Deixe vazio para voltar ao nome original:", text=current)
+        text, ok = QInputDialog.getText(self, tr("Renomear saída"),
+                                        tr("Nome do arquivo de saída (sem extensão).\n"
+                                        "Deixe vazio para voltar ao nome original:"), text=current)
         if ok:
             e.custom = "" if text.strip() in ("", self._stem(e)) else text.strip()
             self._decorate(item)
@@ -2530,7 +2517,7 @@ class MainWindow(QMainWindow):
         keys = [it.data(ROLE_PATH) for it in self.list.selectedItems()
                 if Path(it.data(ROLE_PATH)).suffix.lower() in IMAGE_EXTS]
         if not keys:
-            self.statusBar().showMessage("Selecione uma imagem (foto ou print) na lista.", 4000)
+            self.statusBar().showMessage(tr("Selecione uma imagem (foto ou print) na lista."), 4000)
             return
         for k in keys:
             self._image_mode[k] = mode
@@ -2544,15 +2531,15 @@ class MainWindow(QMainWindow):
                 and not self.entries[it.data(ROLE_PATH)].busy]
         edited = [k for k in keys if self.entries[k].edited]
         if edited and QMessageBox.question(
-                self, "Reconverter",
-                f"{len(edited)} documento(s) foram editados. Reconverter descarta as edições. Continuar?") \
+                self, tr("Reconverter"),
+                tr('{0} documento(s) foram editados. Reconverter descarta as edições. Continuar?').format(len(edited))) \
                 != QMessageBox.Yes:
             return
         for k in keys:
             self.entries[k].edited = False
             self._start(k)
         if not keys:
-            self.statusBar().showMessage("Selecione arquivos para reconverter.", 3000)
+            self.statusBar().showMessage(tr("Selecione arquivos para reconverter."), 3000)
         else:
             self._show_item(self.list.currentItem())
 
@@ -2568,11 +2555,11 @@ class MainWindow(QMainWindow):
         st = self.style()
         if e.queued and not e.busy:
             item.setIcon(st.standardIcon(QStyle.SP_MediaPause))
-            item.setToolTip(f"{e.path}\n\nNa fila — clique em “Converter” (F5)")
+            item.setToolTip(tr('{0}\n\nNa fila — clique em “Converter” (F5)').format(e.path))
         elif e.busy:
             item.setIcon(st.standardIcon(QStyle.SP_BrowserReload))
-            prog = f" — página {e.progress[0]} de {e.progress[1]}" if e.progress and e.progress[1] > 1 else ""
-            item.setToolTip(f"{e.path}\n\nConvertendo{prog}… (Esc para parar)")
+            prog = tr(' — página {0} de {1}').format(e.progress[0], e.progress[1]) if e.progress and e.progress[1] > 1 else ""
+            item.setToolTip(tr('{0}\n\nConvertendo{1}… (Esc para parar)').format(e.path, prog))
         elif e.error:
             item.setIcon(st.standardIcon(QStyle.SP_MessageBoxCritical))
             item.setToolTip(f"{e.path}\n\n{e.error}")
@@ -2584,15 +2571,15 @@ class MainWindow(QMainWindow):
                 or bool(e.result.review_pages)
             item.setIcon(st.standardIcon(QStyle.SP_MessageBoxWarning if warn else QStyle.SP_DialogApplyButton))
             secs = f"{e.result.seconds:.2f}".replace(".", ",")
-            tip = f"{e.path}\n\n{e.result.converter} • {num_br(len(e.text))} caracteres • {secs} s"
+            tip = tr("{0}\n\n{1} • {2} caracteres • {3} s").format(e.path, e.result.converter, num_br(len(e.text)), secs)
             if rep is not None:
-                tip += f"\n{rep.total} correção(ões) de caracteres"
+                tip += tr('\n{0} correção(ões) de caracteres').format(rep.total)
                 if warn:
                     tip += "\n⚠ " + "\n⚠ ".join(rep.warnings())
             if e.result.assets:
-                tip += f"\n{len(e.result.assets)} imagem(ns) extraída(s)"
+                tip += tr('\n{0} imagem(ns) extraída(s)').format(len(e.result.assets))
             if e.result.anon_report is not None:
-                tip += f"\nAnonimizado — {e.result.anon_report.summary()}"
+                tip += tr('\nAnonimizado — {0}').format(e.result.anon_report.summary())
             for w in e.result.warnings:
                 tip += f"\n⚠ {w}"
             if e.edited:
@@ -2605,7 +2592,7 @@ class MainWindow(QMainWindow):
             name = Path(e.path).name
         if e.custom:
             name = f"{e.custom}   ← {name}"
-            item.setToolTip(item.toolTip() + f"\n\nNome de saída: {e.custom}")
+            item.setToolTip(item.toolTip() + tr('\n\nNome de saída: {0}').format(e.custom))
         if e.busy and e.progress and e.progress[1] > 1:
             name += f"   ({e.progress[0]}/{e.progress[1]})"
         elif e.result is not None and not e.busy and e.result.review_pages:
@@ -2658,8 +2645,7 @@ class MainWindow(QMainWindow):
         if item is not None:
             self._decorate(item)
             if item is self.list.currentItem() and total > 1:
-                self.info.setText(f"Convertendo {html.escape(Path(path).name)}… página {done} de {total} "
-                                  "(Esc para parar)")
+                self.info.setText(tr('Convertendo {0}… página {1} de {2} (Esc para parar)').format(html.escape(Path(path).name), done, total))
 
     def _on_failed(self, path: str, gen: int, message: str) -> None:
         if path not in self.entries or gen != self.gen.get(path):
@@ -2689,8 +2675,8 @@ class MainWindow(QMainWindow):
         if queued and not pending:
             self.progress.setVisible(False)
             done = sum(1 for e in self.entries.values() if e.result is not None and not e.busy)
-            self.statusBar().showMessage(f"{queued} arquivo(s) na fila — clique em “Converter” (F5)"
-                                         + (f" • {done} pronto(s)" if done else ""))
+            self.statusBar().showMessage(tr('{0} arquivo(s) na fila — clique em “Converter” (F5)').format(queued)
+                                         + (tr(' • {0} pronto(s)').format(done) if done else ""))
             return
         if not pending and getattr(self, "_support_due", None):
             due, self._support_due = self._support_due, None
@@ -2699,23 +2685,22 @@ class MainWindow(QMainWindow):
             self.progress.setVisible(True)
             self.progress.setRange(0, max(total, 1))
             self.progress.setValue(total - pending)
-            self.statusBar().showMessage(f"Convertendo… ({pending} restante(s))")
+            self.statusBar().showMessage(tr('Convertendo… ({0} restante(s))').format(pending))
         else:
             self.progress.setVisible(False)
             errors = sum(1 for e in self.entries.values() if e.error)
             fixes = sum(e.result.fix_report.total for e in self.entries.values()
                         if e.result and e.result.fix_report)
-            msg = f"{total - errors} documento(s) prontos"
+            msg = tr('{0} documento(s) prontos').format(total - errors)
             if errors:
-                msg += f", {errors} com erro"
+                msg += tr(', {0} com erro').format(errors)
             if fixes:
-                msg += f" • {fixes} caractere(s) corrigido(s)"
+                msg += tr(' • {0} caractere(s) corrigido(s)').format(fixes)
             anon = sum(e.result.anon_report.total for e in self.entries.values()
                        if e.result and e.result.anon_report)
             if any(e.result and e.result.anon_report is not None for e in self.entries.values()):
-                msg += (f" • anonimizado: {anon} dado(s) trocado(s) — revise o arquivo antes de qualquer uso "
-                        "(o Markinho não se responsabiliza por falhas)")
-            self.statusBar().showMessage(msg if total else "Pronto")
+                msg += (tr(' • anonimizado: {0} dado(s) trocado(s) — revise o arquivo antes de qualquer uso (o Markinho não se responsabiliza por falhas)').format(anon))
+            self.statusBar().showMessage(msg if total else tr("Pronto"))
 
     # ---------------- correção de caracteres ----------------
     def _refix_all(self) -> None:
@@ -2738,7 +2723,7 @@ class MainWindow(QMainWindow):
             fix = self.panel.fix_options() or FixOptions()
             text, rep = fix_text(self.editor.toPlainText(), fix)
             self.editor.setPlainText(text)
-            self.statusBar().showMessage(f"{rep.total} correção(ões) aplicada(s) ao texto editado.", 5000)
+            self.statusBar().showMessage(tr('{0} correção(ões) aplicada(s) ao texto editado.').format(rep.total), 5000)
             self._refresh_views()
 
     # ---------------- exibição ----------------
@@ -2775,14 +2760,14 @@ class MainWindow(QMainWindow):
             f.setPointSizeF(max(6.0, self._base_pt[id(w)] * (1.1 ** level)))
             w.setFont(f)
         if step is not None:
-            self.statusBar().showMessage(f"Tamanho do texto: {100 * 1.1 ** level:.0f}%", 2000)
+            self.statusBar().showMessage(tr('Tamanho do texto: {0:.0f}%').format(100 * 1.1 ** level), 2000)
 
     def _toggle_follow(self, on: bool) -> None:
         self.settings.setValue("ui/follow", on)
         if on:
             self._syncing = False
             self._sync_to_original()          # alinha na hora: o PDF vai para a página do texto à vista
-            self.statusBar().showMessage("Rolar junto ligado: o original foi alinhado à página do texto.", 3000)
+            self.statusBar().showMessage(tr("Rolar junto ligado: o original foi alinhado à página do texto."), 3000)
 
     def _split_half(self) -> None:
         w = max(self.compare_split.width(), 400)
@@ -2792,7 +2777,7 @@ class MainWindow(QMainWindow):
         self._left.setVisible(not on)
         if hasattr(self, "_dock"):
             self._dock.setVisible(not on)
-        self.space_btn.setText("Mostrar painéis" if on else "Mais espaço")
+        self.space_btn.setText(tr("Mostrar painéis") if on else tr("Mais espaço"))
         QTimer.singleShot(0, self._split_half)
 
     # ---------------- leitura acompanhada (texto ↔ páginas do original) ----------------
@@ -2859,7 +2844,7 @@ class MainWindow(QMainWindow):
             return
         e = self._current()
         if e is None:
-            self.original.show_message("Selecione um arquivo da lista.")
+            self.original.show_message(tr("Selecione um arquivo da lista."))
         else:
             self.original.load(e.path if not e.path.startswith("<") else "")
 
@@ -2869,18 +2854,17 @@ class MainWindow(QMainWindow):
         e = self.entries.get(item.data(ROLE_PATH)) if item else None
         if e is None:
             self.editor.clear()
-            self.info.setText("Nenhum arquivo selecionado")
+            self.info.setText(tr("Nenhum arquivo selecionado"))
             self.info.setToolTip("")
         elif e.queued and not e.busy:
             self.editor.clear()
-            self.info.setText(f"Na fila: <b>{html.escape(Path(e.path).name)}</b>. Clique em "
-                              "<b>Converter</b> (F5) quando terminar de adicionar arquivos.")
+            self.info.setText(tr('Na fila: <b>{0}</b>. Clique em <b>Converter</b> (F5) quando terminar de adicionar arquivos.').format(html.escape(Path(e.path).name)))
         elif e.busy:
             self.editor.clear()
             if e.partial:                        # prévia das páginas já lidas
                 self.editor.setPlainText(self.PARTIAL_HEADER + "".join(
                     f"\n\n<!-- página {p} -->\n\n{t}" for p, t in e.partial))
-            self.info.setText(f"Convertendo {Path(e.path).name}… (prévia: o texto final aparece ao terminar)")
+            self.info.setText(tr('Convertendo {0}… (prévia: o texto final aparece ao terminar)').format(Path(e.path).name))
         elif e.error:
             self.editor.clear()
             self.info.setText(f"<span style='color:#c0392b'>⚠ {html.escape(e.error)}</span>")
@@ -2888,9 +2872,9 @@ class MainWindow(QMainWindow):
             self.editor.setPlainText(e.text)
             if self.act_simple.isChecked() and e.result.engine != "editor":
                 self.tabs.setCurrentWidget(self.preview)     # modo simples: o texto formatado primeiro
-            where = Path(e.path).name if not e.path.startswith("<") else "Documento novo (não salvo)"
+            where = Path(e.path).name if not e.path.startswith("<") else tr("Documento novo (não salvo)")
             self.info.setText(f"<b>{html.escape(where)}</b>  •  {html.escape(e.result.converter)}  •  "
-                              f"{num_br(len(e.text))} caracteres" + ("  •  ✎ editado" if e.edited else ""))
+                              + tr("{0} caracteres").format(num_br(len(e.text))) + (tr("  •  ✎ editado") if e.edited else ""))
             self.info.setToolTip(e.path if not e.path.startswith("<") else "")
         self.editor.setReadOnly(e is None or e.busy or e.queued or bool(e.error))
         self._update_review(e)
@@ -2974,18 +2958,18 @@ class MainWindow(QMainWindow):
                ".ins{background:#ccf0d4;color:#000} td{vertical-align:top;padding:2px 8px;font-family:monospace;"
                "font-size:12px} .warn{color:#b9770e}</style>")
         if e is None or e.result is None:
-            return css + "<p>Selecione um documento convertido.</p>"
+            return css + tr("<p>Selecione um documento convertido.</p>")
         if e.result.engine == "editor":
-            return css + ("<p>Documento escrito à mão.</p><p><a href='#aplicar'>Aplicar correção de "
-                          "caracteres ao texto</a></p>")
+            return css + (tr("<p>Documento escrito à mão.</p><p><a href='#aplicar'>Aplicar correção de "
+                          "caracteres ao texto</a></p>"))
         rep = e.result.fix_report
         if rep is None:
-            return css + ("<p>A correção de caracteres está <b>desligada</b>. Ative-a no painel "
-                          "<i>Configurações</i> para ver e aplicar correções.</p>")
+            return css + (tr("<p>A correção de caracteres está <b>desligada</b>. Ative-a no painel "
+                          "<i>Configurações</i> para ver e aplicar correções.</p>"))
         out = [css]
         if e.edited:
-            out.append("<p class='warn'>✎ O texto foi editado — as correções abaixo se referem ao texto "
-                       "original convertido. <a href='#aplicar'>Aplicar correção ao texto editado</a></p>")
+            out.append(tr("<p class='warn'>✎ O texto foi editado — as correções abaixo se referem ao texto "
+                       "original convertido. <a href='#aplicar'>Aplicar correção ao texto editado</a></p>"))
         from .exporter import markdown_to_html
         out.append(markdown_to_html(rep.to_markdown()))
         # linhas alteradas (antes x depois)
@@ -3002,8 +2986,8 @@ class MainWindow(QMainWindow):
                 if len(rows) >= 300:
                     break
         if rows:
-            out.append(f"<h3>Linhas alteradas ({len(rows)}{'+' if len(rows) >= 300 else ''})</h3>"
-                       "<table cellspacing='0'>")
+            out.append(tr("<h3>Linhas alteradas ({0})</h3>").format(f"{len(rows)}{'+' if len(rows) >= 300 else ''}")
+                       + "<table cellspacing='0'>")
             for n, (a, b) in rows:
                 out.append(f"<tr><td style='color:gray'>{n}</td><td>{a}</td></tr>"
                            f"<tr><td></td><td>{b}</td></tr><tr><td colspan=2><hr></td></tr>")
@@ -3043,8 +3027,8 @@ class MainWindow(QMainWindow):
         busy = any(x.busy for x in entries)
         done = any(x.result is not None and not x.busy for x in entries)
         step = 1 if not entries else 2 if (pending or busy or not done) else 3
-        names = ["① Adicionar documentos", "② Converter" + (" (em andamento…)" if busy else ""),
-                 "③ Salvar, copiar ou exportar"]
+        names = [tr("① Adicionar documentos"), tr("② Converter") + (tr(" (em andamento…)") if busy else ""),
+                 tr("③ Salvar, copiar ou exportar")]
         parts = []
         for k, n in enumerate(names, 1):
             if k == step:
@@ -3101,7 +3085,7 @@ class MainWindow(QMainWindow):
 
     def copy_current(self) -> None:
         QGuiApplication.clipboard().setText(self.editor.toPlainText())
-        self.statusBar().showMessage("Markdown copiado para a área de transferência.", 3000)
+        self.statusBar().showMessage(tr("Markdown copiado para a área de transferência."), 3000)
 
     @staticmethod
     def _stem(e: Entry) -> str:
@@ -3129,13 +3113,13 @@ class MainWindow(QMainWindow):
         opts = saved_naming(self.settings)
         row = max(0, self.list.row(self.list.currentItem()))     # {n} = posição na lista
         start = Path(recall_dir(self.settings, "save", self._src_dir(e))) / (render(self._context(e), row, opts) + opts.ext)
-        target, _ = QFileDialog.getSaveFileName(self, "Salvar Markdown", str(start),
-                                                "Markdown (*.md *.markdown);;Texto (*.txt);;Todos (*)")
+        target, _ = QFileDialog.getSaveFileName(self, tr("Salvar Markdown"), str(start),
+                                                tr("Markdown (*.md *.markdown);;Texto (*.txt);;Todos (*)"))
         if target:
             if self._write(Path(target), e.text, e.result.assets):
                 remember_dir(self.settings, target, "save")
                 self.settings.setValue("out_dir", str(Path(target).parent))
-                self.statusBar().showMessage(f"Salvo em {target}", 5000)
+                self.statusBar().showMessage(tr('Salvo em {0}').format(target), 5000)
 
     def save_all(self) -> None:
         from .naming import plan
@@ -3154,10 +3138,10 @@ class MainWindow(QMainWindow):
                 continue
             if self._write(p.path, e.text, e.result.assets):
                 written += 1
-        msg = f"{written} arquivo(s) salvo(s) em:\n{folder}"
+        msg = tr('{0} arquivo(s) salvo(s) em:\n{1}').format(written, folder)
         if skipped:
-            msg += f"\n\n{skipped} pulado(s) porque já existiam."
-        QMessageBox.information(self, "Markinho", msg)
+            msg += tr('\n\n{0} pulado(s) porque já existiam.').format(skipped)
+        QMessageBox.information(self, tr("Markinho"), msg)
 
     @staticmethod
     def _all_assets(entries: list[Entry]) -> dict[str, bytes]:
@@ -3174,11 +3158,11 @@ class MainWindow(QMainWindow):
     def save_merged(self) -> None:
         entries = self._done_entries()
         start = Path(recall_dir(self.settings, "save")) / "documentos.md"
-        target, _ = QFileDialog.getSaveFileName(self, "Salvar Markdown combinado", str(start), "Markdown (*.md)")
+        target, _ = QFileDialog.getSaveFileName(self, tr("Salvar Markdown combinado"), str(start), tr("Markdown (*.md)"))
         if target:
             remember_dir(self.settings, target, "save")
         if target and self._write(Path(target), self._merged_text(entries), self._all_assets(entries), rename=False):
-            self.statusBar().showMessage(f"{len(entries)} documento(s) combinados em {target}", 5000)
+            self.statusBar().showMessage(tr('{0} documento(s) combinados em {1}').format(len(entries), target), 5000)
 
     def export_dialog(self) -> None:
         cur = self._current()
@@ -3192,7 +3176,7 @@ class MainWindow(QMainWindow):
         out_dir = recall_dir(self.settings, "export")
         jobs: list[tuple[str, Path, str | None, dict, dict]] = []   # (markdown, destino, pasta base, imagens, extras)
         if scope == 1:
-            folder = QFileDialog.getExistingDirectory(self, "Pasta de destino", out_dir)
+            folder = QFileDialog.getExistingDirectory(self, tr("Pasta de destino"), out_dir)
             if not folder:
                 return
             remember_dir(self.settings, folder, "export")
@@ -3210,7 +3194,7 @@ class MainWindow(QMainWindow):
             else:
                 md, stem, base, files = self._merged_text(entries), "documentos", None, self._all_assets(entries)
             start = str(Path(out_dir) / (stem + fmt.ext))
-            target, _ = QFileDialog.getSaveFileName(self, f"Exportar como {fmt.label}", start, f"{fmt.label} (*{fmt.ext})")
+            target, _ = QFileDialog.getSaveFileName(self, tr('Exportar como {0}').format(fmt.label), start, f"{fmt.label} (*{fmt.ext})")
             if not target:
                 return
             if not target.lower().endswith(fmt.ext):
@@ -3238,18 +3222,17 @@ class MainWindow(QMainWindow):
             QApplication.restoreOverrideCursor()
         ok = len(jobs) - len(errors)
         if errors:
-            QMessageBox.warning(self, "Exportar", f"{ok} exportado(s), {len(errors)} com erro:\n\n" + "\n".join(errors[:10]))
+            QMessageBox.warning(self, tr("Exportar"), tr('{0} exportado(s), {1} com erro:\n\n').format(ok, len(errors)) + "\n".join(errors[:10]))
         else:
-            via = "Pandoc" if used == "pandoc" else "exportador nativo"
-            self.statusBar().showMessage(f"{ok} arquivo(s) exportado(s) como {fmt.label} via {via} → "
-                                         f"{jobs[0][1] if ok == 1 else jobs[0][1].parent}", 8000)
+            via = "Pandoc" if used == "pandoc" else tr("exportador nativo")
+            self.statusBar().showMessage(tr('{0} arquivo(s) exportado(s) como {1} via {2} → {3}').format(ok, fmt.label, via, jobs[0][1] if ok == 1 else jobs[0][1].parent), 8000)
             if ok >= 1:
                 box = QMessageBox(self)
-                box.setWindowTitle("Exportado")
-                box.setText(f"{ok} arquivo(s) exportado(s) como {fmt.label}.")
-                b_here = box.addButton("Ver aqui", QMessageBox.AcceptRole)
-                b_app = box.addButton("Abrir no aplicativo padrão", QMessageBox.ActionRole)
-                box.addButton("Fechar", QMessageBox.RejectRole)
+                box.setWindowTitle(tr("Exportado"))
+                box.setText(tr('{0} arquivo(s) exportado(s) como {1}.').format(ok, fmt.label))
+                b_here = box.addButton(tr("Ver aqui"), QMessageBox.AcceptRole)
+                b_app = box.addButton(tr("Abrir no aplicativo padrão"), QMessageBox.ActionRole)
+                box.addButton(tr("Fechar"), QMessageBox.RejectRole)
                 box.exec()
                 first = jobs[0][1]
                 if box.clickedButton() is b_here:
@@ -3272,7 +3255,7 @@ class MainWindow(QMainWindow):
                 write_assets(text, assets, path.parent)
             return True
         except OSError as exc:
-            QMessageBox.critical(self, "Erro ao salvar", f"Não foi possível salvar {path}:\n{exc}")
+            QMessageBox.critical(self, tr("Erro ao salvar"), tr('Não foi possível salvar {0}:\n{1}').format(path, exc))
             return False
 
     # ---------------- configurações mudaram ----------------
@@ -3284,9 +3267,9 @@ class MainWindow(QMainWindow):
         done = self._converted_files()
         if not done:
             return
-        self.settings_bar_label.setText("<b>As configurações de conversão mudaram.</b> Os arquivos já convertidos "
-                                        "continuam com as configurações anteriores. Converter de novo?")
-        self.btn_redo_all.setText(f"Todos ({len(done)})")
+        self.settings_bar_label.setText(tr("<b>As configurações de conversão mudaram.</b> Os arquivos já convertidos "
+                                        "continuam com as configurações anteriores. Converter de novo?"))
+        self.btn_redo_all.setText(tr('Todos ({0})').format(len(done)))
         self.btn_redo_all.setVisible(len(done) > 1)
         cur = self._current()
         self.btn_redo_one.setVisible(cur is not None and cur.path in done)
@@ -3323,25 +3306,25 @@ class MainWindow(QMainWindow):
             md, origin = clipboard_to_markdown(html_text, text, png)
         except Exception as exc:  # noqa: BLE001
             QApplication.restoreOverrideCursor()
-            QMessageBox.warning(self, "Colar", f"Não foi possível converter o conteúdo colado:\n{exc}")
+            QMessageBox.warning(self, tr("Colar"), tr('Não foi possível converter o conteúdo colado:\n{0}').format(exc))
             return
         QApplication.restoreOverrideCursor()
         if not md.strip():
-            self.statusBar().showMessage("A área de transferência está vazia (copie um texto ou imagem antes).", 5000)
+            self.statusBar().showMessage(tr("A área de transferência está vazia (copie um texto ou imagem antes)."), 5000)
             return
         n = 1
         while f"<colado {n}>" in self.entries:
             n += 1
         key = f"<colado {n}>"
-        res = ConversionResult(Path(f"colado_{n}.md"), md, f"Colado ({origin})", raw_markdown=md, engine="editor")
+        res = ConversionResult(Path(tr('colado_{0}.md').format(n)), md, tr('Colado ({0})').format(origin), raw_markdown=md, engine="editor")
         self.entries[key] = Entry(key, res, text=md, busy=False)
-        item = QListWidgetItem(f"Colado {n}.md")
+        item = QListWidgetItem(tr('Colado {0}.md').format(n))
         item.setData(ROLE_PATH, key)
         self.list.addItem(item)
         self._decorate(item)
         self.list.setCurrentItem(item)
         self.tabs.setCurrentIndex(0)
-        self.statusBar().showMessage(f"Conteúdo colado convertido ({origin}).", 4000)
+        self.statusBar().showMessage(tr('Conteúdo colado convertido ({0}).').format(origin), 4000)
 
     def copy_for_ai(self) -> None:
         from .gui_tools import AiCopyDialog
@@ -3357,9 +3340,9 @@ class MainWindow(QMainWindow):
 
         e = self._current()
         if e is None or e.result is None:
-            QMessageBox.information(self, "Dividir por títulos", "Selecione um documento já convertido.")
+            QMessageBox.information(self, tr("Dividir por títulos"), tr("Selecione um documento já convertido."))
             return
-        start = str(Path(self._src_dir(e)) / f"{self._stem(e)}_partes")
+        start = str(Path(self._src_dir(e)) / tr('{0}_partes').format(self._stem(e)))
         SplitDialog(self, e.text, e.result.assets, self.settings, start).exec()
 
     def batch_report(self) -> None:
@@ -3372,11 +3355,11 @@ class MainWindow(QMainWindow):
                 continue
             rows.append(report.row(e.path, e.result if not e.busy else None, e.error, e.queued))
         if not rows:
-            QMessageBox.information(self, "Relatório do lote", "Adicione e converta arquivos primeiro.")
+            QMessageBox.information(self, tr("Relatório do lote"), tr("Adicione e converta arquivos primeiro."))
             return
         target, flt = QFileDialog.getSaveFileName(
-            self, "Salvar relatório do lote", str(Path(recall_dir(self.settings, "save")) / "relatorio-markinho.csv"),
-            "Planilha (*.csv);;Página (*.html)")
+            self, tr("Salvar relatório do lote"), str(Path(recall_dir(self.settings, "save")) / "relatorio-markinho.csv"),
+            tr("Planilha (*.csv);;Página (*.html)"))
         if not target:
             return
         path = Path(target)
@@ -3387,9 +3370,9 @@ class MainWindow(QMainWindow):
             else:
                 report.to_csv(rows, path.with_suffix(".csv"))
         except OSError as exc:
-            QMessageBox.critical(self, "Relatório do lote", f"Não foi possível salvar:\n{exc}")
+            QMessageBox.critical(self, tr("Relatório do lote"), tr('Não foi possível salvar:\n{0}').format(exc))
             return
-        self.statusBar().showMessage(report.summary(rows) + " Relatório salvo.", 6000)
+        self.statusBar().showMessage(report.summary(rows) + tr(" Relatório salvo."), 6000)
 
     def watch_dialog(self) -> None:
         from .gui_tools import WatchDialog
@@ -3411,21 +3394,21 @@ class MainWindow(QMainWindow):
         out = None if self.settings.value("watch/same", True, type=bool) else self.settings.value("watch/out", "")
         w = FolderWatcher(folder, out or None, self)
         if not w.start():
-            self.watch_label.setText("Pasta monitorada não encontrada")
+            self.watch_label.setText(tr("Pasta monitorada não encontrada"))
             return
         w.converted.connect(self._on_watch_result)
         self._watcher = w
-        self.watch_label.setText(f"Monitorando: {Path(folder).name}")
-        self.watch_label.setToolTip(f"Pasta monitorada: {folder}\nArquivos novos são convertidos sozinhos.")
+        self.watch_label.setText(tr('Monitorando: {0}').format(Path(folder).name))
+        self.watch_label.setToolTip(tr('Pasta monitorada: {0}\nArquivos novos são convertidos sozinhos.').format(folder))
 
     def _on_watch_result(self, r) -> None:
         if r.error:
             from .diagnostics import record_error
 
             record_error(str(r.source), r.error)
-            self.statusBar().showMessage(f"Pasta monitorada: erro em {r.source.name}: {r.error}", 8000)
+            self.statusBar().showMessage(tr('Pasta monitorada: erro em {0}: {1}').format(r.source.name, r.error), 8000)
         elif r.output:
-            self.statusBar().showMessage(f"Pasta monitorada: {r.source.name} → {r.output.name}", 6000)
+            self.statusBar().showMessage(tr('Pasta monitorada: {0} → {1}').format(r.source.name, r.output.name), 6000)
 
     # ---------------- modo simples, assistente, relatório de erro ----------------
     def _toggle_shell(self, on: bool) -> None:
@@ -3434,15 +3417,15 @@ class MainWindow(QMainWindow):
         try:
             if on:
                 winshell.register()
-                QMessageBox.information(self, "Botão direito do Windows",
-                                        "Pronto! Clique com o botão direito num PDF, Word, Excel ou imagem > Markinho.\n\n"
+                QMessageBox.information(self, tr("Botão direito do Windows"),
+                                        tr("Pronto! Clique com o botão direito num PDF, Word, Excel ou imagem > Markinho.\n\n"
                                         "No Windows 11, o menu fica em “Mostrar mais opções”. Se você mover a pasta do "
-                                        "Markinho de lugar, ligue esta opção de novo.")
+                                        "Markinho de lugar, ligue esta opção de novo."))
             else:
                 winshell.unregister()
-                self.statusBar().showMessage("Menu “Markinho” removido do botão direito.", 4000)
+                self.statusBar().showMessage(tr("Menu “Markinho” removido do botão direito."), 4000)
         except Exception as exc:  # noqa: BLE001
-            QMessageBox.warning(self, "Botão direito do Windows", f"Não foi possível alterar o menu:\n{exc}")
+            QMessageBox.warning(self, tr("Botão direito do Windows"), tr('Não foi possível alterar o menu:\n{0}').format(exc))
 
     def _set_simple(self, on: bool) -> None:
         self.settings.setValue("ui/simple", on)
@@ -3461,19 +3444,18 @@ class MainWindow(QMainWindow):
 
         e = self._current()
         if e is not None and e.text and QMessageBox.question(
-                self, "Anonimizar", f"Anonimizar o documento aberto ({Path(e.path).name})?\n\n"
-                "“Não” escolhe outro arquivo Markdown.") == QMessageBox.Yes:
+                self, tr("Anonimizar"), tr('Anonimizar o documento aberto ({0})?\n\n“Não” escolhe outro arquivo Markdown.').format(Path(e.path).name)) == QMessageBox.Yes:
             AnonDialog(self, self.settings, e.text, Path(e.path)).exec()
             return
-        path, _ = QFileDialog.getOpenFileName(self, "Anonimizar um arquivo Markdown",
-                                              recall_dir(self.settings, "anon"), "Markdown (*.md *.markdown *.txt)")
+        path, _ = QFileDialog.getOpenFileName(self, tr("Anonimizar um arquivo Markdown"),
+                                              recall_dir(self.settings, "anon"), tr("Markdown (*.md *.markdown *.txt)"))
         if not path:
             return
         remember_dir(self.settings, path, "anon")
         try:
             text = Path(path).read_text(encoding="utf-8", errors="replace")
         except OSError as exc:
-            QMessageBox.warning(self, "Anonimizar", f"Não foi possível ler o arquivo: {exc}")
+            QMessageBox.warning(self, tr("Anonimizar"), tr('Não foi possível ler o arquivo: {0}').format(exc))
             return
         AnonDialog(self, self.settings, text, Path(path)).exec()
 
@@ -3493,14 +3475,14 @@ class MainWindow(QMainWindow):
         SupportDialog(self, milestone if isinstance(milestone, int) else None, self.settings).exec()
 
     def privacy(self) -> None:
-        from .privacy import TEXT
+        from .privacy import text
 
         dlg = QDialog(self)
-        dlg.setWindowTitle("Privacidade e relatório de erro")
+        dlg.setWindowTitle(tr("Privacidade e relatório de erro"))
         dlg.resize(640, 600)
         lay = QVBoxLayout(dlg)
         view = QTextBrowser()
-        view.setMarkdown(TEXT)
+        view.setMarkdown(text())
         lay.addWidget(view)
         bb = QDialogButtonBox(QDialogButtonBox.Close)
         bb.rejected.connect(dlg.reject)
@@ -3521,7 +3503,7 @@ class MainWindow(QMainWindow):
         if e.result.review_pages:
             links = ", ".join(f"<a href='page:{p}'>{p}</a>" for p in e.result.review_pages[:30])
             more = "…" if len(e.result.review_pages) > 30 else ""
-            parts.append(f"⚠ <b>Revise a(s) página(s)</b> {links}{more} — clique para ver no original.")
+            parts.append(tr('⚠ <b>Revise a(s) página(s)</b> {0}{1} — clique para ver no original.').format(links, more))
         for w in e.result.warnings[:4]:
             parts.append("• " + html.escape(w))
         self.review.setText("<br>".join(parts))
@@ -3577,8 +3559,10 @@ def _visible(s: str) -> str:
 
 
 def num_br(n: int) -> str:
-    """1023 → “1.023” (separador de milhar brasileiro)."""
-    return f"{n:,}".replace(",", ".")
+    """1023 → “1.023” em português, “1,023” em inglês (ver i18n.num)."""
+    from .i18n import num
+
+    return num(n)
 
 
 def draw_icon(kind: str) -> QIcon:

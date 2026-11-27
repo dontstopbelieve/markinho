@@ -13,6 +13,8 @@ Fluxo de uma conversão:
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import contextvars
 import tempfile
 import time
@@ -32,7 +34,11 @@ _PARTIAL: contextvars.ContextVar[Any] = contextvars.ContextVar("markinho_partial
 _CANCEL: contextvars.ContextVar[Any] = contextvars.ContextVar("markinho_cancel", default=None)
 _PAGES: contextvars.ContextVar[Any] = contextvars.ContextVar("markinho_pages", default=None)
 
-CANCELLED = "Conversão interrompida pelo usuário."
+CANCELLED = tr("Conversão interrompida pelo usuário.")
+# erros em que outro motor não ajudaria (senha, arquivo ausente, formato recusado, segurança);
+# português e inglês, porque a mensagem vem traduzida
+_NO_RETRY = ("senha", "não encontrado", "não aceita", "segurança",
+             "password", "not found", "does not accept", "security")
 
 
 INFO = "ℹ "        # avisos só informativos começam com este sinal (não mostram ⚠)
@@ -167,7 +173,7 @@ def convert_native(path: Path, opts: dict[str, Any] | None = None) -> str:
     _ensure_loaded()
     conv = _REGISTRY.get(path.suffix.lower())
     if conv is None:
-        raise ConversionError(f"Formato não suportado pelo motor nativo: '{path.suffix or path.name}'")
+        raise ConversionError(tr("Formato não suportado pelo motor nativo: '{0}'").format(path.suffix or path.name))
     token = _OPTIONS.set(dict(opts or {}))
     try:
         return conv.func(path)
@@ -211,8 +217,7 @@ def _convert_with_fallback(path, engine, engine_options, fix, output, fallback) 
         return _convert_once(path, engine, engine_options, fix, output)
     except ConversionError as exc:
         msg = str(exc).lower()
-        if not fallback or "senha" in msg or "não encontrado" in msg or "não aceita" in msg \
-                or "segurança" in msg or str(exc) == CANCELLED:
+        if not fallback or any(k in msg for k in _NO_RETRY) or str(exc) == CANCELLED:
             raise
         first = engine if engine != "auto" else None
         try:
@@ -226,8 +231,7 @@ def _convert_with_fallback(path, engine, engine_options, fix, output, fallback) 
                 r = _convert_once(path, alt.id, None, fix, output)
             except ConversionError:
                 continue
-            r.warnings.insert(0, f"{ENGINES[first].name} não conseguiu ler o arquivo ({exc}); "
-                                 f"convertido com {alt.name}.")
+            r.warnings.insert(0, tr('{0} não conseguiu ler o arquivo ({1}); convertido com {2}.').format(ENGINES[first].name, exc, alt.name))
             return r
         raise
 
@@ -241,13 +245,13 @@ def _convert_once(path: str | Path, engine: str = "auto", engine_options: dict[s
     path = Path(path)
     out = output or OutputOptions()
     if not path.is_file():
-        raise ConversionError(f"Arquivo não encontrado: {path}")
+        raise ConversionError(tr('Arquivo não encontrado: {0}').format(path))
     from .safety import UnsafeFileError, check_zip
 
     try:
         check_zip(path)
     except UnsafeFileError as exc:
-        raise ConversionError(f"Arquivo recusado por segurança: {exc}. Ele não foi aberto.") from None
+        raise ConversionError(tr('Arquivo recusado por segurança: {0}. Ele não foi aberto.').format(exc)) from None
     try:
         eng = pick_engine(path, engine)
     except RuntimeError as exc:
@@ -268,18 +272,15 @@ def _convert_once(path: str | Path, engine: str = "auto", engine_options: dict[s
         try:
             raw = eng.convert(path, opts)
         except ImportError as exc:
-            raise ConversionError(
-                f"Dependência ausente para o motor {eng.name}: {exc.name}. "
-                f"Instale com: {eng.install_hint or 'pip install -r requirements.txt'}") from exc
+            raise ConversionError(tr("Dependência ausente para o motor {0}: {1}. Instale com: {2}").format(
+                eng.name, exc.name, eng.install_hint or "pip install -r requirements.txt")) from exc
         except ConversionError:
             raise
         except Exception as exc:  # noqa: BLE001
-            msg = f"{eng.name} falhou ao converter {path.name}: {exc}"
+            msg = tr('{0} falhou ao converter {1}: {2}').format(eng.name, path.name, exc)
             if eng.heavy and any(k in f"{type(exc).__name__} {exc}" for k in
                                  ("403", "Proxy", "Connect", "Timeout", "resolve", "HfHub", "LocalEntryNotFound")):
-                msg += (" — Não foi possível baixar os modelos de IA. Na primeira execução o "
-                        f"{eng.name} precisa de internet para baixá-los (ou use “Baixar modelos” "
-                        "em Motores, num computador com internet, e copie a pasta de modelos).")
+                msg += (tr(' — Não foi possível baixar os modelos de IA. Na primeira execução o {0} precisa de internet para baixá-los (ou use “Baixar modelos” em Motores, num computador com internet, e copie a pasta de modelos).').format(eng.name))
             raise ConversionError(msg) from exc
         finally:
             _SINK.reset(token)
@@ -301,14 +302,14 @@ def _convert_once(path: str | Path, engine: str = "auto", engine_options: dict[s
         if model:
             alts, errs = describe_all(sink.files, model, out.ollama_url)
             raw = set_alt_texts(raw, alts)
-            warnings += [f"Descrição de imagens: {e}" for e in errs]
+            warnings += [tr('Descrição de imagens: {0}').format(e) for e in errs]
         else:
-            warnings.append("Descrição de imagens: Ollama não encontrado ou sem modelo de visão "
-                            "(ex.: ollama pull qwen2.5vl:3b).")
+            warnings.append(tr("Descrição de imagens: Ollama não encontrado ou sem modelo de visão "
+                            "(ex.: ollama pull qwen2.5vl:3b)."))
 
     label = eng.name
     if eng.id == "native":
-        label = f"Nativo › {native_name(path.suffix)}"
+        label = tr("Nativo") + f" › {native_name(path.suffix)}"
     review = sorted({p for _, pages in notes for p in pages})
     warnings = [m for m, _ in notes] + warnings
     result = ConversionResult(path, raw, label, 0.0, raw_markdown=raw, engine=eng.id, assets=dict(sink.files),

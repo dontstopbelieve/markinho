@@ -14,46 +14,48 @@ o usuário deve revisar o resultado.
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import re
 import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
 from typing import Callable
 
-DISCLAIMER = ("O Markinho não se responsabiliza por dados que deixarem de ser encontrados ou que forem trocados "
-              "por engano. Cabe a você revisar o arquivo anonimizado antes de qualquer uso ou compartilhamento.")
-LIST_HELP = ("Maiúsculas, minúsculas e acentos não fazem diferença: “joão”, “JOÃO” e “Joao” são iguais. "
+DISCLAIMER = (tr("O Markinho não se responsabiliza por dados que deixarem de ser encontrados ou que forem trocados "
+              "por engano. Cabe a você revisar o arquivo anonimizado antes de qualquer uso ou compartilhamento."))
+LIST_HELP = (tr("Maiúsculas, minúsculas e acentos não fazem diferença: “joão”, “JOÃO” e “Joao” são iguais. "
              "Mas cada forma diferente precisa estar na lista: “João da Silva” não esconde “João”, "
              "“Sr. Silva” nem “J. Silva”. Escreva todas as variações, uma por linha (apelidos, sobrenome "
              "sozinho, siglas, plural, erros de digitação comuns). Para que variações virem o mesmo "
-             "marcador, use “termo = substituto” (ex.: “João = [PESSOA A]”).")
+             "marcador, use “termo = substituto” (ex.: “João = [PESSOA A]”)."))
 
 # (id, rótulo na interface, marcador, ligado por padrão)
 KINDS: list[tuple[str, str, str, bool]] = [
     ("cpf", "CPF", "CPF", True),
-    ("cnpj", "CNPJ (inclui o novo CNPJ com letras)", "CNPJ", True),
+    ("cnpj", tr("CNPJ (inclui o novo CNPJ com letras)"), "CNPJ", True),
     ("pis", "PIS/PASEP/NIS", "PIS", True),
-    ("titulo", "Título de eleitor", "TÍTULO DE ELEITOR", True),
-    ("rg", "RG e CNH (quando escritos “RG”/“CNH” antes do número)", "DOCUMENTO", True),
-    ("cartao", "Cartão de crédito", "CARTÃO", True),
+    ("titulo", tr("Título de eleitor"), "TÍTULO DE ELEITOR", True),
+    ("rg", tr("RG e CNH (quando escritos “RG”/“CNH” antes do número)"), "DOCUMENTO", True),
+    ("cartao", tr("Cartão de crédito"), "CARTÃO", True),
     ("email", "E-mail", "E-MAIL", True),
-    ("telefone", "Telefone", "TELEFONE", True),
+    ("telefone", tr("Telefone"), "TELEFONE", True),
     ("cep", "CEP", "CEP", True),
-    ("processo", "Número de processo (padrão do CNJ)", "PROCESSO", True),
-    ("oab", "Registro na OAB", "OAB", True),
-    ("placa", "Placa de veículo (quando escrita “placa” antes)", "PLACA", False),
-    ("ip", "Endereço IP", "IP", False),
-    ("assinatura", "Assinaturas eletrônicas (“Assinado eletronicamente por…”)", "PESSOA", True),
-    ("nomes", "Nomes depois de Sr., Dra., réu, autor, paciente, nome:…", "PESSOA", True),
+    ("processo", tr("Número de processo (padrão do CNJ)"), "PROCESSO", True),
+    ("oab", tr("Registro na OAB"), "OAB", True),
+    ("placa", tr("Placa de veículo (quando escrita “placa” antes)"), "PLACA", False),
+    ("ip", tr("Endereço IP"), "IP", False),
+    ("assinatura", tr("Assinaturas eletrônicas (“Assinado eletronicamente por…”)"), "PESSOA", True),
+    ("nomes", tr("Nomes depois de Sr., Dra., réu, autor, paciente, nome:…"), "PESSOA", True),
 ]
 KIND_LABELS = {k: lbl for k, lbl, _, _ in KINDS}
 MARKERS = {k: m for k, _, m, _ in KINDS}
 DEFAULT_KINDS = [k for k, _, _, on in KINDS if on]
 
 MODES = [
-    ("marcador", "Marcador: [CPF], [E-MAIL], [PESSOA]"),
-    ("pseudonimo", "Pseudônimo numerado: [PESSOA 1], [CPF 2] (o mesmo dado recebe sempre o mesmo número)"),
-    ("mascara", "Máscara parcial: ***.456.789-**, j***@exemplo.com, J. S."),
+    ("marcador", tr("Marcador: [CPF], [E-MAIL], [PESSOA]")),
+    ("pseudonimo", tr("Pseudônimo numerado: [PESSOA 1], [CPF 2] (o mesmo dado recebe sempre o mesmo número)")),
+    ("mascara", tr("Máscara parcial: ***.456.789-**, j***@exemplo.com, J. S.")),
 ]
 
 
@@ -77,9 +79,9 @@ class AnonReport:
 
     def summary(self) -> str:
         if not self.total:
-            return "nenhum dado pessoal encontrado"
-        names = {**{k: lbl.split(" (")[0] for k, lbl in KIND_LABELS.items()}, "lista": "Sua lista",
-                 "nomes": "Nomes", "assinatura": "Assinaturas"}
+            return tr("nenhum dado pessoal encontrado")
+        names = {**{k: lbl.split(" (")[0] for k, lbl in KIND_LABELS.items()}, "lista": tr("Sua lista"),
+                 "nomes": tr("Nomes"), "assinatura": tr("Assinaturas")}
         return " · ".join(f"{names.get(k, k)}: {n}" for k, n in self.counts.most_common())
 
 

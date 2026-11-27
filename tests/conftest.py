@@ -3,6 +3,7 @@ derruba o processo)."""
 import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+os.environ["MARKINHO_LANG"] = "pt"          # os testes conferem os textos em português
 
 from PySide6.QtWidgets import QApplication  # noqa: E402
 

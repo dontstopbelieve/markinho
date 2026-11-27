@@ -19,13 +19,15 @@ Regras que valem para todas:
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import json
 import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
-STRATEGIES = [("title", "Por título (seções)"), ("page", "Por página"), ("basic", "Só por tamanho")]
+STRATEGIES = [("title", tr("Por título (seções)")), ("page", tr("Por página")), ("basic", tr("Só por tamanho"))]
 
 _PAGE_RE = re.compile(r"^<!--\s*P[áa]gina\s+(\d+)\s*-->$", re.I)
 _HEADING_START = re.compile(r"^(#{1,6})[ \t]+")

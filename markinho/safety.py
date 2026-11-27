@@ -9,6 +9,8 @@
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import math
 import zipfile
 from pathlib import Path
@@ -39,17 +41,17 @@ def check_zip(path: str | Path) -> None:
     except (OSError, zipfile.BadZipFile):
         return                                   # o conversor mostra o erro de leitura normal
     if len(infos) > MAX_ENTRIES:
-        raise UnsafeFileError(f"o pacote tem {len(infos)} arquivos internos (suspeito)")
+        raise UnsafeFileError(tr('o pacote tem {0} arquivos internos (suspeito)').format(len(infos)))
     total = 0
     for info in infos:
         total += info.file_size
         if info.file_size > MAX_ENTRY:
-            raise UnsafeFileError(f"uma parte interna teria {_gb(info.file_size)} ao descompactar")
+            raise UnsafeFileError(tr('uma parte interna teria {0} ao descompactar').format(_gb(info.file_size)))
         if info.compress_size and info.file_size > 10 * 1024 ** 2 \
                 and info.file_size / info.compress_size > MAX_RATIO:
-            raise UnsafeFileError("compressão anormal (possível “bomba de compressão”)")
+            raise UnsafeFileError(tr("compressão anormal (possível “bomba de compressão”)"))
     if total > MAX_TOTAL_UNCOMPRESSED:
-        raise UnsafeFileError(f"o conteúdo descompactado teria {_gb(total)} (possível “bomba de compressão”)")
+        raise UnsafeFileError(tr('o conteúdo descompactado teria {0} (possível “bomba de compressão”)').format(_gb(total)))
 
 
 def read_zip_member(zf: zipfile.ZipFile, name, limit: int = MAX_ENTRY) -> bytes:
@@ -57,7 +59,7 @@ def read_zip_member(zf: zipfile.ZipFile, name, limit: int = MAX_ENTRY) -> bytes:
     with zf.open(name) as fh:
         data = fh.read(limit + 1)
     if len(data) > limit:
-        raise UnsafeFileError("uma parte interna do pacote é grande demais")
+        raise UnsafeFileError(tr("uma parte interna do pacote é grande demais"))
     return data
 
 

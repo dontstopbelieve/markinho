@@ -12,6 +12,8 @@ Docling e Marker baixam redes neurais na primeira execução. Para usar sem inte
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import os
 import sys
 from pathlib import Path
@@ -67,9 +69,9 @@ def status() -> dict[str, str]:
         p = (docling_artifacts() or models_dir() / sub) if name == "docling" else models_dir() / sub
         if p.is_dir() and any(p.rglob("*")):
             size = sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
-            out[name] = f"baixados ({size / 1e6:.0f} MB) em {p}"
+            out[name] = tr('baixados ({0:.0f} MB) em {1}').format(size / 1e6, p)
         else:
-            out[name] = "não baixados"
+            out[name] = tr("não baixados")
     return out
 
 
@@ -80,26 +82,26 @@ def download_models(which: str, progress=print) -> Path:
     if which == "docling":
         target = root / "docling"
         target.mkdir(parents=True, exist_ok=True)
-        progress(f"Baixando modelos do Docling para {target} …")
+        progress(tr('Baixando modelos do Docling para {0} …').format(target))
         try:
             from docling.utils.model_downloader import download_models as dl
         except ImportError as exc:
-            raise RuntimeError("Docling não está instalado (pip install docling).") from exc
+            raise RuntimeError(tr("Docling não está instalado (pip install docling).")) from exc
         try:
             dl(output_dir=target, progress=False, with_easyocr=True)
         except TypeError:   # versões com assinatura diferente
             dl(output_dir=target)
-        progress("Modelos do Docling prontos.")
+        progress(tr("Modelos do Docling prontos."))
         return target
     if which == "marker":
         target = root / "datalab"
         target.mkdir(parents=True, exist_ok=True)
-        progress(f"Baixando modelos do Marker para {target} …")
+        progress(tr('Baixando modelos do Marker para {0} …').format(target))
         try:
             from marker.models import create_model_dict
         except ImportError as exc:
-            raise RuntimeError("Marker não está instalado (pip install marker-pdf).") from exc
+            raise RuntimeError(tr("Marker não está instalado (pip install marker-pdf).")) from exc
         create_model_dict()
-        progress("Modelos do Marker prontos.")
+        progress(tr("Modelos do Marker prontos."))
         return target
-    raise ValueError(f"Modelo desconhecido: {which}")
+    raise ValueError(tr('Modelo desconhecido: {0}').format(which))

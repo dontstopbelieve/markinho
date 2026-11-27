@@ -7,6 +7,8 @@ cada parágrafo alterado, palavra por palavra. Tudo local.
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import difflib
 import html
 import re
@@ -32,14 +34,14 @@ class Comparison:
     def summary(self) -> str:
         a, r, m = self.count("novo"), self.count("removido"), self.count("alterado")
         if not (a or r or m):
-            return "As duas versões têm o mesmo texto."
+            return tr("As duas versões têm o mesmo texto.")
         parts = []
         if m:
-            parts.append(f"{m} trecho(s) alterado(s)")
+            parts.append(tr("{0} trecho(s) alterado(s)").format(m))
         if a:
-            parts.append(f"{a} trecho(s) novo(s)")
+            parts.append(tr("{0} trecho(s) novo(s)").format(a))
         if r:
-            parts.append(f"{r} trecho(s) removido(s)")
+            parts.append(tr("{0} trecho(s) removido(s)").format(r))
         return ", ".join(parts) + "."
 
 
@@ -107,14 +109,13 @@ CSS = ("body{font-family:sans-serif;line-height:1.5} del{background:#ffd7d5;colo
        "color:#555;font-weight:bold} .igual{color:#666;border-color:#eee}")
 
 
-def to_html(comp: Comparison, name_a: str = "Versão antiga", name_b: str = "Versão nova",
-            show_equal: bool = False, title: str = "Comparação de versões") -> str:
+def to_html(comp: Comparison, name_a: str = tr("Versão antiga"), name_b: str = tr("Versão nova"),
+            show_equal: bool = False, title: str = tr("Comparação de versões")) -> str:
     """Relatório em HTML (usado na janela e para salvar)."""
     rows = [f"<h2>{html.escape(title)}</h2>",
-            f"<p><b>Antiga:</b> {html.escape(name_a)}<br><b>Nova:</b> {html.escape(name_b)}</p>",
-            f"<p><b>Resumo:</b> {html.escape(comp.summary())} "
-            "<span style='background:#ffd7d5'>&nbsp;riscado = saiu&nbsp;</span> "
-            "<span style='background:#ccf0d4'>&nbsp;verde = entrou&nbsp;</span></p><hr>"]
+            tr("<p><b>Antiga:</b> {0}<br><b>Nova:</b> {1}</p>").format(html.escape(name_a), html.escape(name_b)),
+            tr("<p><b>Resumo:</b> {0} <span style='background:#ffd7d5'>&nbsp;riscado = saiu&nbsp;</span> "
+               "<span style='background:#ccf0d4'>&nbsp;verde = entrou&nbsp;</span></p><hr>").format(html.escape(comp.summary()))]
     for c in comp.changes:
         if c.kind == "igual":
             if show_equal:
@@ -126,6 +127,6 @@ def to_html(comp: Comparison, name_a: str = "Versão antiga", name_b: str = "Ver
             body = f"<ins>{html.escape(c.new)}</ins>"
         else:
             body = f"<del>{html.escape(c.old)}</del>"
-        label = {"alterado": "ALTERADO", "novo": "NOVO", "removido": "REMOVIDO"}[c.kind]
+        label = {"alterado": tr("ALTERADO"), "novo": tr("NOVO"), "removido": tr("REMOVIDO")}[c.kind]
         rows.append(f"<div class='blk {c.kind}'><span class='tag'>{label}</span><br>{body}</div>")
     return f"<html><head><meta charset='utf-8'><style>{CSS}</style></head><body>{''.join(rows)}</body></html>"

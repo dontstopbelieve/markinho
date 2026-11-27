@@ -7,6 +7,8 @@ por exemplo: `ollama pull qwen2.5vl:3b`, `ollama pull llava` ou `ollama pull gem
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import base64
 import json
 import urllib.error
@@ -14,9 +16,9 @@ import urllib.request
 
 VISION_HINTS = ("llava", "vl", "vision", "gemma3", "minicpm-v", "moondream", "bakllava", "llama3.2-vision",
                 "granite3.2-vision", "mistral-small3", "qwen2.5vl", "qwen3-vl")
-PROMPT = ("Descreva esta imagem em português do Brasil, em no máximo duas frases, para servir de texto "
+PROMPT = (tr("Descreva esta imagem em português do Brasil, em no máximo duas frases, para servir de texto "
           "alternativo em um documento. Se houver texto legível na imagem, transcreva-o. "
-          "Responda só com a descrição.")
+          "Responda só com a descrição."))
 
 
 _LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
@@ -27,7 +29,7 @@ def _request(url: str, payload: dict | None = None, timeout: float = 5.0) -> dic
 
     # regra do Markinho: nada sai do computador — as imagens só vão para um Ollama local
     if (urlparse(url).hostname or "").lower() not in _LOCAL_HOSTS:
-        raise ValueError("A descrição de imagens só usa um Ollama neste computador (localhost).")
+        raise ValueError(tr("A descrição de imagens só usa um Ollama neste computador (localhost)."))
     data = json.dumps(payload).encode() if payload is not None else None
     req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"},
                                  method="POST" if data else "GET")
@@ -64,7 +66,7 @@ def describe_all(files: dict[str, bytes], model: str, base_url: str, limit: int 
     alts, errors = {}, []
     for k, (name, blob) in enumerate(files.items()):
         if k >= limit:
-            errors.append(f"Limite de {limit} imagens atingido; as demais ficaram sem descrição.")
+            errors.append(tr('Limite de {0} imagens atingido; as demais ficaram sem descrição.').format(limit))
             break
         try:
             alts[name] = describe_image(blob, model, base_url)

@@ -16,6 +16,8 @@ Segurança:
 """
 from __future__ import annotations
 
+from .i18n import num, tr
+
 import contextlib
 import json
 import os
@@ -100,23 +102,23 @@ def check_path(path: str, write: bool = False, must_exist: bool = True) -> Path:
     """Resolve o caminho e confere se está dentro de uma pasta autorizada."""
     folders = allowed_folders()
     if not folders:
-        raise AccessDenied("Nenhuma pasta autorizada. Abra o Markinho > Assistentes de IA e adicione as pastas "
-                           "que o assistente pode usar.")
+        raise AccessDenied(tr("Nenhuma pasta autorizada. Abra o Markinho > Assistentes de IA e adicione as pastas "
+                           "que o assistente pode usar."))
     if "\x00" in path:
-        raise AccessDenied("Caminho inválido.")
+        raise AccessDenied(tr("Caminho inválido."))
     p = Path(path).expanduser()
     if not p.is_absolute():
         p = folders[0] / p          # relativo: dentro da primeira pasta autorizada
     p = p.resolve()                 # resolve ".." e links simbólicos ANTES de verificar
     if not any(p == f or p.is_relative_to(f) for f in folders):
-        raise AccessDenied(f"Acesso negado: {p} está fora das pastas autorizadas ({', '.join(map(str, folders))}).")
+        raise AccessDenied(tr("Acesso negado: {0} está fora das pastas autorizadas ({1}).").format(p, ", ".join(map(str, folders))))
     if write and not load_config().get("allow_write"):
-        raise AccessDenied("Gravar arquivos não está permitido. Ative “Permitir salvar arquivos” em "
-                           "Markinho > Assistentes de IA.")
+        raise AccessDenied(tr("Gravar arquivos não está permitido. Ative “Permitir salvar arquivos” em "
+                           "Markinho > Assistentes de IA."))
     if must_exist and not p.is_file():
-        raise AccessDenied(f"Arquivo não encontrado: {p}")
+        raise AccessDenied(tr('Arquivo não encontrado: {0}').format(p))
     if must_exist and p.stat().st_size > MAX_FILE_MB * 1024 * 1024:
-        raise AccessDenied(f"Arquivo maior que {MAX_FILE_MB} MB.")
+        raise AccessDenied(tr('Arquivo maior que {0} MB.').format(MAX_FILE_MB))
     return p
 
 
@@ -181,7 +183,7 @@ def build_server():
 
         exts = set(all_input_extensions())
         if any(c in pattern for c in "/\\") or ".." in pattern:
-            raise AccessDenied("O filtro deve ser só um nome de arquivo (ex.: *.pdf), sem pastas ou “..”.")
+            raise AccessDenied(tr("O filtro deve ser só um nome de arquivo (ex.: *.pdf), sem pastas ou “..”."))
         roots = [check_path(folder, must_exist=False)] if folder else allowed_folders()
         allowed = allowed_folders()
         if not roots:
@@ -225,7 +227,7 @@ def build_server():
                                                                       frontmatter=frontmatter))
         md = r.markdown
         if len(md) > max_chars:
-            md = md[:max_chars] + f"\n\n[… truncado: {len(r.markdown):,} caracteres no total; use max_chars maior ou pages]"
+            md = md[:max_chars] + tr('\n\n[… truncado: {0} caracteres no total; use max_chars maior ou pages]').format(num(len(r.markdown)))
         return md
 
     @server.tool(annotations=read_only)
@@ -260,19 +262,19 @@ def build_server():
         from .exporter import FORMATS_BY_ID, export
 
         if format not in FORMATS_BY_ID:
-            raise ValueError(f"Formato desconhecido: {format}. Opções: {', '.join(FORMATS_BY_ID)}")
+            raise ValueError(tr("Formato desconhecido: {0}. Opções: {1}").format(format, ", ".join(FORMATS_BY_ID)))
         target = check_path(output_path, write=True, must_exist=False)
         if target.suffix.lower() != FORMATS_BY_ID[format].ext:
             target = target.with_suffix(FORMATS_BY_ID[format].ext)
             target = check_path(str(target), write=True, must_exist=False)
         if target.exists() and not overwrite:
-            raise AccessDenied(f"{target} já existe (use overwrite=true para substituir).")
+            raise AccessDenied(tr('{0} já existe (use overwrite=true para substituir).').format(target))
         target.parent.mkdir(parents=True, exist_ok=True)
         with _quiet():
             # imagens só das pastas autorizadas: o Markdown pode ter vindo de um documento malicioso
             via = export(markdown, target, format, {"title": title} if title else {},
                          base_dir=target.parent, allowed_dirs=allowed_folders())
-        return f"Arquivo gravado: {target} (via {'Pandoc' if via == 'pandoc' else 'exportador nativo'})"
+        return tr("Arquivo gravado: {0} (via {1})").format(target, "Pandoc" if via == "pandoc" else tr("exportador nativo"))
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False, idempotent_hint=True,
                                              open_world_hint=False))
@@ -303,12 +305,12 @@ def build_server():
         target = check_path(str(folder / (render(ctx, 0, NamingOptions(name_template, safe=safe_names)) + ".md")),
                             write=True, must_exist=False)
         if target.exists() and not overwrite:
-            raise AccessDenied(f"{target} já existe (use overwrite=true para substituir).")
+            raise AccessDenied(tr('{0} já existe (use overwrite=true para substituir).').format(target))
         folder.mkdir(parents=True, exist_ok=True)
         md, files = rename_assets(r.markdown, r.assets, target.stem)
         target.write_text(md, encoding="utf-8")
         n = write_assets(md, files, folder)
-        return f"Salvo: {target}" + (f" e {n} imagem(ns) na pasta {target.stem}_assets" if n else "")
+        return tr('Salvo: {0}').format(target) + (tr(' e {0} imagem(ns) na pasta {1}_assets').format(n, target.stem) if n else "")
 
     return server
 
@@ -321,8 +323,8 @@ def run() -> int:
 
     logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
     if not allowed_folders():
-        print("Markinho MCP: nenhuma pasta autorizada ainda — o assistente não conseguirá ler arquivos até "
-              "você autorizar pastas em Markinho > Assistentes de IA.", file=sys.stderr)
+        print(tr("Markinho MCP: nenhuma pasta autorizada ainda — o assistente não conseguirá ler arquivos até "
+              "você autorizar pastas em Markinho > Assistentes de IA."), file=sys.stderr)
     build_server().run("stdio")
     return 0
 
@@ -367,7 +369,7 @@ def install_claude_desktop(path: Path | None = None) -> Path:
         try:
             data = json.loads(raw) if raw.strip() else {}
         except ValueError as exc:
-            raise RuntimeError(f"O arquivo {path} não é um JSON válido; corrija-o antes.") from exc
+            raise RuntimeError(tr('O arquivo {0} não é um JSON válido; corrija-o antes.').format(path)) from exc
         path.with_suffix(".json.bak").write_text(raw, encoding="utf-8")
     data.setdefault("mcpServers", {})["markinho"] = client_config("claude")["mcpServers"]["markinho"]
     path.parent.mkdir(parents=True, exist_ok=True)

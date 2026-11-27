@@ -3,6 +3,8 @@
 """Etapas finais: metadados (frontmatter YAML) e perfis de saída (dialetos)."""
 from __future__ import annotations
 
+from .i18n import tr
+
 import datetime as dt
 import json
 import re
@@ -13,10 +15,10 @@ from typing import Any
 from .assets import IMAGE_MODES, render_images
 
 PROFILES = [
-    ("gfm", "GitHub (GFM) — padrão"),
+    ("gfm", tr("GitHub (GFM) — padrão")),
     ("mdformat", "Padronizado (mdformat, CommonMark + tabelas)"),
     ("obsidian", "Obsidian (frontmatter + imagens ![[...]])"),
-    ("llm", "Texto para IA (sem imagens nem comentários)"),
+    ("llm", tr("Texto para IA (sem imagens nem comentários)")),
 ]
 
 
@@ -100,8 +102,8 @@ def extract_metadata(path: Path) -> dict[str, Any]:
 _FILE_EXTS = (".indd", ".idml", ".qxp", ".qxd", ".doc", ".docx", ".odt", ".rtf", ".pdf", ".ppt", ".pptx",
               ".xls", ".xlsx", ".ai", ".psd", ".cdr", ".pub", ".tex", ".dvi", ".txt", ".htm", ".html", ".md",
               ".pages", ".key", ".numbers", ".wpd")
-_BAD_TITLE_START = ("microsoft word", "microsoft powerpoint", "microsoft excel", "untitled", "sem título",
-                    "sem titulo", "document", "documento1", "slide 1", "apresentação1", "pasta1")
+_BAD_TITLE_START = ("microsoft word", "microsoft powerpoint", "microsoft excel", "untitled", tr("sem título"),
+                    tr("sem titulo"), "document", "documento1", "slide 1", "apresentação1", "pasta1")
 
 
 def useful_title(title: Any) -> str:

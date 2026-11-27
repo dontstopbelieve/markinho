@@ -20,6 +20,7 @@ marker_dir.mkdir(parents=True, exist_ok=True)
 (marker_dir / "edition.txt").write_text(EDITION, encoding="utf-8")
 
 datas = [(str(ROOT / "markinho" / "resources"), "markinho/resources"),
+         (str(ROOT / "markinho" / "locale"), "markinho/locale"),
          (str(marker_dir / "edition.txt"), "markinho/resources"),
          (str(ROOT / "THIRD_PARTY_LICENSES.md"), "."),
          (str(ROOT / "THIRD_PARTY_LICENSES.md"), "licenses"),

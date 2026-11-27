@@ -11,6 +11,8 @@ O Markinho é software livre (AGPL-3.0). Os componentes incluídos têm licença
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,23 +25,23 @@ class Edition:
     features: tuple[str, ...]
 
 
-LEVE = Edition("leve", "LEVE", "O essencial, leve e rápido.", (
-    "Motor nativo: PDF (títulos, tabelas, colunas, código, imagens), Word, Excel, PowerPoint, HTML, EPUB, CSV…",
-    "AnyDoc: Word/Excel/PowerPoint antigos (.doc, .xls, .ppt), OpenDocument (.odt/.ods/.odp) e RTF",
-    "Correção de caracteres, imagens (pasta/base64), frontmatter e perfis de saída",
-    "Exportação para DOCX, PDF, HTML e TXT",
-    "Pedaços para RAG/IA (JSON/JSONL) com títulos, página e origem",
-    "Descrição de imagens com IA local (se o Ollama estiver instalado)",
-    "Servidor MCP local: Claude Desktop, Cursor e VS Code convertem arquivos pelo Markinho (só pastas autorizadas)",
+LEVE = Edition("leve", "LEVE", tr("O essencial, leve e rápido."), (
+    tr("Motor nativo: PDF (títulos, tabelas, colunas, código, imagens), Word, Excel, PowerPoint, HTML, EPUB, CSV…"),
+    tr("AnyDoc: Word/Excel/PowerPoint antigos (.doc, .xls, .ppt), OpenDocument (.odt/.ods/.odp) e RTF"),
+    tr("Correção de caracteres, imagens (pasta/base64), frontmatter e perfis de saída"),
+    tr("Exportação para DOCX, PDF, HTML e TXT"),
+    tr("Pedaços para RAG/IA (JSON/JSONL) com títulos, página e origem"),
+    tr("Descrição de imagens com IA local (se o Ollama estiver instalado)"),
+    tr("Servidor MCP local: Claude Desktop, Cursor e VS Code convertem arquivos pelo Markinho (só pastas autorizadas)"),
 ))
-PADRAO = Edition("padrao", "PADRÃO", "LEVE + Pandoc + OCR.", LEVE.features + (
-    "Pandoc: ~35 formatos de entrada (ODT, RTF, LaTeX, RST, Jupyter…) e 21 de exportação",
-    "OCR local com Tesseract (português e inglês) para escaneados e imagens",
+PADRAO = Edition("padrao", "PADRÃO", tr("LEVE + Pandoc + OCR."), LEVE.features + (
+    tr("Pandoc: ~35 formatos de entrada (ODT, RTF, LaTeX, RST, Jupyter…) e 21 de exportação"),
+    tr("OCR local com Tesseract (português e inglês) para escaneados e imagens"),
 ))
-COMPLETA = Edition("completa", "COMPLETA", "Tudo: inclui a IA de layout (Docling), funcionando offline.",
+COMPLETA = Edition("completa", "COMPLETA", tr("Tudo: inclui a IA de layout (Docling), funcionando offline."),
                    PADRAO.features + (
-    "Docling: IA de layout (ordem de leitura, tabelas complexas, fórmulas), modelos já incluídos",
-    "MarkItDown (Microsoft) e RapidOCR",
+    tr("Docling: IA de layout (ordem de leitura, tabelas complexas, fórmulas), modelos já incluídos"),
+    tr("MarkItDown (Microsoft) e RapidOCR"),
 ))
 EDITIONS = {e.id: e for e in (LEVE, PADRAO, COMPLETA)}
 
@@ -62,7 +64,7 @@ def current() -> Edition | None:
 
 def label() -> str:
     ed = current()
-    return ed.name if ed else "código-fonte"
+    return ed.name if ed else tr("código-fonte")
 
 
 def upgrade_hint(feature: str) -> str:
@@ -74,4 +76,4 @@ def upgrade_hint(feature: str) -> str:
     order = ["leve", "padrao", "completa"]
     if order.index(ed.id) >= order.index(need.id):
         return ""
-    return f"Disponível na edição {need.name} (instale-a por cima desta; suas configurações são mantidas)."
+    return tr('Disponível na edição {0} (instale-a por cima desta; suas configurações são mantidas).').format(need.name)

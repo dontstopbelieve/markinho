@@ -8,6 +8,8 @@ explica o motivo. Vários arquivos selecionados viram um lote só (veja `single.
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -142,9 +144,9 @@ def convert_here(path: str | Path, s: QSettings | None = None, index: int = 0,
     src = Path(path)
     try:
         if not src.is_file():
-            return QuickResult(src, error="arquivo não encontrado")
+            return QuickResult(src, error=tr("arquivo não encontrado"))
         eid, opts, fix, output, fallback = saved_job(s, src)
-        ctx = {"origem": "botão direito / pasta monitorada", "motor": eid, "opções do motor": dict(opts),
+        ctx = {"origem": tr("botão direito / pasta monitorada"), "motor": eid, "opções do motor": dict(opts),
                "correção de caracteres": "ligada" if fix is not None else "desligada",
                "imagens": output.images, "perfil": output.profile}
         res = convert(src, eid, opts, fix, output, fallback=fallback, progress=progress, cancel=cancel)
@@ -170,7 +172,7 @@ def convert_here(path: str | Path, s: QSettings | None = None, index: int = 0,
             write_assets(text, assets, dest.parent)
         return QuickResult(src, dest)
     except PermissionError:
-        return QuickResult(src, error="sem permissão para gravar nesta pasta")
+        return QuickResult(src, error=tr("sem permissão para gravar nesta pasta"))
     except Exception as exc:  # noqa: BLE001
         return _failed(src, exc, locals().get("ctx"))
 
@@ -186,14 +188,14 @@ def export_one(path: str | Path, fmt_id: str, target: str | Path, options: dict 
         if cancel is not None and cancel.is_set():
             raise ConversionError(CANCELLED)
         if not src.is_file():
-            return QuickResult(src, error="arquivo não encontrado")
+            return QuickResult(src, error=tr("arquivo não encontrado"))
         md = src.read_text(encoding="utf-8", errors="replace")
         dest = Path(target)
         dest.parent.mkdir(parents=True, exist_ok=True)
         export(md, dest, fmt_id, options or {}, base_dir=src.parent)
         return QuickResult(src, dest)
     except PermissionError:
-        return QuickResult(src, error="sem permissão para gravar nesta pasta")
+        return QuickResult(src, error=tr("sem permissão para gravar nesta pasta"))
     except Exception as exc:  # noqa: BLE001
         return _failed(src, exc)
 
@@ -216,13 +218,13 @@ def summary(results: list[QuickResult]) -> tuple[str, str]:
     skipped = [r for r in results if r.skipped]
     bad = [r for r in results if r.error]
     if len(results) == 1 and ok:
-        return "Markinho: concluído", f"{ok[0].output.name} foi salvo em {ok[0].output.parent}"
-    parts = [f"{len(ok)} arquivo(s) convertido(s)"]
+        return tr("Markinho: concluído"), tr('{0} foi salvo em {1}').format(ok[0].output.name, ok[0].output.parent)
+    parts = [tr('{0} arquivo(s) convertido(s)').format(len(ok))]
     if skipped:
-        parts.append(f"{len(skipped)} pulado(s) (já existiam)")
+        parts.append(tr('{0} pulado(s) (já existiam)').format(len(skipped)))
     if bad:
-        parts.append(f"{len(bad)} com erro")
-    return ("Markinho: concluído" if not bad else "Markinho: terminou com erros"), ", ".join(parts) + "."
+        parts.append(tr('{0} com erro').format(len(bad)))
+    return (tr("Markinho: concluído") if not bad else tr("Markinho: terminou com erros")), ", ".join(parts) + "."
 
 
 # --------------------------------------------------------------------------- #
@@ -301,7 +303,7 @@ def main(paths: list[str], mode: str = "aqui") -> int:
             if last and Path(last).is_dir():
                 sug = Path(last) / sug.name
             filt = "Markdown (*.md)" if ext == ".md" else f"{ext[1:].upper()} (*{ext})"
-            f, _ = QFileDialog.getSaveFileName(None, "Salvar como", str(sug), filt)
+            f, _ = QFileDialog.getSaveFileName(None, tr("Salvar como"), str(sug), filt)
             if not f:
                 return False
             f = Path(f)
@@ -311,7 +313,7 @@ def main(paths: list[str], mode: str = "aqui") -> int:
             state["out_dir"] = f.parent            # arquivos que chegarem depois vão para a mesma pasta
             remember_dir(s, f, "quick")
             return True
-        d = QFileDialog.getExistingDirectory(None, f"Pasta para salvar os {len(queue)} arquivos",
+        d = QFileDialog.getExistingDirectory(None, tr('Pasta para salvar os {0} arquivos').format(len(queue)),
                                              recall_dir(s, "quick", str(Path(queue[0]).parent)))
         if not d:
             return False
@@ -410,9 +412,9 @@ def main(paths: list[str], mode: str = "aqui") -> int:
 
             from .diagnostics import record_error
 
-            record_error("(botão direito)", str(exc), traceback.format_exc())
+            record_error(tr("(botão direito)"), str(exc), traceback.format_exc())
             if os.environ.get("MARKINHO_QUIET") != "1":
-                QMessageBox.critical(None, "Markinho", f"Não foi possível converter:\n{exc}")
+                QMessageBox.critical(None, tr("Markinho"), tr('Não foi possível converter:\n{0}').format(exc))
             app.exit(1)
 
     QTimer.singleShot(500, begin)

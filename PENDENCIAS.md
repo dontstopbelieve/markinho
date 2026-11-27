@@ -174,20 +174,21 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
 - [ ] **Anonimização — nomes sem pista (COMPLETA)**: hoje (16/11/2026) a anonimização acha nomes só
       por pistas (Sr., réu, paciente, assinatura…) e pela lista do usuário. Detectar qualquer nome exige
       um modelo de IA de reconhecimento de nomes; antes, conferir a licença do modelo (venda permitida).
-- [ ] **Tradução da interface** — só **português (Brasil) e inglês**; fazer depois de definir o nome:
-      - Formato: arquivos **`.po`** (texto, um por idioma) numa pasta `lang/` ao lado do programa,
-        lidos direto (sem compilar). Editável no Bloco de Notas ou no Poedit.
-      - Tamanho: ~400–480 textos (~4–5 mil palavras), quase 40% na interface.
-      - Custo: estrutura (uma vez) moderada a alta; inglês feito pelo Claude, com revisão antes do
-        lançamento internacional; manutenção a cada função nova.
-
-## Ferramentas para o Claude (avaliadas em 13/11/2026)
-
-- Não instalar por enquanto: oh-my-claudecode (multiagentes, muito consumo), chrome-devtools-mcp e
-  Vercel (só se houver site do produto — há Chromium/Playwright na sessão), Supabase (só se houver
-  servidor/banco: contas, licenças online, anúncios), Cartographer e claude-code-setup (genéricos;
-  substituídos pelo `CLAUDE.md`), claude-mem (memória se perde nas sessões em nuvem; grava tudo).
-- Plugins de terceiros com hooks executam código: só de fontes confiáveis e depois da auditoria.
+- [~] **Idiomas** (decidido em 27/11/2026): **inglês feito em 27/11/2026** (interface, terminal, servidor MCP,
+      relatório do lote, Privacidade; ~960 textos em `locale/en.json`). Falta revisão de nativo antes de divulgar
+      fora do Brasil; depois espanhol e outros, que saem do inglês com facilidade.
+      - Ficam em português de propósito: relatório de erro (é para o dono ler), marcadores do texto anonimizado
+        ([PESSOA 1], CPF…), marcas dentro do Markdown (`<!-- página N -->`), nomes das opções do terminal.
+      - Testes (`tests/test_i18n.py`): todo `tr()` tem tradução, mesmos `{0}`, sem sobras, `tr()` só com texto
+        literal e nunca em códigos internos (“auto”, “leve”…). Decisões não podem depender do texto traduzido
+        (ver `core._NO_RETRY` e `report.STATES`).
+      - Estrutura: `markinho/i18n.py` (`tr()`, chave = texto em português) + `markinho/locale/<idioma>.json`;
+        idioma automático pelo sistema ou escolhido em Configurações > Aparência (reiniciar para aplicar).
+      - ~950 textos (~12 mil palavras) no programa + ~6 mil na documentação (README/PRIVACIDADE em inglês: depois).
+      - **Adaptar ao idioma/país** (etapa seguinte): anonimização com documentos de cada país (EUA: SSN/EIN;
+        Reino Unido: NI number; Espanha: DNI/NIE; México: CURP/RFC…), idioma do OCR (eng, spa…), exemplos e dicas.
+        PJe, SEI e ABNT continuam (são do Brasil).
+      - Instaladores em inglês (termos de uso, mensagens do Inno/WiX): depois.
 - [x] `CLAUDE.md` criado: memória do projeto lida em toda sessão nova.
 
 ## Limitações conhecidas

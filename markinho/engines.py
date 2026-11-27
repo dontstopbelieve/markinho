@@ -14,6 +14,8 @@ que pode ser usado.
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import importlib.util
 import re
 import shutil
@@ -80,47 +82,47 @@ def _subprocess_flags() -> dict:
 # --------------------------------------------------------------------------- #
 class NativeEngine(Engine):
     id = "native"
-    name = "Nativo"
-    description = ("Conversores próprios: rápidos, leves e sem IA. Detecta títulos, tabelas, colunas e "
-                   "código em PDFs, extrai imagens e faz OCR local de páginas escaneadas e imagens.")
+    name = tr("Nativo")
+    description = (tr("Conversores próprios: rápidos, leves e sem IA. Detecta títulos, tabelas, colunas e "
+                   "código em PDFs, extrai imagens e faz OCR local de páginas escaneadas e imagens."))
     license = "MIT"
     options = [
-        Option("ocr", "OCR (texto em imagens/escaneados)", "choice", "auto",
-               [("auto", "Automático: só páginas sem texto"), ("force", "Forçar em todas as páginas"),
-                ("off", "Desligado")],
-               help="“Forçar” refaz o texto por OCR — útil quando o texto embutido no PDF vem com "
-                    "caracteres trocados."),
-        Option("ocr_backend", "Motor de OCR", "choice", "auto",
-               [("auto", "Automático"), ("tesseract", "Tesseract (mantém acentos)"),
-                ("rapidocr", "RapidOCR (sem instalação, perde acentos)")]),
-        Option("ocr_lang", "Idiomas do OCR (Tesseract)", "text", "por+eng", help="Instalados: por (português) e eng (inglês)."),
-        Option("ocr_enhance", "OCR: melhorar a imagem antes", "bool", True,
-               help="Tons de cinza, contraste automático, endireita páginas tortas e gira páginas de lado. "
-                    "Ajuda em fotos de celular e cópias escuras ou tortas."),
-        Option("ocr_model", "OCR: modelo do Tesseract", "choice", "fast",
-               [("fast", "Rápido (fast)"), ("best", "Mais preciso (best), mais lento")],
-               help="“Mais preciso” usa os modelos best quando instalados (Windows PADRÃO/COMPLETA); "
-                    "sem eles, usa os normais."),
-        Option("image_mode", "Imagens: ler como", "choice", "auto",
-               [("auto", "Automático (texto com títulos)"), ("text", "Texto corrido"),
-                ("table", "Tabela"), ("code", "Código (mantém espaços)")],
-               help="Para fotos e prints: diga o que a imagem contém e o OCR monta o resultado certo — "
-                    "uma tabela em colunas, código com os espaços preservados ou texto simples."),
-        Option("pdf_layout", "PDF: análise de layout (títulos, tabelas)", "bool", True),
-        Option("pdf_columns", "PDF: detectar várias colunas", "bool", True,
-               help="Lê cada coluna inteira antes de passar para a próxima (artigos, jornais)."),
-        Option("pdf_strip_headers", "PDF: remover cabeçalhos/rodapés repetidos", "bool", True),
-        Option("pdf_strip_stamps", "PDF: remover carimbos de assinatura eletrônica (PJe, SEI…)", "bool", True,
-               help="Tira a faixa vertical “Assinado eletronicamente por…”, códigos verificadores e endereços de "
-                    "conferência que se repetem nas margens de cada página."),
-        Option("pdf_margin_top", "PDF: ignorar topo da página (%)", "int", 0,
-               help="Corta uma faixa fixa no topo de todas as páginas (0 = não cortar)."),
-        Option("pdf_margin_bottom", "PDF: ignorar rodapé da página (%)", "int", 0),
-        Option("pdf_page_markers", "PDF: marcar início de cada página", "bool", False),
-        Option("tables_html", "Tabelas mescladas viram HTML", "bool", True,
-               help="Tabelas com células mescladas (rowspan/colspan) são gravadas em HTML, que o "
-                    "Markdown aceita; sem isso, as células são repetidas numa tabela simples."),
-        Option("pages", "Páginas (ex.: 1-3,5)", "text", "", help="Vazio = todas. Vale para PDF."),
+        Option("ocr", tr("OCR (texto em imagens/escaneados)"), "choice", "auto",
+               [("auto", tr("Automático: só páginas sem texto")), ("force", tr("Forçar em todas as páginas")),
+                ("off", tr("Desligado"))],
+               help=tr("“Forçar” refaz o texto por OCR — útil quando o texto embutido no PDF vem com "
+                    "caracteres trocados.")),
+        Option("ocr_backend", tr("Motor de OCR"), "choice", "auto",
+               [("auto", tr("Automático")), ("tesseract", tr("Tesseract (mantém acentos)")),
+                ("rapidocr", tr("RapidOCR (sem instalação, perde acentos)"))]),
+        Option("ocr_lang", tr("Idiomas do OCR (Tesseract)"), "text", "por+eng", help=tr("Instalados: por (português) e eng (inglês).")),
+        Option("ocr_enhance", tr("OCR: melhorar a imagem antes"), "bool", True,
+               help=tr("Tons de cinza, contraste automático, endireita páginas tortas e gira páginas de lado. "
+                    "Ajuda em fotos de celular e cópias escuras ou tortas.")),
+        Option("ocr_model", tr("OCR: modelo do Tesseract"), "choice", "fast",
+               [("fast", tr("Rápido (fast)")), ("best", tr("Mais preciso (best), mais lento"))],
+               help=tr("“Mais preciso” usa os modelos best quando instalados (Windows PADRÃO/COMPLETA); "
+                    "sem eles, usa os normais.")),
+        Option("image_mode", tr("Imagens: ler como"), "choice", "auto",
+               [("auto", tr("Automático (texto com títulos)")), ("text", tr("Texto corrido")),
+                ("table", tr("Tabela")), ("code", tr("Código (mantém espaços)"))],
+               help=tr("Para fotos e prints: diga o que a imagem contém e o OCR monta o resultado certo — "
+                    "uma tabela em colunas, código com os espaços preservados ou texto simples.")),
+        Option("pdf_layout", tr("PDF: análise de layout (títulos, tabelas)"), "bool", True),
+        Option("pdf_columns", tr("PDF: detectar várias colunas"), "bool", True,
+               help=tr("Lê cada coluna inteira antes de passar para a próxima (artigos, jornais).")),
+        Option("pdf_strip_headers", tr("PDF: remover cabeçalhos/rodapés repetidos"), "bool", True),
+        Option("pdf_strip_stamps", tr("PDF: remover carimbos de assinatura eletrônica (PJe, SEI…)"), "bool", True,
+               help=tr("Tira a faixa vertical “Assinado eletronicamente por…”, códigos verificadores e endereços de "
+                    "conferência que se repetem nas margens de cada página.")),
+        Option("pdf_margin_top", tr("PDF: ignorar topo da página (%)"), "int", 0,
+               help=tr("Corta uma faixa fixa no topo de todas as páginas (0 = não cortar).")),
+        Option("pdf_margin_bottom", tr("PDF: ignorar rodapé da página (%)"), "int", 0),
+        Option("pdf_page_markers", tr("PDF: marcar início de cada página"), "bool", False),
+        Option("tables_html", tr("Tabelas mescladas viram HTML"), "bool", True,
+               help=tr("Tabelas com células mescladas (rowspan/colspan) são gravadas em HTML, que o "
+                    "Markdown aceita; sem isso, as células são repetidas numa tabela simples.")),
+        Option("pages", tr("Páginas (ex.: 1-3,5)"), "text", "", help=tr("Vazio = todas. Vale para PDF.")),
     ]
 
     def extensions(self) -> set[str]:
@@ -150,7 +152,7 @@ PANDOC_READERS = {
 
 MD_FLAVORS = [
     ("gfm", "GitHub (GFM)"),
-    ("commonmark_x", "CommonMark + extensões"),
+    ("commonmark_x", tr("CommonMark + extensões")),
     ("markdown", "Pandoc Markdown"),
     ("markdown_strict", "Markdown original (estrito)"),
     ("markdown_mmd", "MultiMarkdown"),
@@ -199,26 +201,26 @@ def pandoc_version() -> str:
 def run_pandoc(args: list[str], input_text: str | None = None, timeout: int = 300) -> str:
     exe = pandoc_path()
     if not exe:
-        raise RuntimeError("Pandoc não encontrado.")
+        raise RuntimeError(tr("Pandoc não encontrado."))
     proc = subprocess.run([exe, *args], input=input_text, capture_output=True, text=True,
                           encoding="utf-8", timeout=timeout, **_subprocess_flags())
     if proc.returncode != 0:
-        raise RuntimeError(proc.stderr.strip() or f"pandoc saiu com código {proc.returncode}")
+        raise RuntimeError(proc.stderr.strip() or tr('pandoc saiu com código {0}').format(proc.returncode))
     return proc.stdout
 
 
 class PandocEngine(Engine):
     id = "pandoc"
     name = "Pandoc"
-    description = ("Conversor universal de documentos. Excelente para DOCX, ODT, EPUB, LaTeX, RST, RTF, "
-                   "Jupyter e dezenas de outros formatos. Não lê PDF.")
-    install_hint = "pip install pypandoc_binary   (já inclui o Pandoc)"
-    license = "GPL-2.0 (programa separado)"
+    description = (tr("Conversor universal de documentos. Excelente para DOCX, ODT, EPUB, LaTeX, RST, RTF, "
+                   "Jupyter e dezenas de outros formatos. Não lê PDF."))
+    install_hint = tr("pip install pypandoc_binary   (já inclui o Pandoc)")
+    license = tr("GPL-2.0 (programa separado)")
     options = [
-        Option("flavor", "Dialeto Markdown", "choice", "gfm", MD_FLAVORS),
-        Option("wrap", "Quebra de linha", "choice", "none",
-               [("none", "Não quebrar"), ("auto", "Quebrar em 72 colunas"), ("preserve", "Preservar original")]),
-        Option("toc", "Gerar sumário", "bool", False),
+        Option("flavor", tr("Dialeto Markdown"), "choice", "gfm", MD_FLAVORS),
+        Option("wrap", tr("Quebra de linha"), "choice", "none",
+               [("none", tr("Não quebrar")), ("auto", tr("Quebrar em 72 colunas")), ("preserve", tr("Preservar original"))]),
+        Option("toc", tr("Gerar sumário"), "bool", False),
     ]
 
     def available(self) -> tuple[bool, str]:
@@ -226,7 +228,7 @@ class PandocEngine(Engine):
             return True, f"Pandoc {pandoc_version()}"
         from .edition import upgrade_hint
 
-        return False, upgrade_hint("pandoc") or "Pandoc não encontrado."
+        return False, upgrade_hint("pandoc") or tr("Pandoc não encontrado.")
 
     def extensions(self) -> set[str]:
         fmts = pandoc_formats("in")
@@ -250,22 +252,22 @@ class PandocEngine(Engine):
 class DoclingEngine(Engine):
     id = "docling"
     name = "Docling"
-    description = ("IA de análise de layout (IBM / LF AI & Data). Ordem de leitura, tabelas complexas, "
-                   "fórmulas, código e OCR para PDFs escaneados e imagens. Mais lento; baixa modelos na 1ª vez.")
+    description = (tr("IA de análise de layout (IBM / LF AI & Data). Ordem de leitura, tabelas complexas, "
+                   "fórmulas, código e OCR para PDFs escaneados e imagens. Mais lento; baixa modelos na 1ª vez."))
     install_hint = "pip install docling"
     license = "MIT"
     heavy = True
     options = [
-        Option("ocr", "OCR (texto em imagens/escaneados)", "bool", True),
-        Option("force_ocr", "Forçar OCR em todas as páginas", "bool", False,
-               help="Ignora o texto embutido no PDF e reconhece tudo por OCR — útil quando o "
-                    "texto do PDF tem caracteres trocados."),
-        Option("ocr_lang", "Idiomas do OCR (EasyOCR)", "text", "pt,en",
-               help="Códigos separados por vírgula. Só vale quando o OCR do Docling é o EasyOCR."),
-        Option("tables", "Estrutura de tabelas (TableFormer)", "bool", True),
-        Option("table_accurate", "Tabelas: modo preciso", "bool", True),
-        Option("formulas", "Reconhecer fórmulas (LaTeX)", "bool", False),
-        Option("code", "Reconhecer blocos de código", "bool", False),
+        Option("ocr", tr("OCR (texto em imagens/escaneados)"), "bool", True),
+        Option("force_ocr", tr("Forçar OCR em todas as páginas"), "bool", False,
+               help=tr("Ignora o texto embutido no PDF e reconhece tudo por OCR — útil quando o "
+                    "texto do PDF tem caracteres trocados.")),
+        Option("ocr_lang", tr("Idiomas do OCR (EasyOCR)"), "text", "pt,en",
+               help=tr("Códigos separados por vírgula. Só vale quando o OCR do Docling é o EasyOCR.")),
+        Option("tables", tr("Estrutura de tabelas (TableFormer)"), "bool", True),
+        Option("table_accurate", tr("Tabelas: modo preciso"), "bool", True),
+        Option("formulas", tr("Reconhecer fórmulas (LaTeX)"), "bool", False),
+        Option("code", tr("Reconhecer blocos de código"), "bool", False),
     ]
     _cache: dict[tuple, Any] = {}
     _lock = threading.Lock()
@@ -280,10 +282,10 @@ class DoclingEngine(Engine):
 
                 return True, f"Docling {version('docling')}"
             except Exception:  # noqa: BLE001
-                return True, "Docling instalado"
+                return True, tr("Docling instalado")
         from .edition import upgrade_hint
 
-        return False, upgrade_hint("docling") or "Docling não está instalado."
+        return False, upgrade_hint("docling") or tr("Docling não está instalado.")
 
     _exts: set[str] | None = None
 
@@ -379,22 +381,22 @@ class DoclingEngine(Engine):
 class MarkerEngine(Engine):
     id = "marker"
     name = "Marker"
-    description = ("PDF → Markdown de alta precisão (Datalab). OCR com Surya, equações em LaTeX, "
-                   "tabelas, remoção de cabeçalhos/rodapés. Melhor com GPU; baixa modelos na 1ª vez.")
-    install_hint = "pip install marker-pdf      (outros formatos: pip install marker-pdf[full])"
-    license = "GPL-3.0 (código) + licença própria dos modelos"
+    description = (tr("PDF → Markdown de alta precisão (Datalab). OCR com Surya, equações em LaTeX, "
+                   "tabelas, remoção de cabeçalhos/rodapés. Melhor com GPU; baixa modelos na 1ª vez."))
+    install_hint = tr("pip install marker-pdf      (outros formatos: pip install marker-pdf[full])")
+    license = tr("GPL-3.0 (código) + licença própria dos modelos")
     heavy = True
     options = [
-        Option("force_ocr", "Forçar OCR em todas as páginas", "bool", False,
-               help="Refaz todo o texto por OCR. Use quando o texto do PDF vem com caracteres trocados."),
-        Option("disable_ocr", "Desativar OCR (só texto embutido)", "bool", False),
-        Option("strip_existing_ocr", "Descartar OCR antigo do PDF e refazer", "bool", False),
-        Option("paginate_output", "Separar páginas no resultado", "bool", False),
-        Option("keep_headers_footers", "Manter cabeçalhos e rodapés", "bool", False),
-        Option("page_range", "Páginas (ex.: 0,5-10)", "text", "", help="Numeração começa em 0."),
-        Option("use_llm", "Melhorar com LLM", "bool", False,
-               help="Usa um LLM para tabelas e matemática. Para ficar 100% local, configure o "
-                    "Ollama conforme a documentação do Marker."),
+        Option("force_ocr", tr("Forçar OCR em todas as páginas"), "bool", False,
+               help=tr("Refaz todo o texto por OCR. Use quando o texto do PDF vem com caracteres trocados.")),
+        Option("disable_ocr", tr("Desativar OCR (só texto embutido)"), "bool", False),
+        Option("strip_existing_ocr", tr("Descartar OCR antigo do PDF e refazer"), "bool", False),
+        Option("paginate_output", tr("Separar páginas no resultado"), "bool", False),
+        Option("keep_headers_footers", tr("Manter cabeçalhos e rodapés"), "bool", False),
+        Option("page_range", tr("Páginas (ex.: 0,5-10)"), "text", "", help=tr("Numeração começa em 0.")),
+        Option("use_llm", tr("Melhorar com LLM"), "bool", False,
+               help=tr("Usa um LLM para tabelas e matemática. Para ficar 100% local, configure o "
+                    "Ollama conforme a documentação do Marker.")),
     ]
     _models = None
     _lock = threading.Lock()
@@ -404,8 +406,8 @@ class MarkerEngine(Engine):
 
     def available(self) -> tuple[bool, str]:
         if _has("marker"):
-            return True, "Marker instalado"
-        return False, "Marker não está instalado (não incluído no Markinho: os modelos têm restrição de uso comercial)."
+            return True, tr("Marker instalado")
+        return False, tr("Marker não está instalado (não incluído no Markinho: os modelos têm restrição de uso comercial).")
 
     def extensions(self) -> set[str]:
         return self.EXTS_PDF | self.EXTS_FULL
@@ -455,8 +457,8 @@ class MarkerEngine(Engine):
 class MarkItDownEngine(Engine):
     id = "markitdown"
     name = "MarkItDown"
-    description = ("Conversor da Microsoft, rápido e com suporte amplo a Office (DOCX, XLSX, PPTX), HTML, "
-                   "PDF simples, Outlook (.msg), EPUB, CSV, JSON, XML e ZIP. Sem IA.")
+    description = (tr("Conversor da Microsoft, rápido e com suporte amplo a Office (DOCX, XLSX, PPTX), HTML, "
+                   "PDF simples, Outlook (.msg), EPUB, CSV, JSON, XML e ZIP. Sem IA."))
     install_hint = "pip install markitdown[all]"
     license = "MIT"
     EXTS = {".docx", ".xlsx", ".xls", ".pptx", ".pdf", ".html", ".htm", ".csv", ".json", ".xml", ".zip",
@@ -472,7 +474,7 @@ class MarkItDownEngine(Engine):
                 return True, "MarkItDown instalado"
         from .edition import upgrade_hint
 
-        return False, upgrade_hint("markitdown") or "MarkItDown não está instalado."
+        return False, upgrade_hint("markitdown") or tr("MarkItDown não está instalado.")
 
     def extensions(self) -> set[str]:
         return self.EXTS
@@ -494,20 +496,20 @@ class MarkItDownEngine(Engine):
 class PyMuPDF4LLMEngine(Engine):
     id = "pymupdf4llm"
     name = "PyMuPDF4LLM"
-    description = ("PDF → Markdown muito rápido em CPU, sem modelos pesados: títulos por fonte, tabelas, "
-                   "colunas e imagens. Atenção: licença AGPL-3.0 (uso comercial fechado exige licença).")
+    description = (tr("PDF → Markdown muito rápido em CPU, sem modelos pesados: títulos por fonte, tabelas, "
+                   "colunas e imagens. Atenção: licença AGPL-3.0 (uso comercial fechado exige licença)."))
     install_hint = "pip install pymupdf4llm"
     license = "AGPL-3.0"
     options = [
-        Option("pages", "Páginas (ex.: 1-3,5)", "text", ""),
-        Option("page_chunks_markers", "Marcar início de cada página", "bool", False),
+        Option("pages", tr("Páginas (ex.: 1-3,5)"), "text", ""),
+        Option("page_chunks_markers", tr("Marcar início de cada página"), "bool", False),
     ]
     EXTS = {".pdf", ".xps", ".epub", ".mobi", ".fb2", ".cbz", ".svg"}
 
     def available(self) -> tuple[bool, str]:
         if _has("pymupdf4llm"):
             return True, "PyMuPDF4LLM instalado"
-        return False, "PyMuPDF4LLM não está instalado (não incluído no Markinho: licença AGPL)."
+        return False, tr("PyMuPDF4LLM não está instalado (não incluído no Markinho: licença AGPL).")
 
     def extensions(self) -> set[str]:
         return self.EXTS
@@ -543,13 +545,13 @@ class PyMuPDF4LLMEngine(Engine):
 class AnyDocEngine(Engine):
     id = "anydoc"
     name = "AnyDoc"
-    description = ("Conversor em Rust (Firecrawl), muito rápido. Lê Word/Excel/PowerPoint antigos (.doc, .xls, "
+    description = (tr("Conversor em Rust (Firecrawl), muito rápido. Lê Word/Excel/PowerPoint antigos (.doc, .xls, "
                    ".ppt), OpenDocument (.odt/.ods/.odp), RTF, EPUB, além de DOCX/XLSX/PPTX e PDF com texto. "
-                   "Notas de rodapé, equações e notas do apresentador. 100% local (o OCR hospedado nunca é usado).")
+                   "Notas de rodapé, equações e notas do apresentador. 100% local (o OCR hospedado nunca é usado)."))
     install_hint = "pip install firecrawl-anydoc"
     license = "MIT"
     options = [
-        Option("tables_html", "Tabelas mescladas viram HTML", "bool", True),
+        Option("tables_html", tr("Tabelas mescladas viram HTML"), "bool", True),
     ]
 
     def available(self) -> tuple[bool, str]:
@@ -557,7 +559,7 @@ class AnyDocEngine(Engine):
             from .anydoc_engine import version
 
             return True, f"AnyDoc {version()}".strip()
-        return False, "AnyDoc não está instalado."
+        return False, tr("AnyDoc não está instalado.")
 
     def extensions(self) -> set[str]:
         from .anydoc_engine import EXTENSIONS
@@ -572,10 +574,10 @@ class AnyDocEngine(Engine):
             return convert(path, opts, current_sink())
         except Exception as exc:  # noqa: BLE001
             if type(exc).__name__ == "NeedsOcrError":
-                raise RuntimeError("o PDF não tem texto (é escaneado). Use o motor Nativo, que faz OCR local, "
-                                   "ou o Docling.") from exc
+                raise RuntimeError(tr("o PDF não tem texto (é escaneado). Use o motor Nativo, que faz OCR local, "
+                                   "ou o Docling.")) from exc
             if type(exc).__name__ == "EncryptedError":
-                raise RuntimeError("o arquivo está protegido por senha.") from exc
+                raise RuntimeError(tr("o arquivo está protegido por senha.")) from exc
             raise
 
 
@@ -612,9 +614,9 @@ def pick_engine(path: Path, engine_id: str = AUTO) -> Engine:
         eng = ENGINES[engine_id]
         ok, why = eng.available()
         if not ok:
-            raise RuntimeError(f"{eng.name}: {why} Instale com: {eng.install_hint}")
+            raise RuntimeError(tr('{0}: {1} Instale com: {2}').format(eng.name, why, eng.install_hint))
         if not eng.supports(path):
-            raise RuntimeError(f"O motor {eng.name} não aceita arquivos '{ext}'.")
+            raise RuntimeError(tr("O motor {0} não aceita arquivos '{1}'.").format(eng.name, ext))
         return eng
     order = list(_AUTO_ORDER)
     pref = _AUTO_PREFER.get(ext)
@@ -630,7 +632,7 @@ def pick_engine(path: Path, engine_id: str = AUTO) -> Engine:
         eng = ENGINES[eid]
         if eng.available()[0] and eng.supports(path):
             return eng
-    raise RuntimeError(f"Nenhum motor disponível converte arquivos '{ext or path.name}'.")
+    raise RuntimeError(tr("Nenhum motor disponível converte arquivos '{0}'.").format(ext or path.name))
 
 
 def all_input_extensions() -> list[str]:

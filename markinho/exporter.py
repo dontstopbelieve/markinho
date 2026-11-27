@@ -7,6 +7,8 @@ exportadores nativos para HTML, DOCX, PDF (via Qt) e texto puro.
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import html as html_lib
 import re
 import shutil
@@ -31,16 +33,16 @@ class ExportFormat:
 FORMATS: list[ExportFormat] = [
     ExportFormat("docx", "Word (.docx)", ".docx", "docx", native=True, binary=True),
     ExportFormat("pdf", "PDF (.pdf)", ".pdf", "pdf", native=True, binary=True),
-    ExportFormat("html", "Página web (.html)", ".html", "html5", native=True),
+    ExportFormat("html", tr("Página web (.html)"), ".html", "html5", native=True),
     ExportFormat("odt", "OpenDocument / LibreOffice (.odt)", ".odt", "odt", binary=True),
-    ExportFormat("epub", "E-book EPUB (.epub)", ".epub", "epub3", binary=True),
-    ExportFormat("pptx", "PowerPoint (.pptx) — um slide por título", ".pptx", "pptx", binary=True),
+    ExportFormat("epub", tr("E-book EPUB (.epub)"), ".epub", "epub3", binary=True),
+    ExportFormat("pptx", tr("PowerPoint (.pptx) — um slide por título"), ".pptx", "pptx", binary=True),
     ExportFormat("rtf", "Rich Text (.rtf)", ".rtf", "rtf"),
     ExportFormat("latex", "LaTeX (.tex)", ".tex", "latex"),
     ExportFormat("typst", "Typst (.typ)", ".typ", "typst"),
     ExportFormat("rst", "reStructuredText (.rst)", ".rst", "rst"),
     ExportFormat("asciidoc", "AsciiDoc (.adoc)", ".adoc", "asciidoc"),
-    ExportFormat("mediawiki", "MediaWiki / Wikipédia (.wiki)", ".wiki", "mediawiki"),
+    ExportFormat("mediawiki", tr("MediaWiki / Wikipédia (.wiki)"), ".wiki", "mediawiki"),
     ExportFormat("org", "Emacs Org-mode (.org)", ".org", "org"),
     ExportFormat("textile", "Textile (.textile)", ".textile", "textile"),
     ExportFormat("jira", "Jira / Confluence (.jira)", ".jira", "jira"),
@@ -50,8 +52,8 @@ FORMATS: list[ExportFormat] = [
     ExportFormat("commonmark", "CommonMark (.md)", ".md", "commonmark"),
     ExportFormat("markdown_strict", "Markdown estrito (.md)", ".md", "markdown_strict"),
     ExportFormat("plain", "Texto puro (.txt)", ".txt", "plain", native=True),
-    ExportFormat("chunks_jsonl", "Pedaços para RAG / IA (.jsonl)", ".jsonl", None, native=True),
-    ExportFormat("chunks_json", "Pedaços para RAG / IA (.json)", ".json", None, native=True),
+    ExportFormat("chunks_jsonl", tr("Pedaços para RAG / IA (.jsonl)"), ".jsonl", None, native=True),
+    ExportFormat("chunks_json", tr("Pedaços para RAG / IA (.json)"), ".json", None, native=True),
 ]
 FORMATS_BY_ID = {f.id: f for f in FORMATS}
 
@@ -104,11 +106,11 @@ def export(markdown: str, target: str | Path, fmt_id: str, options: dict[str, An
     markdown, _notes = sanitize_markdown(markdown, base_dir or target.parent, allowed_dirs)
     backends = format_backends(fmt)
     if not backends:
-        raise RuntimeError(f"Nenhum exportador disponível para {fmt.label}. Instale o Pandoc: pip install pypandoc_binary")
+        raise RuntimeError(tr('Nenhum exportador disponível para {0}. Instale o Pandoc: pip install pypandoc_binary').format(fmt.label))
     if backend == "auto":
         backend = backends[0]
     elif backend not in backends:
-        raise RuntimeError(f"O exportador '{backend}' não gera {fmt.label}.")
+        raise RuntimeError(tr("O exportador '{0}' não gera {1}.").format(backend, fmt.label))
     if backend == "pandoc":
         _export_pandoc(markdown, target, fmt, opts, base_dir)
     else:
@@ -427,7 +429,7 @@ def _native_docx(md: str, target: Path, opts: dict) -> None:
             elif name in ("ul", "ol"):
                 add_list(el)
             elif name == "pre":
-                par = document.add_paragraph(style=style_or("No Spacing"))
+                par = document.add_paragraph(style=style_or(tr("No Spacing")))
                 run = par.add_run(el.get_text().rstrip("\n"))
                 run.font.name = "Consolas"
                 run.font.size = Pt(9.5)

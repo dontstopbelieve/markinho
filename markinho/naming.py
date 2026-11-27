@@ -17,6 +17,8 @@ Exemplos: "{nome}" → contrato.md · "{n}_{nome}" → 001_contrato.md ·
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import datetime as dt
 import re
 import string
@@ -26,8 +28,8 @@ from pathlib import Path
 
 TOKENS = ["nome", "original", "n", "titulo", "data", "pasta", "motor"]
 EXTENSIONS = [".md", ".markdown", ".txt"]
-CONFLICTS = [("suffix", "Acrescentar _2, _3…"), ("overwrite", "Substituir"), ("skip", "Pular")]
-PRESETS = [("{nome}", "Manter o nome"), ("{n}_{nome}", "Número + nome"), ("{n} - {titulo}", "Número + título"),
+CONFLICTS = [("suffix", tr("Acrescentar _2, _3…")), ("overwrite", tr("Substituir")), ("skip", tr("Pular"))]
+PRESETS = [("{nome}", tr("Manter o nome")), ("{n}_{nome}", tr("Número + nome")), ("{n} - {titulo}", tr("Número + título")),
            ("{data}_{nome}", "Data + nome"), ("{nome}_{data}", "Nome + data")]
 
 _INVALID = re.compile(r'[<>:"/\\|?*\x00-\x1f]+')
@@ -73,14 +75,14 @@ class _Number(int):
 def validate(template: str) -> str | None:
     """Mensagem de erro se o padrão for inválido, senão None."""
     if not template.strip():
-        return "O padrão não pode ficar vazio."
+        return tr("O padrão não pode ficar vazio.")
     try:
         parsed = list(string.Formatter().parse(template))
         fields = [f for _, f, _, _ in parsed if f is not None]
         if any("{" in (spec or "") for _, _, spec, _ in parsed):
-            return "Padrão inválido: não use marcadores dentro de outro marcador."
+            return tr("Padrão inválido: não use marcadores dentro de outro marcador.")
     except ValueError as exc:
-        return f"Padrão inválido: {exc}"
+        return tr('Padrão inválido: {0}').format(exc)
     unknown = [f for f in fields if f.split("!")[0] not in TOKENS]
     if unknown:
         return f"Marcador desconhecido: {{{unknown[0]}}}. Use: " + ", ".join("{" + t + "}" for t in TOKENS)

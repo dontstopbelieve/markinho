@@ -8,6 +8,8 @@ atual (HKEY_CURRENT_USER), sem pedir senha de administrador — as mesmas entrad
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import os
 import sys
 from pathlib import Path
@@ -40,12 +42,12 @@ def entries(exe: str) -> list[tuple[str, str, str]]:
             out.extend([(key, "", label), (key, "MultiSelectModel", "Player"), (key + "\\command", "", cmd)])
 
     for ext in DOC_EXTS:
-        menu(ext, [("1perguntar", "Converter para Markdown…", "--converter-para-md"),
-                   ("2aqui", "Converter para Markdown aqui", "--converter-aqui"),
-                   ("3abrir", "Abrir no Markinho", "")])
+        menu(ext, [("1perguntar", tr("Converter para Markdown…"), "--converter-para-md"),
+                   ("2aqui", tr("Converter para Markdown aqui"), "--converter-aqui"),
+                   ("3abrir", tr("Abrir no Markinho"), "")])
     for ext in MD_EXTS:
-        menu(ext, [("1exportar", "Converter Markdown para… (Word, PDF, HTML…)", "--exportar"),
-                   ("2abrir", "Abrir no Markinho", "")])
+        menu(ext, [("1exportar", tr("Converter Markdown para… (Word, PDF, HTML…)"), "--exportar"),
+                   ("2abrir", tr("Abrir no Markinho"), "")])
     return out
 
 

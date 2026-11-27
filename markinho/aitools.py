@@ -4,12 +4,14 @@
 no limite do assistente (ChatGPT, Claude, Gemini…). Tudo local: nada é enviado a lugar nenhum."""
 from __future__ import annotations
 
+from .i18n import tr
+
 import math
 
 CHARS_PER_TOKEN = 3.6       # português costuma gastar um pouco mais de tokens que o inglês (≈4)
 
 # limites de referência (tokens). O limite real depende do plano e do modelo de cada assistente.
-LIMITS = [("Sem divisão", 0), ("8 mil tokens (conversas curtas)", 8_000), ("32 mil tokens", 32_000),
+LIMITS = [(tr("Sem divisão"), 0), ("8 mil tokens (conversas curtas)", 8_000), ("32 mil tokens", 32_000),
           ("100 mil tokens", 100_000), ("200 mil tokens", 200_000)]
 
 
@@ -53,5 +55,5 @@ def split_for_ai(md: str, max_tokens: int) -> list[str]:
     n = len(parts)
     if n == 1:
         return parts
-    return [f"[Parte {k} de {n}. Aguarde todas as partes antes de responder.]\n\n{p}" if k < n
-            else f"[Parte {k} de {n} — última parte.]\n\n{p}" for k, p in enumerate(parts, 1)]
+    return [tr('[Parte {0} de {1}. Aguarde todas as partes antes de responder.]\n\n{2}').format(k, n, p) if k < n
+            else tr('[Parte {0} de {1} — última parte.]\n\n{2}').format(k, n, p) for k, p in enumerate(parts, 1)]

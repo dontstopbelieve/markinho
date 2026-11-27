@@ -12,6 +12,8 @@ pasta é gravada ao lado do `.md`. O modo de saída decide como elas aparecem:
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import base64
 import html
 import mimetypes
@@ -19,9 +21,9 @@ import re
 from pathlib import Path
 from typing import Sequence
 
-IMAGE_MODES = [("folder", "Numa pasta ao lado do .md"),
-               ("base64", "Dentro do próprio .md (arquivo maior)"),
-               ("none", "Não incluir imagens")]
+IMAGE_MODES = [("folder", tr("Numa pasta ao lado do .md")),
+               ("base64", tr("Dentro do próprio .md (arquivo maior)")),
+               ("none", tr("Não incluir imagens"))]
 
 _IMG_RE = re.compile(r"!\[([^\]]*)\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)")
 _DATA_RE = re.compile(r"^data:(image/[\w.+-]+);base64,(.+)$", re.S)

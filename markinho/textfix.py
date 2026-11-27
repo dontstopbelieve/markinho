@@ -17,6 +17,8 @@ o texto corrigido e um `FixReport` com o que foi alterado.
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import html
 import re
 import unicodedata
@@ -38,15 +40,15 @@ class FixOptions:
     quotes: bool = False           # “aspas curvas” -> "aspas retas"
 
     LABELS = {
-        "mojibake": ("Codificação trocada (mojibake)", "Ex.: “AÃ§Ã£o” → “Ação”, “â€œ” → “"),
-        "accents": ("Acentos soltos/decompostos", "Ex.: “Educa¸c˜ao” → “Educação” (comum em PDFs)"),
-        "ligatures": ("Ligaduras tipográficas", "Ex.: “ﬁm” → “fim”, “ﬂor” → “flor”"),
-        "invisibles": ("Caracteres invisíveis e de controle", "Hífen discricionário, espaço de largura zero, BOM"),
-        "hyphenation": ("Hifenização em quebra de linha", "Ex.: “pala-⏎vra” → “palavra”"),
-        "html_entities": ("Entidades HTML", "Ex.: “&amp;amp;” → “&”, “&amp;#233;” → “é”"),
-        "cid_glyphs": ("Glifos sem mapeamento “(cid:N)”", "Remove marcas de caracteres que o PDF não informou"),
-        "spaces": ("Espaços especiais", "Espaço não separável e similares → espaço comum"),
-        "quotes": ("Aspas tipográficas → retas", "“ ” ‘ ’ → \" '  (desligado por padrão)"),
+        "mojibake": (tr("Codificação trocada (mojibake)"), tr("Ex.: “AÃ§Ã£o” → “Ação”, “â€œ” → “")),
+        "accents": ("Acentos soltos/decompostos", tr("Ex.: “Educa¸c˜ao” → “Educação” (comum em PDFs)")),
+        "ligatures": (tr("Ligaduras tipográficas"), "Ex.: “ﬁm” → “fim”, “ﬂor” → “flor”"),
+        "invisibles": (tr("Caracteres invisíveis e de controle"), tr("Hífen discricionário, espaço de largura zero, BOM")),
+        "hyphenation": (tr("Hifenização em quebra de linha"), "Ex.: “pala-⏎vra” → “palavra”"),
+        "html_entities": ("Entidades HTML", tr("Ex.: “&amp;amp;” → “&”, “&amp;#233;” → “é”")),
+        "cid_glyphs": (tr("Glifos sem mapeamento “(cid:N)”"), tr("Remove marcas de caracteres que o PDF não informou")),
+        "spaces": (tr("Espaços especiais"), tr("Espaço não separável e similares → espaço comum")),
+        "quotes": (tr("Aspas tipográficas → retas"), tr("“ ” ‘ ’ → \" '  (desligado por padrão)")),
     }
 
     @classmethod
@@ -81,18 +83,15 @@ class FixReport:
     def warnings(self) -> list[str]:
         out = []
         if self.lost_chars:
-            out.append(f"{self.lost_chars} caractere(s) “�” irrecuperáveis no texto. "
-                       "O arquivo original perdeu essa informação; tente outro motor "
-                       "(Docling ou Marker com OCR) para recuperar.")
+            out.append(tr('{0} caractere(s) “�” irrecuperáveis no texto. O arquivo original perdeu essa informação; tente outro motor (Docling ou Marker com OCR) para recuperar.').format(self.lost_chars))
         if self.cid_removed:
-            out.append(f"{self.cid_removed} glifo(s) “(cid:N)” sem mapeamento foram removidos — "
-                       "o PDF não informa o caractere real; um motor com OCR pode recuperá-los.")
+            out.append(tr('{0} glifo(s) “(cid:N)” sem mapeamento foram removidos — o PDF não informa o caractere real; um motor com OCR pode recuperá-los.').format(self.cid_removed))
         return out
 
     def to_markdown(self) -> str:
         if not self.total and not self.warnings():
-            return "Nenhuma correção foi necessária. ✔"
-        lines = [f"**{self.total} correção(ões) aplicada(s)**", ""]
+            return tr("Nenhuma correção foi necessária. ✔")
+        lines = [tr('**{0} correção(ões) aplicada(s)**').format(self.total), ""]
         for key, n in sorted(self.counts.items(), key=lambda kv: -kv[1]):
             label = FixOptions.LABELS.get(key, (key, ""))[0]
             lines.append(f"- **{label}**: {n}")

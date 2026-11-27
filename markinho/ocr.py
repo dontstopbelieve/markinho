@@ -12,14 +12,16 @@ Markdown usado nos PDFs (títulos, colunas, parágrafos).
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 import os
 import shutil
 import sys
 from functools import lru_cache
 from pathlib import Path
 
-OCR_BACKENDS = [("auto", "Automático"), ("tesseract", "Tesseract (mantém acentos)"),
-                ("rapidocr", "RapidOCR (sem instalação, perde acentos)")]
+OCR_BACKENDS = [("auto", "Automático"), ("tesseract", tr("Tesseract (mantém acentos)")),
+                ("rapidocr", tr("RapidOCR (sem instalação, perde acentos)"))]
 
 
 def _bundle_dirs() -> list[Path]:
@@ -119,15 +121,15 @@ def describe_status() -> str:
     if not av:
         from .edition import upgrade_hint
 
-        return upgrade_hint("ocr") or ("Nenhum OCR instalado. Instale o Tesseract (com o idioma português) ou "
-                                       "`pip install rapidocr_onnxruntime`.")
+        return upgrade_hint("ocr") or (tr("Nenhum OCR instalado. Instale o Tesseract (com o idioma português) ou "
+                                       "`pip install rapidocr_onnxruntime`."))
     parts = []
     if "tesseract" in av:
         langs = tesseract_languages()
         parts.append("Tesseract (" + (", ".join(langs) if langs else "idiomas?") + ")")
     if "rapidocr" in av:
         parts.append("RapidOCR")
-    return "OCR disponível: " + "; ".join(parts)
+    return tr("OCR disponível: ") + "; ".join(parts)
 
 
 def pick_backend(choice: str = "auto") -> str | None:

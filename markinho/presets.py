@@ -12,6 +12,8 @@
 """
 from __future__ import annotations
 
+from .i18n import tr
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -27,20 +29,20 @@ class Preset:
 
 
 PRESETS: dict[str, Preset] = {p.id: p for p in (
-    Preset("rapido", "Rápido", "O mais rápido, para muitos arquivos digitais. Não lê escaneados e não traz "
-           "imagens; em PDFs sai texto corrido, sem títulos.",
+    Preset("rapido", tr("Rápido"), tr("O mais rápido, para muitos arquivos digitais. Não lê escaneados e não traz "
+           "imagens; em PDFs sai texto corrido, sem títulos."),
            "auto",
            {"native": {"ocr": "off", "pdf_layout": False, "pdf_columns": False, "pdf_strip_headers": True,
                        "tables_html": True}},
            images="none"),
-    Preset("equilibrado", "Equilibrado (padrão)", "Bom para a maioria dos documentos: títulos, colunas, tabelas, "
-           "imagens e leitura de páginas escaneadas.",
+    Preset("equilibrado", tr("Equilibrado (padrão)"), tr("Bom para a maioria dos documentos: títulos, colunas, tabelas, "
+           "imagens e leitura de páginas escaneadas."),
            "auto",
            {"native": {"ocr": "auto", "pdf_layout": True, "pdf_columns": True, "pdf_strip_headers": True,
                        "tables_html": True}},
            images="folder"),
-    Preset("qualidade", "Máxima qualidade", "Mais lento, para PDFs difíceis: tabelas complicadas, fórmulas e "
-           "escaneados ruins (usa IA de layout na edição COMPLETA).",
+    Preset("qualidade", tr("Máxima qualidade"), tr("Mais lento, para PDFs difíceis: tabelas complicadas, fórmulas e "
+           "escaneados ruins (usa IA de layout na edição COMPLETA)."),
            "docling",
            {"docling": {"ocr": True, "tables": True, "table_accurate": True, "formulas": True, "code": True},
             # sem o Docling: OCR só nas páginas sem texto, com os modelos mais precisos. Forçar OCR em PDF
