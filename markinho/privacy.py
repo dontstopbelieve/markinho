@@ -42,7 +42,8 @@ de IA de um motor opcional — e mesmo aí nenhum documento é enviado.
 
 A opção **Anonimizar dados pessoais** troca CPF, CNPJ, e-mails, telefones, nomes da sua lista e
 outros dados por marcadores, e tira autor, datas e dados escondidos das imagens. Ela roda no seu
-computador e não guarda a correspondência entre “[PESSOA 1]” e o nome verdadeiro.
+computador e só guarda a correspondência entre “[PESSOA 1]” e o nome verdadeiro se você pedir (opção
+“Salvar a tabela de correspondência”, num arquivo separado que você deve guardar em local seguro).
 
 Na **sua lista**, maiúsculas, minúsculas e acentos não fazem diferença (“joão”, “JOÃO” e “Joao” são
 iguais), mas **cada variação precisa ser escrita**: “João da Silva” não esconde “João”, “Sr. Silva”
@@ -127,7 +128,8 @@ models of an optional engine — and even then no document is sent.
 
 The **Anonymize personal data** option replaces CPF, CNPJ, e-mails, phone numbers, names from your
 list and other data with markers, and removes author, dates and hidden data from images. It runs on
-your computer and does not keep the link between “[PESSOA 1]” and the real name. The detection
+your computer and only keeps the link between “[PESSOA 1]” and the real name if you ask (“Save the
+mapping table” option, in a separate file that you should keep somewhere safe). The detection
 rules are made for Brazilian documents (CPF, CNPJ, PIS, voter ID, CNJ case numbers, Brazilian phone
 numbers); e-mails, credit cards and your own list work for any language.
 
@@ -213,7 +215,8 @@ IA de un motor opcional — e incluso entonces no se envía ningún documento.
 
 La opción **Anonimizar datos personales** reemplaza CPF, CNPJ, correos, teléfonos, nombres de su
 lista y otros datos por marcadores, y quita el autor, las fechas y los datos ocultos de las
-imágenes. Se ejecuta en su equipo y no guarda la relación entre “[PESSOA 1]” y el nombre real. Las
+imágenes. Se ejecuta en su equipo y solo guarda la relación entre “[PESSOA 1]” y el nombre real si usted lo
+pide (opción “Guardar la tabla de correspondencia”, en un archivo aparte que debe guardar en un lugar seguro). Las
 reglas de detección están hechas para documentos brasileños (CPF, CNPJ, PIS, título de elector,
 número de proceso del CNJ, teléfonos de Brasil); los correos, las tarjetas de crédito y su propia
 lista funcionan en cualquier idioma.

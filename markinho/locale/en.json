@@ -1108,5 +1108,19 @@
 "Comparação no olmOCR-bench que mostrou onde melhorar: cabeçalhos/rodapés por faixa e colunas pelos corredores entre as palavras (nada do código ou do modelo deles)": "olmOCR-bench comparison that showed where to improve: headers/footers by row and columns from the gaps between words (none of their code or model)",
 "OCR PP-OCR latino pronto.": "Latin PP-OCR OCR ready.",
 "Baixando o OCR PP-OCR latino para {0} …": "Downloading the Latin PP-OCR OCR to {0} …",
-"PP-OCR latino (ótimo em letra miúda, mantém acentos)": "Latin PP-OCR (great for small print, keeps accents)"
+"PP-OCR latino (ótimo em letra miúda, mantém acentos)": "Latin PP-OCR (great for small print, keeps accents)",
+"grava ao lado de cada .md a tabela de correspondência (<nome>.correspondencia.csv: [PESSOA 1] = nome original); guarde-a em local seguro (liga --anonimizar)": "writes the mapping table next to each .md (<name>.correspondencia.csv: [PESSOA 1] = original name); keep it somewhere safe (turns on --anonimizar)",
+"na data de nascimento, mantém só o ano (liga --anonimizar)": "for dates of birth, keeps only the year (turns on --anonimizar)",
+"tabela de correspondência: {0} (guarde em local seguro, separada do documento)": "mapping table: {0} (keep it somewhere safe, apart from the document)",
+"Endereço (Rua, Av., Travessa… com número)": "Address (street name with number)",
+"Data de nascimento (depois de “nascido em”, “data de nascimento”…)": "Date of birth (after “nascido em”, “data de nascimento”…)",
+"Idade": "Age",
+"Marcador": "Marker",
+"Dado original": "Original data",
+"Ainda podem ajudar a identificar alguém (não foram trocados): {0}. Tirar só o nome não basta: revise ou marque esses tipos.": "These can still help identify someone (they were not replaced): {0}. Removing only the name is not enough: review them or tick these types.",
+"Data de nascimento: manter só o ano (em vez de esconder a data inteira)": "Date of birth: keep only the year (instead of hiding the whole date)",
+"Salvar a tabela de correspondência ([PESSOA 1] = nome original) num arquivo separado, para poder desfazer depois": "Save the mapping table ([PESSOA 1] = original name) in a separate file, so it can be undone later",
+"Grava “<nome>.correspondencia.csv” ao lado do arquivo. Esse arquivo contém os dados originais: guarde-o em local seguro e nunca o envie junto com o documento anonimizado (LGPD, art. 13, § 4º). Só funciona no modo “Pseudônimo numerado”.": "Writes “<name>.correspondencia.csv” next to the file. That file holds the original data: keep it somewhere safe and never send it together with the anonymized document (LGPD, art. 13, § 4). Only works in “Numbered pseudonym” mode.",
+"Tabela de correspondência salva em {0}. Guarde-a em local seguro, separada do documento.": "Mapping table saved in {0}. Keep it somewhere safe, apart from the document.",
+"Ideias para a anonimização: avisar o que ainda identifica a pessoa, generalizar a data de nascimento e guardar a tabela da pseudonimização à parte (nada do código ou dos textos deles)": "Ideas for anonymization: warning about what still identifies the person, generalizing the date of birth and keeping the pseudonymization table apart (none of their code or texts)"
 }

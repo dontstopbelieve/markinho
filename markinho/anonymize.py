@@ -43,6 +43,8 @@ KINDS: list[tuple[str, str, str, bool]] = [
     ("cep", "CEP", "CEP", True),
     ("processo", tr("Número de processo (padrão do CNJ)"), "PROCESSO", True),
     ("oab", tr("Registro na OAB"), "OAB", True),
+    ("endereco", tr("Endereço (Rua, Av., Travessa… com número)"), "ENDEREÇO", True),
+    ("nascimento", tr("Data de nascimento (depois de “nascido em”, “data de nascimento”…)"), "NASCIMENTO", True),
     ("placa", tr("Placa de veículo (quando escrita “placa” antes)"), "PLACA", False),
     ("ip", tr("Endereço IP"), "IP", False),
     ("assinatura", tr("Assinaturas eletrônicas (“Assinado eletronicamente por…”)"), "PESSOA", True),
@@ -67,11 +69,26 @@ class AnonOptions:
     metadata: bool = True        # tirar autor, datas, assunto e nome do arquivo do frontmatter
     image_metadata: bool = True  # tirar EXIF/GPS das imagens (sem perder qualidade)
     remove_images: bool = False  # não incluir imagens (fotos, assinaturas escaneadas)
+    birth_year: bool = False     # data de nascimento → só o ano (generalização, em vez de esconder tudo)
+    save_mapping: bool = False   # gravar a tabela de correspondência ([PESSOA 1] = …) em arquivo separado
 
 
 @dataclass
 class AnonReport:
     counts: Counter = field(default_factory=Counter)
+    # pseudônimo → formas originais encontradas (só no modo pseudônimo; para a tabela de correspondência)
+    mapping: dict[str, list[str]] = field(default_factory=dict)
+    # o que ficou no texto e ainda pode ajudar a identificar alguém (tipo → quantidade)
+    residual: Counter = field(default_factory=Counter)
+
+    def residual_summary(self) -> str:
+        """“Ainda podem identificar alguém: …” — vazio se nada sobrou."""
+        if not self.residual:
+            return ""
+        names = {**{k: lbl.split(" (")[0] for k, lbl in KIND_LABELS.items()}, "idade": tr("Idade")}
+        items = " · ".join(f"{names.get(k, k)}: {n}" for k, n in self.residual.most_common())
+        return tr("Ainda podem ajudar a identificar alguém (não foram trocados): {0}. Tirar só o nome não basta: "
+                  "revise ou marque esses tipos.").format(items)
 
     @property
     def total(self) -> int:
@@ -191,6 +208,17 @@ _PATTERNS: list[tuple[str, re.Pattern, Callable[[str], bool] | None]] = [
                        r"|\b\d{1,3}\.?\d{3}[ \t]?(?:-[ \t]?)?OAB[ \t]?/[ \t]?[A-Z]{2}\b"), None),
     ("rg", re.compile(r"\b(?:RG|CNH|R\.G\.)(?:[ \t]?(?:n[º°o.]{1,2}|:|-)){0,2}[ \t]{0,3}"
                       r"(?P<v>\d{1,2}\.?\d{3}\.?\d{3}(?:-?[\dXx]{1,2})?)(?![\d])"), None),
+    ("nascimento", re.compile(r"(?i:nascid[oa]s?[ \t]+(?:em|a|no[ \t]+dia)|data[ \t]+de[ \t]+nascimento|dt\.?[ \t]+nasc\.?"
+                              r"|\bnasc\.|\bd\.[ \t]?n\.)[ \t]{0,3}[:\-–]?[ \t]{0,3}"
+                              r"(?P<v>\d{1,2}[/.-]\d{1,2}[/.-](?:\d{4}|\d{2})(?!\d)"
+                              r"|\d{1,2}º?[ \t]+de[ \t]+[A-Za-zçÇ]{3,9}[ \t]+de[ \t]+\d{4})"), None),
+    # logradouro com número: “Rua das Flores, 123”, “Av. Brasil nº 45, apto 12” (palavras com tamanho limitado)
+    ("endereco", re.compile(r"(?<![\w])(?P<v>(?i:rua|r\.|avenida|av\.|travessa|tv\.|trav\.|alameda|al\.|praça|pça\.?"
+                            r"|rodovia|rod\.|estrada|estr\.|largo|viela|beco|quadra|qd\.)[ \t]{1,3}"
+                            r"(?:[^\W\d_][\w'’.ªº-]{0,29}[ \t]{1,2}){0,7}[^\W\d_][\w'’.ªº-]{0,29}"
+                            r"[ \t]{0,2},?[ \t]{0,3}(?:n[º°o.]{1,2}[ \t]{0,2})?\d{1,5}[A-Za-z]?(?![\d/.,]\d)"
+                            r"(?:[ \t]{0,3}[,–-][ \t]{0,3}(?i:apto|ap\.|apartamento|casa|bloco|bl\.|sala|conj\.?|conjunto"
+                            r"|lote|lt\.)[ \t]{0,3}[\w-]{1,8}){0,2})"), None),
     ("placa", re.compile(r"\b[Pp]laca[: \t]{1,3}(?P<v>[A-Z]{3}-?\d[A-Z0-9]\d{2})\b"), None),
     ("ip", re.compile(r"(?<![\d.])(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)(?![\d.])"), None),
 ]
@@ -231,6 +259,9 @@ class _Replacer:
     def token(self, kind: str, value: str, marker: str | None = None) -> str:
         self.report.counts[kind] += 1
         marker = marker or MARKERS.get(kind, "OCULTO")
+        if kind == "nascimento" and self.opts.birth_year:      # generalização: fica só o ano
+            year = re.findall(r"\d{4}|\d{2}$", value)
+            return year[-1] if year else f"[{marker}]"
         mode = self.opts.mode
         if mode == "mascara":
             return mask(kind, value)
@@ -239,7 +270,11 @@ class _Replacer:
             if key not in self.numbers:
                 self.next[marker] += 1
                 self.numbers[key] = self.next[marker]
-            return f"[{marker} {self.numbers[key]}]"
+            tok = f"[{marker} {self.numbers[key]}]"
+            seen = self.report.mapping.setdefault(tok, [])
+            if value not in seen and len(seen) < 20:
+                seen.append(value)
+            return tok
         return f"[{marker}]"
 
 
@@ -352,8 +387,61 @@ def anonymize(md: str, opts: AnonOptions) -> tuple[str, AnonReport]:
         kind = "assinatura" if name in signed else "nomes"
         text = _term_re(name).sub(lambda m, kind=kind: rep.token(kind, m.group(0), "PESSOA"), text)
 
+    rep.report.residual = residual_risks(text, kinds)
     text = _MARK_RE.sub(lambda m: kept[int("".join(str(ord(c) - _MARK_DIGIT0) for c in m.group(1)))], text)
     return text, rep.report
+
+
+# idade de uma pessoa: “45 anos de idade”, “idade: 45”, “com 45 anos”
+_AGE = re.compile(r"\b\d{1,3}[ \t]+anos[ \t]+de[ \t]+idade\b|(?i:\bidade)[ \t]{0,2}:?[ \t]{0,2}\d{1,3}\b"
+                  r"|(?i:\bcom)[ \t]+\d{1,3}[ \t]+anos\b")
+# os tipos que, sobrando sozinhos, ainda ajudam a achar a pessoa (o erro clássico: tirar o nome e deixar o resto)
+_QUASI = ("cpf", "rg", "titulo", "pis", "email", "telefone", "endereco", "nascimento", "cep", "placa", "cartao")
+
+
+def residual_risks(text: str, kinds: set[str]) -> Counter:
+    """Depois de anonimizar: conta o que ficou no texto e ainda pode identificar alguém (tipos desmarcados e
+    idades). Os marcadores já colocados ([CPF 1]…) não contam."""
+    out: Counter = Counter()
+    for kind, pat, check in _PATTERNS:
+        if kind in kinds or kind not in _QUASI:
+            continue
+        for m in pat.finditer(text):
+            g = "v" if "v" in m.re.groupindex and m.group("v") is not None else 0
+            if check is None or check(m.group(g)):
+                out[kind] += 1
+    n = len(_AGE.findall(text))
+    if n:
+        out["idade"] = n
+    return out
+
+
+def write_mapping(md_path, report: AnonReport):
+    """Grava “<nome>.correspondencia.csv” ao lado do Markdown: pseudônimo → dado original. É o que a LGPD chama
+    de informação adicional da pseudonimização (art. 13, § 4º): guarde em local seguro, separado do documento.
+    Devolve o caminho, ou None se não havia o que gravar."""
+    import csv
+    import io
+    from pathlib import Path
+
+    if not report.mapping:
+        return None
+    md_path = Path(md_path)
+    target = md_path.with_name(md_path.stem + ".correspondencia.csv")
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow([tr("Marcador"), tr("Dado original")])
+
+    def safe(v: str) -> str:                     # planilha nunca executa fórmula vinda do documento
+        return "'" + v if v[:1] in ("=", "+", "-", "@", "\t", "\r") else v
+
+    for tok in sorted(report.mapping, key=lambda t: (re.sub(r"\s*\d+\]$", "", t), int(re.findall(r"\d+", t)[-1]))):
+        for v in report.mapping[tok]:
+            w.writerow([tok, safe(v)])
+    from .batch import atomic_write
+
+    atomic_write(target, "\ufeff" + buf.getvalue())
+    return target
 
 
 # --------------------------------------------------------------------------- #

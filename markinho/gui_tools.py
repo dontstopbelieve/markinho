@@ -976,7 +976,16 @@ class AnonDialog(QDialog):
         self.exif.setChecked(o.image_metadata)
         self.noimg = QCheckBox(tr("Não incluir imagens (fotos, assinaturas e documentos escaneados)"))
         self.noimg.setChecked(o.remove_images)
-        for w in (self.meta, self.exif, self.noimg):
+        self.birth_year = QCheckBox(tr("Data de nascimento: manter só o ano (em vez de esconder a data inteira)"))
+        self.birth_year.setChecked(o.birth_year)
+        self.save_mapping = QCheckBox(tr("Salvar a tabela de correspondência ([PESSOA 1] = nome original) num "
+                                         "arquivo separado, para poder desfazer depois"))
+        self.save_mapping.setChecked(o.save_mapping)
+        self.save_mapping.setToolTip(tr("Grava “<nome>.correspondencia.csv” ao lado do arquivo. Esse arquivo contém os "
+                                        "dados originais: guarde-o em local seguro e nunca o envie junto com o "
+                                        "documento anonimizado (LGPD, art. 13, § 4º). Só funciona no modo "
+                                        "“Pseudônimo numerado”."))
+        for w in (self.meta, self.exif, self.noimg, self.birth_year, self.save_mapping):
             el.addWidget(w)
         el.addWidget(_hint(tr("O nome do arquivo .md segue o padrão de nomes das configurações: se o nome do "
                            "original identificar alguém, use um padrão como “documento_{n}”.")))
@@ -1011,7 +1020,8 @@ class AnonDialog(QDialog):
         mode = next((b.property("mode") for b in self.modes.buttons() if b.isChecked()), "pseudonimo")
         return AnonOptions(kinds=[k for k, cb in self.kind_boxes.items() if cb.isChecked()], mode=mode,
                            words=self.words.toPlainText(), metadata=self.meta.isChecked(),
-                           image_metadata=self.exif.isChecked(), remove_images=self.noimg.isChecked())
+                           image_metadata=self.exif.isChecked(), remove_images=self.noimg.isChecked(),
+                           birth_year=self.birth_year.isChecked(), save_mapping=self.save_mapping.isChecked())
 
     def result_text(self) -> tuple[str, object]:
         from .anonymize import anonymize, strip_frontmatter_private
@@ -1028,7 +1038,10 @@ class AnonDialog(QDialog):
 
     def _count(self, *_):
         _, rep = self.result_text()
-        self.found.setText(tr('<b>Encontrado neste texto:</b> {0}.').format(rep.summary()))
+        text = tr('<b>Encontrado neste texto:</b> {0}.').format(rep.summary())
+        if rep.residual:
+            text += "<br>⚠ " + rep.residual_summary()
+        self.found.setText(text)
 
     def _preview(self) -> None:
         text, _ = self.result_text()
@@ -1064,8 +1077,17 @@ class AnonDialog(QDialog):
         remember_dir(self.settings, path, "anon")
         text, rep = self.result_text()
         Path(path).write_text(text, encoding="utf-8")
-        QMessageBox.information(self, tr("Anonimizar"), tr('Cópia anonimizada salva.\n\n{0}\n\n').format(rep.summary())
-                                + DISCLAIMER)
+        msg = tr('Cópia anonimizada salva.\n\n{0}\n\n').format(rep.summary())
+        if rep.residual:
+            msg += "⚠ " + rep.residual_summary() + "\n\n"
+        if self.save_mapping.isChecked():
+            from .anonymize import write_mapping
+
+            table = write_mapping(path, rep)
+            if table:
+                msg += tr("Tabela de correspondência salva em {0}. Guarde-a em local seguro, separada do "
+                          "documento.").format(table) + "\n\n"
+        QMessageBox.information(self, tr("Anonimizar"), msg + DISCLAIMER)
         self.accept()
 
 

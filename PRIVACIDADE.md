@@ -35,7 +35,8 @@ de IA de um motor opcional — e mesmo aí nenhum documento é enviado.
 
 A opção **Anonimizar dados pessoais** troca CPF, CNPJ, e-mails, telefones, nomes da sua lista e
 outros dados por marcadores, e tira autor, datas e dados escondidos das imagens. Ela roda no seu
-computador e não guarda a correspondência entre “[PESSOA 1]” e o nome verdadeiro.
+computador e só guarda a correspondência entre “[PESSOA 1]” e o nome verdadeiro se você pedir (opção
+“Salvar a tabela de correspondência”, num arquivo separado que você deve guardar em local seguro).
 
 Na **sua lista**, maiúsculas, minúsculas e acentos não fazem diferença (“joão”, “JOÃO” e “Joao” são
 iguais), mas **cada variação precisa ser escrita**: “João da Silva” não esconde “João”, “Sr. Silva”

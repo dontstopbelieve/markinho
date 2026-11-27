@@ -2621,6 +2621,8 @@ class MainWindow(QMainWindow):
                 tip += tr('\n{0} imagem(ns) extraída(s)').format(len(e.result.assets))
             if e.result.anon_report is not None:
                 tip += tr('\nAnonimizado — {0}').format(e.result.anon_report.summary())
+                if e.result.anon_report.residual:
+                    tip += "\n⚠ " + e.result.anon_report.residual_summary()
             for w in e.result.warnings:
                 tip += f"\n⚠ {w}"
             if e.edited:
@@ -3198,7 +3200,7 @@ class MainWindow(QMainWindow):
         target, _ = QFileDialog.getSaveFileName(self, tr("Salvar Markdown"), str(start),
                                                 tr("Markdown (*.md *.markdown);;Texto (*.txt);;Todos (*)"))
         if target:
-            if self._write(Path(target), e.text, e.result.assets):
+            if self._write(Path(target), e.text, e.result.assets, anon_report=e.result.anon_report):
                 remember_dir(self.settings, target, "save")
                 self.settings.setValue("out_dir", str(Path(target).parent))
                 self.statusBar().showMessage(tr('Salvo em {0}').format(target), 5000)
@@ -3227,7 +3229,7 @@ class MainWindow(QMainWindow):
                 continue
             if sha:
                 manifest.start(src, sha, "janela", target.name)
-            if self._write(target, e.text, e.result.assets):
+            if self._write(target, e.text, e.result.assets, anon_report=e.result.anon_report):
                 written += 1
                 if sha:
                     manifest.finish(src, True)
@@ -3341,7 +3343,8 @@ class MainWindow(QMainWindow):
 
                     QDesktopServices.openUrl(QUrl.fromLocalFile(str(first)))
 
-    def _write(self, path: Path, text: str, assets: dict[str, bytes] | None = None, rename: bool = True) -> bool:
+    def _write(self, path: Path, text: str, assets: dict[str, bytes] | None = None, rename: bool = True,
+               anon_report=None) -> bool:
         from .naming import rename_assets
 
         try:
@@ -3353,6 +3356,13 @@ class MainWindow(QMainWindow):
             atomic_write(path, text)          # nunca fica um arquivo pela metade
             if assets:
                 write_assets(text, assets, path.parent)
+            if anon_report is not None:
+                from .quick import anon_options
+
+                if anon_options(self.settings).save_mapping:
+                    from .anonymize import write_mapping
+
+                    write_mapping(path, anon_report)      # “<nome>.correspondencia.csv”, ao lado
             return True
         except OSError as exc:
             QMessageBox.critical(self, tr("Erro ao salvar"), tr('Não foi possível salvar {0}:\n{1}').format(path, exc))

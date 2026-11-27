@@ -638,8 +638,15 @@ Marque **Anonimizar dados pessoais** nas configurações (botão **Opções…**
 
 - **Números com dígito verificador conferido** (não apaga números comuns): CPF, CNPJ (inclusive o novo
   CNPJ com letras), PIS/NIS, título de eleitor, cartão de crédito.
-- **Outros dados**: e-mail, telefone, CEP, número de processo (CNJ), OAB, RG/CNH (com “RG”/“CNH” antes),
-  placa (com “placa” antes), endereço IP.
+- **Outros dados**: e-mail, telefone, CEP, **endereço** (Rua/Av./Travessa… com número), **data de nascimento**
+  (depois de “nascido em”, “data de nascimento”; opção de manter **só o ano**), número de processo (CNJ),
+  OAB, RG/CNH (com “RG”/“CNH” antes), placa (com “placa” antes), endereço IP.
+- **O que ainda identifica**: depois de anonimizar, o Markinho avisa o que ficou no texto e ainda pode
+  apontar a pessoa (endereço, CEP, data de nascimento, idade, telefone… de tipos que você desmarcou).
+  Tirar só o nome não basta.
+- **Tabela de correspondência** (opcional, desligada): grava `<nome>.correspondencia.csv` ao lado do arquivo,
+  com `[PESSOA 1]` = nome original, para poder desfazer depois — é a “informação adicional” da
+  pseudonimização da LGPD (art. 13, § 4º): **guarde em local seguro, separada do documento**.
 - **Nomes**: assinaturas eletrônicas (“Assinado eletronicamente por…”) e nomes depois de pistas como
   Sr., Dra., réu, autor, paciente, nome: — cada nome encontrado é trocado no texto todo.
 - **Sua lista** de nomes, empresas e lugares (sem diferenciar maiúsculas e acentos; `termo = substituto`).
@@ -648,7 +655,8 @@ Marque **Anonimizar dados pessoais** nas configurações (botão **Opções…**
 - **Como trocar**: pseudônimo numerado (`[PESSOA 1]`, o mesmo dado sempre com o mesmo número),
   marcador (`[CPF]`) ou máscara parcial (`***.982.247-**`, `J. S.`).
 
-No terminal: `markinho contrato.pdf --anonimizar` (ou `--anonimizar-lista nomes.txt`).
+No terminal: `markinho contrato.pdf --anonimizar` (ou `--anonimizar-lista nomes.txt`; `--anonimizar-ano` mantém só o
+ano de nascimento; `--anonimizar-tabela` grava a tabela de correspondência).
 
 **Como a lista funciona:** maiúsculas, minúsculas e acentos **não** fazem diferença (“joão”, “JOÃO” e
 “Joao” são iguais), mas **cada variação precisa ser escrita**: “João da Silva” não esconde “João”,

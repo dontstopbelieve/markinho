@@ -76,6 +76,9 @@ INCLUDED: tuple[Credit, ...] = (
 )
 
 INSPIRED_BY: tuple[Credit, ...] = (
+    Credit("lgpd-skills", "goul4rt", "—", "https://github.com/goul4rt/lgpd-skills",
+           tr("Ideias para a anonimização: avisar o que ainda identifica a pessoa, generalizar a data de "
+              "nascimento e guardar a tabela da pseudonimização à parte (nada do código ou dos textos deles)")),
     Credit(tr("OCRia-nano-1 / LiteParse"), tr("LlamaIndex"), "—", "https://huggingface.co/llamaindex/OCRia-nano-1",
            tr("Ideias: escolher o reconhecimento por escrita da linha (idioma automático do OCR) e usar o PP-OCR "
               "em vez do Tesseract onde ele lê melhor (nada do código ou dos modelos deles)")),

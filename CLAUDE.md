@@ -76,8 +76,9 @@ markinho/
   splitter.py      dividir Markdown por títulos
   report.py        relatório do lote (CSV/HTML)
   diagnostics.py   relatório de erro: sistema, configurações, erros com a configuração usada (sem conteúdo)
-  anonymize.py     anonimizar: CPF/CNPJ/PIS… (dígito verificador), e-mail, telefone, nomes com pista, lista,
-                   metadados, EXIF das imagens (OutputOptions.anon; aplicado em finalize_result)
+  anonymize.py     anonimizar: CPF/CNPJ/PIS… (dígito verificador), e-mail, telefone, endereço, nascimento (só o ano),
+                   nomes com pista, lista, metadados, EXIF; residual_risks (o que ainda identifica → aviso);
+                   write_mapping (<nome>.correspondencia.csv, opcional). OutputOptions.anon; aplicado em finalize_result
   outline.py       títulos do Markdown (painel Sumário)
   compare.py       comparar duas versões (parágrafos e palavras; relatório HTML)
   updates.py       lembrete de atualização sem internet (a cada 60 dias; data do build em resources/build-date.txt)

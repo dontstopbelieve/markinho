@@ -113,7 +113,9 @@ def anon_options(s):
                        words=str(s.value("anon/words", "")),
                        metadata=s.value("anon/metadata", True, type=bool),
                        image_metadata=s.value("anon/image_metadata", True, type=bool),
-                       remove_images=s.value("anon/remove_images", False, type=bool))
+                       remove_images=s.value("anon/remove_images", False, type=bool),
+                       birth_year=s.value("anon/birth_year", False, type=bool),
+                       save_mapping=s.value("anon/save_mapping", False, type=bool))
 
 
 def save_anon_options(s, o) -> None:
@@ -123,6 +125,8 @@ def save_anon_options(s, o) -> None:
     s.setValue("anon/metadata", o.metadata)
     s.setValue("anon/image_metadata", o.image_metadata)
     s.setValue("anon/remove_images", o.remove_images)
+    s.setValue("anon/birth_year", o.birth_year)
+    s.setValue("anon/save_mapping", o.save_mapping)
 
 
 def naming_options(s: QSettings):
@@ -187,6 +191,11 @@ def convert_here(path: str | Path, s: QSettings | None = None, index: int = 0,
         batch.atomic_write(dest, text)
         if assets:
             write_assets(text, assets, dest.parent)
+        anon = getattr(res.output, "anon", None)
+        if res.anon_report is not None and anon is not None and anon.save_mapping:
+            from .anonymize import write_mapping
+
+            write_mapping(dest, res.anon_report)
         if manifest is not None:
             manifest.finish(src, True)
         return QuickResult(src, dest)

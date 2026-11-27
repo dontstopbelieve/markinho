@@ -179,6 +179,15 @@ Revisão do pacote inteiro com a ferramenta de revisão do Claude Code. Corrigid
   dos 7 idiomas da lista; a pasta do Tesseract do sistema nunca é alterada (o pacote fica na pasta do usuário,
   com atalhos para os idiomas do sistema).
 
+### 27/11/2026 — Anonimização: endereço, nascimento, o que sobra e tabela de correspondência
+
+- Regras novas com tamanho limitado (palavras de até 30 letras, no máximo 8, sem `.*?`): texto preparado
+  (milhares de palavras depois de “Rua”, “1/1/1/…”) não trava — `test_regras_novas_nao_travam_com_texto_preparado`.
+- A tabela de correspondência é **desligada por padrão**, fica num arquivo separado e o aviso diz para guardá-la
+  longe do documento; célula que começa com `=`, `+`, `-`, `@` ganha apóstrofo (planilha não executa fórmula).
+- PP-OCR (RapidOCR): só com modelos locais; sem eles o motor nem aparece (o RapidOCR novo baixaria da internet).
+  Coberto pelo teste de sigilo (`test_pp_ocr_sem_internet`).
+
 ## Rotina antes de cada versão
 
 1. `pip install pip-audit` e `pip-audit -r requirements-padrao.txt` (e as outras edições).

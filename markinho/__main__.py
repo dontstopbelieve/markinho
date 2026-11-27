@@ -51,6 +51,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--frontmatter", action="store_true", help=tr("metadados YAML no topo do .md"))
     ap.add_argument("--anonimizar", action="store_true",
                     help=tr("troca CPF, CNPJ, e-mails, telefones, nomes com pista etc. por marcadores ([PESSOA 1])"))
+    ap.add_argument("--anonimizar-tabela", action="store_true",
+                    help=tr("grava ao lado de cada .md a tabela de correspondência (<nome>.correspondencia.csv: "
+                            "[PESSOA 1] = nome original); guarde-a em local seguro (liga --anonimizar)"))
+    ap.add_argument("--anonimizar-ano", action="store_true",
+                    help=tr("na data de nascimento, mantém só o ano (liga --anonimizar)"))
     ap.add_argument("--anonimizar-lista", metavar="ARQUIVO",
                     help=tr("arquivo .txt com nomes/termos a esconder (um por linha; liga --anonimizar)"))
     ap.add_argument("--describe", nargs="?", const="", default=None, metavar="MODELO",
@@ -227,11 +232,11 @@ def cli(argv: list[str]) -> int:
         preset_engine, preset_opts, preset_images = resolve(args.modo)
     output = OutputOptions(images=args.images or preset_images or "folder", profile=args.profile, frontmatter=args.frontmatter,
                            describe_images=args.describe is not None, ollama_model=args.describe or "")
-    if args.anonimizar or args.anonimizar_lista:
+    if args.anonimizar or args.anonimizar_lista or args.anonimizar_tabela or args.anonimizar_ano:
         from .anonymize import AnonOptions
 
         words = Path(args.anonimizar_lista).read_text(encoding="utf-8-sig") if args.anonimizar_lista else ""
-        output.anon = AnonOptions(words=words)
+        output.anon = AnonOptions(words=words, save_mapping=args.anonimizar_tabela, birth_year=args.anonimizar_ano)
         from .anonymize import DISCLAIMER
 
         print(tr("Anonimização: ") + DISCLAIMER, file=sys.stderr)
@@ -380,6 +385,13 @@ def cli(argv: list[str]) -> int:
             md, files = rename_assets(res.markdown, res.assets, target.stem)   # pasta de imagens acompanha o nome
             atomic_write(target, md)
             n = write_assets(md, files, target.parent)
+            if args.anonimizar_tabela and res.anon_report is not None:
+                from .anonymize import write_mapping
+
+                table = write_mapping(target, res.anon_report)
+                if table:
+                    print(tr("tabela de correspondência: {0} (guarde em local seguro, separada do documento)")
+                          .format(table), file=sys.stderr)
             extra = tr(', {0} imagem(ns)').format(n) if n else ""
             print(f"{f} -> {target} ({res.converter}{extra})", file=sys.stderr)
         if manifest is not None:

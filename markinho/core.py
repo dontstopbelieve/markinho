@@ -346,6 +346,10 @@ def finalize_result(result: ConversionResult, fix: Any = None, output: Any = Non
         from .anonymize import anonymize, clean_metadata, strip_image_metadata
 
         text, result.anon_report = anonymize(text, anon)
+        if result.anon_report.residual:
+            msg = result.anon_report.residual_summary()
+            if msg not in result.warnings:
+                result.warnings.append(msg)
         if anon.image_metadata:
             result.assets = {k: strip_image_metadata(v) for k, v in result.assets.items()}
         if anon.remove_images:

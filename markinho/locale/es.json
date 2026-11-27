@@ -1108,5 +1108,19 @@
 "Comparação no olmOCR-bench que mostrou onde melhorar: cabeçalhos/rodapés por faixa e colunas pelos corredores entre as palavras (nada do código ou do modelo deles)": "Comparación en olmOCR-bench que mostró dónde mejorar: encabezados/pies por franja y columnas por los pasillos entre las palabras (nada de su código ni de su modelo)",
 "OCR PP-OCR latino pronto.": "OCR PP-OCR latino listo.",
 "Baixando o OCR PP-OCR latino para {0} …": "Descargando el OCR PP-OCR latino en {0} …",
-"PP-OCR latino (ótimo em letra miúda, mantém acentos)": "PP-OCR latino (excelente en letra pequeña, mantiene los acentos)"
+"PP-OCR latino (ótimo em letra miúda, mantém acentos)": "PP-OCR latino (excelente en letra pequeña, mantiene los acentos)",
+"grava ao lado de cada .md a tabela de correspondência (<nome>.correspondencia.csv: [PESSOA 1] = nome original); guarde-a em local seguro (liga --anonimizar)": "graba junto a cada .md la tabla de correspondencia (<nombre>.correspondencia.csv: [PESSOA 1] = nombre original); guárdela en un lugar seguro (activa --anonimizar)",
+"na data de nascimento, mantém só o ano (liga --anonimizar)": "en la fecha de nacimiento, mantiene solo el año (activa --anonimizar)",
+"tabela de correspondência: {0} (guarde em local seguro, separada do documento)": "tabla de correspondencia: {0} (guárdela en un lugar seguro, separada del documento)",
+"Endereço (Rua, Av., Travessa… com número)": "Dirección (calle, avenida… con número)",
+"Data de nascimento (depois de “nascido em”, “data de nascimento”…)": "Fecha de nacimiento (después de “nascido em”, “data de nascimento”…)",
+"Idade": "Edad",
+"Marcador": "Marcador",
+"Dado original": "Dato original",
+"Ainda podem ajudar a identificar alguém (não foram trocados): {0}. Tirar só o nome não basta: revise ou marque esses tipos.": "Todavía pueden ayudar a identificar a alguien (no se reemplazaron): {0}. Quitar solo el nombre no basta: revíselos o marque esos tipos.",
+"Data de nascimento: manter só o ano (em vez de esconder a data inteira)": "Fecha de nacimiento: mantener solo el año (en lugar de ocultar la fecha entera)",
+"Salvar a tabela de correspondência ([PESSOA 1] = nome original) num arquivo separado, para poder desfazer depois": "Guardar la tabla de correspondencia ([PESSOA 1] = nombre original) en un archivo aparte, para poder deshacerlo después",
+"Grava “<nome>.correspondencia.csv” ao lado do arquivo. Esse arquivo contém os dados originais: guarde-o em local seguro e nunca o envie junto com o documento anonimizado (LGPD, art. 13, § 4º). Só funciona no modo “Pseudônimo numerado”.": "Graba “<nombre>.correspondencia.csv” junto al archivo. Ese archivo contiene los datos originales: guárdelo en un lugar seguro y nunca lo envíe junto con el documento anonimizado (LGPD, art. 13, § 4). Solo funciona en el modo “Seudónimo numerado”.",
+"Tabela de correspondência salva em {0}. Guarde-a em local seguro, separada do documento.": "Tabla de correspondencia guardada en {0}. Guárdela en un lugar seguro, separada del documento.",
+"Ideias para a anonimização: avisar o que ainda identifica a pessoa, generalizar a data de nascimento e guardar a tabela da pseudonimização à parte (nada do código ou dos textos deles)": "Ideas para la anonimización: avisar lo que todavía identifica a la persona, generalizar la fecha de nacimiento y guardar aparte la tabla de la seudonimización (nada de su código ni de sus textos)"
 }
