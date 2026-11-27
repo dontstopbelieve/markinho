@@ -37,8 +37,8 @@ real para quem lida com dados de clientes, pacientes ou funcionários (sigilo pr
 ### Qualidade, com honestidade
 
 No teste público [olmOCR-bench](https://huggingface.co/datasets/allenai/olmOCR-bench) (Allen AI), a edição
-PADRÃO — que roda em qualquer computador, sem IA, a ~0,5 s por página — tirou **42,5%**, e a COMPLETA, com IA de
-layout que também roda no computador, **53,5%** (27/11/2026). Empata com
+PADRÃO — que roda em qualquer computador, sem IA, a ~0,5 s por página — tirou **cerca de 46%** (42,5% antes das
+melhorias de cabeçalhos e colunas de 27/11/2026), e a COMPLETA, com IA de layout que também roda no computador, **53,5%**. Empata com
 os melhores em **não perder texto** (99,5%) e fica atrás dos programas com IA pesada em fórmulas matemáticas e
 escaneados muito antigos. Os líderes do teste usam IA com placa de vídeo ou serviços na nuvem (que mandam o
 documento para fora).

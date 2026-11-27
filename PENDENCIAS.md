@@ -52,6 +52,13 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
       texto da página 99,5% · cabeçalhos/rodapés 64% · texto miúdo 58% · colunas 53% · tabelas 46% ·
       escaneados 19% · fórmulas 0%. **Docling (COMPLETA, IA local): 53,5%** (cabeçalhos 91%, colunas 75%,
       tabelas 68%, escaneados 26%), 6,7 s/página contra 0,5 s do Nativo. Fórmulas: 0% nos dois.
+      **Depois (27/11, ideias tiradas da comparação com o dots.ocr, sem IA):** cabeçalho/rodapé por faixa
+      (partes na mesma altura juntas, “5 of 15”, citação da revista) **64% → 80%**; colunas achadas pelas
+      palavras (`pdf.column_rivers` + `river_order`, 2/3+ colunas, também escaneadas) **53% → 59%**; texto
+      miúdo **58% → 63%**; escaneados 20,5% → 21,5% (pelo diagnóstico das 5 categorias; total estimado ~46%).
+      dots.ocr (IA de 3B, placa de vídeo, licença própria): 79,1%. Onde ele ainda ganha longe: tabelas (88%
+      × 46%) e fórmulas (82% × 0%) — precisam de IA que lê a imagem. Próximo passo possível: medir o Docling
+      com o pacote Fórmulas na categoria de fórmulas.
 - [ ] **Destino da COMPLETA**: gerar no GitHub (Windows e Linux) para ver o tamanho real (limite de 2 GB
       por arquivo nas Releases) e comparar a qualidade Docling × Nativo. Se o ganho for pequeno, ficar com
       uma versão só.
