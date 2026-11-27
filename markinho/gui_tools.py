@@ -717,3 +717,60 @@ class AnonDialog(QDialog):
         QMessageBox.information(self, "Anonimizar", f"Cópia anonimizada salva.\n\n{rep.summary()}\n\n"
                                 + DISCLAIMER)
         self.accept()
+
+
+# --------------------------------------------------------------------------- #
+# Apoie o Markinho
+# --------------------------------------------------------------------------- #
+class SupportDialog(QDialog):
+    """Doação opcional por Pix (QR Code, chave e copia e cola). `milestone`: agradecimento de marco de uso."""
+
+    def __init__(self, parent=None, milestone: int | None = None, settings: QSettings | None = None):
+        from PySide6.QtGui import QPixmap
+
+        from .support import PIX_KEY, PIX_PAYLOAD
+
+        super().__init__(parent)
+        self.settings = settings
+        self.setWindowTitle("Apoie o Markinho")
+        self.setMinimumWidth(480)
+        lay = QVBoxLayout(self)
+        if milestone:
+            head = QLabel(f"<h3>🎉 Você já converteu {milestone:,} documentos com o Markinho!</h3>".replace(",", "."))
+            head.setWordWrap(True)
+            lay.addWidget(head)
+        txt = QLabel("O Markinho é gratuito e continuará sendo. Se ele foi útil e você quiser agradecer, "
+                     "pode fazer uma doação de qualquer valor por <b>Pix</b>.<br><br>É totalmente "
+                     "<b>opcional</b> e não cria nenhuma obrigação de suporte, correções ou novas versões.")
+        txt.setWordWrap(True)
+        lay.addWidget(txt)
+        img = Path(__file__).resolve().parent / "resources" / "apoie-pix.png"
+        if img.exists():
+            qr = QLabel()
+            qr.setPixmap(QPixmap(str(img)).scaledToWidth(200, Qt.SmoothTransformation))
+            qr.setAlignment(Qt.AlignCenter)
+            lay.addWidget(qr)
+        row = QHBoxLayout()
+        key = QLineEdit(PIX_KEY)
+        key.setReadOnly(True)
+        b_key = QPushButton("Copiar chave")
+        b_key.clicked.connect(lambda: (QGuiApplication.clipboard().setText(PIX_KEY), b_key.setText("Copiada ✓")))
+        row.addWidget(QLabel("Chave Pix:"))
+        row.addWidget(key, 1)
+        row.addWidget(b_key)
+        lay.addLayout(row)
+        b_cc = QPushButton("Copiar “Pix copia e cola”")
+        b_cc.clicked.connect(lambda: (QGuiApplication.clipboard().setText(PIX_PAYLOAD),
+                                      b_cc.setText("Pix copia e cola copiado ✓")))
+        lay.addWidget(b_cc)
+        lay.addWidget(_hint("No aplicativo do banco aparece o nome do mantenedor como recebedor (padrão do Pix). "
+                            "Outras formas de ajudar: relatar problemas e sugerir funções no GitHub, e indicar o "
+                            "Markinho a quem precisa."))
+        bb = QDialogButtonBox()
+        if milestone and settings is not None:
+            never = bb.addButton("Não mostrar de novo", QDialogButtonBox.RejectRole)
+            never.clicked.connect(lambda: settings.setValue("support/never", True))
+        bb.addButton("Fechar", QDialogButtonBox.AcceptRole)
+        bb.accepted.connect(self.accept)
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)

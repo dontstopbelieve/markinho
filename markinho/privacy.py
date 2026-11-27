@@ -20,6 +20,9 @@ de IA de um motor opcional — e mesmo aí nenhum documento é enviado.
   permitir.
 - As suas configurações (motor, opções, últimas pastas usadas) ficam salvas apenas no seu
   computador, nas configurações do usuário do sistema.
+- O Markinho conta, só no seu computador, quantos documentos você já converteu, para mostrar
+  **uma única vez** um agradecimento aos 100 e aos 1.000 documentos (com a opção “Não mostrar de
+  novo”). Esse número nunca é enviado a ninguém.
 
 ## Anonimizar
 

@@ -403,7 +403,7 @@ O Markinho é gratuito e continuará gratuito. Se ele foi útil e você quiser a
 uma doação de qualquer valor por **Pix**. É totalmente **opcional** e **não cria nenhuma obrigação**
 de suporte, correções ou novas versões — o projeto continua “como está”.
 
-<img src="docs/apoie-pix.png" alt="QR Code do Pix para apoiar o Markinho" width="200">
+<img src="markinho/resources/apoie-pix.png" alt="QR Code do Pix para apoiar o Markinho" width="200">
 
 - **Chave Pix (aleatória):** `1487d3bd-979f-482e-a83a-026329e0b143`
 - **Pix copia e cola:**
@@ -413,6 +413,7 @@ de suporte, correções ou novas versões — o projeto continua “como está�
   ```
 
 No aplicativo do banco aparece o nome do mantenedor como recebedor — é o padrão do Pix.
+No programa: **Ajuda > Apoie o Markinho**.
 Outras formas de ajudar (sem dinheiro): relatar problemas, sugerir funções e indicar o Markinho
 (veja [CONTRIBUTING.md](CONTRIBUTING.md)).
 

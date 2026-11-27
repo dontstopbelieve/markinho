@@ -1800,6 +1800,9 @@ class AboutDialog(QDialog):
 
         bb = QDialogButtonBox(QDialogButtonBox.Close)
         bb.button(QDialogButtonBox.Close).setText("Fechar")
+        b_sup = bb.addButton("Gostou? Apoie o Markinho ❤", QDialogButtonBox.ActionRole)
+        b_sup.clicked.connect(lambda: __import__("markinho.gui_tools", fromlist=["SupportDialog"])
+                              .SupportDialog(self).exec())
         bb.rejected.connect(self.reject)
         lay.addWidget(bb)
 
@@ -1974,6 +1977,8 @@ class MainWindow(QMainWindow):
         help_menu.addAction("Privacidade e relatório de erro", self.privacy)
         help_menu.addAction("Gerar relatório de erro…", self.error_report)
         help_menu.addAction("Página do projeto", self.open_project_page)
+        help_menu.addSeparator()
+        help_menu.addAction("Apoie o Markinho ❤…", self.support)
         edit_menu = self.menuBar().addMenu("Editar")
         edit_menu.addAction(self.act_paste)
         edit_menu.addAction(self.act_copy)
@@ -2491,6 +2496,11 @@ class MainWindow(QMainWindow):
         e = self.entries[path]
         e.result, e.error, e.busy, e.edited, e.text = result, "", False, False, result.markdown
         e.progress = None
+        from .support import count_conversion
+
+        milestone = count_conversion(self.settings)
+        if milestone:
+            self._support_due = milestone          # mostra quando terminar o que está convertendo
         self._after_update(path)
 
     def _on_progress(self, path: str, gen: int, done: int, total: int) -> None:
@@ -2534,6 +2544,9 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"{queued} arquivo(s) na fila — clique em “Converter” (F5)"
                                          + (f" • {done} pronto(s)" if done else ""))
             return
+        if not pending and getattr(self, "_support_due", None):
+            due, self._support_due = self._support_due, None
+            QTimer.singleShot(1200, lambda: self.support(due))
         if pending:
             self.progress.setVisible(True)
             self.progress.setRange(0, max(total, 1))
@@ -3245,6 +3258,14 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Anonimizar", f"Não foi possível ler o arquivo: {exc}")
             return
         AnonDialog(self, self.settings, text, Path(path)).exec()
+
+    def support(self, milestone: int | None = None) -> None:
+        from .gui_tools import SupportDialog
+
+        if milestone and any(e.busy for e in self.entries.values()):
+            self._support_due = milestone          # nunca no meio de uma conversão
+            return
+        SupportDialog(self, milestone if isinstance(milestone, int) else None, self.settings).exec()
 
     def privacy(self) -> None:
         from .privacy import TEXT

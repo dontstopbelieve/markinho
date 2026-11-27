@@ -418,3 +418,21 @@ def test_ux_menus_panel_and_header(win):
     app.processEvents()
     assert w._toolbar.widgetForAction(w.act_copy).toolButtonStyle() == Qt.ToolButtonTextBesideIcon
     w.panel.adv_toggle.setChecked(False)
+
+
+def test_support_milestones_and_dialog(tmp_path):
+    from PySide6.QtCore import QSettings
+
+    from markinho.gui_tools import SupportDialog
+    from markinho.support import PIX_KEY, PIX_PAYLOAD, count_conversion, pix_crc_ok
+
+    assert pix_crc_ok() and PIX_KEY in PIX_PAYLOAD and "MARKINHO" in PIX_PAYLOAD
+    s = QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)
+    hits = [m for _ in range(1000) if (m := count_conversion(s))]
+    assert hits == [100, 1000]                       # uma vez em cada marco
+    assert count_conversion(s) is None and int(s.value("stats/converted")) == 1001
+    s2 = QSettings(str(tmp_path / "s2.ini"), QSettings.IniFormat)
+    s2.setValue("support/never", True)
+    assert not any(count_conversion(s2) for _ in range(150))   # “não mostrar de novo” vale para sempre
+    d = SupportDialog(None, 100, s2)
+    assert "100 documentos" in d.findChildren(type(d.layout().itemAt(0).widget()))[0].text()
