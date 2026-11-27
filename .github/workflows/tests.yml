@@ -41,6 +41,13 @@ jobs:
         run: pip install -r requirements-padrao.txt -r requirements-dev.txt
       - name: Testes e cobertura
         run: python -m pytest -q --cov --cov-report=term-missing:skip-covered --cov-report=html
+      # Sigilo verificado: os testes de conversão rodam numa máquina SEM rede nenhuma (nem o Python nem o
+      # Pandoc/Tesseract conseguem acessar a internet). Se algo tentar se conectar, falha aqui.
+      - name: Sigilo — converter sem internet (rede desligada de verdade)
+        if: runner.os == 'Linux'
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+          unshare -rn python -m pytest -q -p no:cacheprovider tests/test_offline.py
       # Relatório de cobertura (abrir htmlcov/index.html): verde = testado, vermelho = sem teste
       - name: Guardar relatório de cobertura
         if: always() && runner.os == 'Linux'

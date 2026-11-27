@@ -157,6 +157,15 @@ Revisão do pacote inteiro com a ferramenta de revisão do Claude Code. Corrigid
 - Tabela HTML com `rowspan`/`colspan` absurdos (documento preparado) é limitada (1.000 por célula, 200 mil
   células) e não trava o programa.
 
+### 27/11/2026 — Sigilo verificado automaticamente
+
+- `tests/test_offline.py`: converte todos os tipos de arquivo (PDF, escaneado com OCR, Word, Excel, CSV,
+  Markdown, .doc/.xls/.ppt/.odt/.ods/.odp/.rtf), anonimiza, exporta para 9 formatos (com imagem remota no
+  texto, que não pode ser baixada) e usa o botão direito, o lote com `--retomar`, só as tabelas e a skill —
+  com toda conexão de rede bloqueada e anotada. Um teste confere que o próprio bloqueio funciona.
+- No GitHub (workflow Testes), o mesmo arquivo roda com `unshare -rn`: a máquina fica sem rede nenhuma, o que
+  cobre também os programas externos (Pandoc, Tesseract).
+
 ## Rotina antes de cada versão
 
 1. `pip install pip-audit` e `pip-audit -r requirements-padrao.txt` (e as outras edições).

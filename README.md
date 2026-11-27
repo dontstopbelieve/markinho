@@ -3,16 +3,49 @@
 > **Versão em preparação:** ainda não há instaladores publicados. Quando a primeira versão sair, os
 > instaladores estarão na página **Releases** deste repositório.
 
-Converte documentos **para Markdown** e de **Markdown para outros formatos**, com
-interface gráfica e linha de comando, em **português, inglês e espanhol**. **Tudo roda no seu
-computador**: nenhum documento é enviado para a internet.
+## O conversor para documentos sigilosos
 
-Reúne num só programa as ideias do
-[markitdown](https://github.com/microsoft/markitdown), do
-[Docling](https://github.com/docling-project/docling), do
-[Marker](https://github.com/datalab-to/marker), do [Pandoc](https://pandoc.org) e do
-[PyMuPDF4LLM](https://github.com/pymupdf/pymupdf4llm), e já vem com soluções para os
-problemas mais comuns de conversão.
+Contratos, processos, prontuários, folhas de pagamento, balanços: o Markinho transforma esses documentos em
+texto limpo (Markdown) — para salvar, copiar para a IA, exportar para Word/PDF/Excel — **sem que nenhum deles
+saia do seu computador**. Funciona com a internet desligada, não tem telemetria e não depende de nenhuma
+empresa externa. Interface gráfica e linha de comando, em **português, inglês e espanhol**.
+
+### Por que isso importa
+
+Muitos conversores “inteligentes” mandam o arquivo para um servidor de outra empresa. A partir daí você não
+controla mais onde ele fica, quem lê, por quanto tempo é guardado ou se é usado para treinar IA — um problema
+real para quem lida com dados de clientes, pacientes ou funcionários (sigilo profissional, LGPD, GDPR).
+
+| | Documento sai do computador? | Precisa de placa de vídeo? | Janela fácil (sem programar)? | Anonimiza dados pessoais? |
+|---|:---:|:---:|:---:|:---:|
+| Serviços na nuvem (Mistral OCR, GPT-4o, Gemini…) | **sim** — vai para a empresa | — | — | não |
+| Modelos de IA locais (olmOCR, Qwen-VL, GOT-OCR) | não | sim, potente | não | não |
+| Conversores com IA (Marker, MinerU) | não | melhor com | não | não |
+| **Markinho** | **não — verificado** | **não** | **sim** | **sim** (CPF, CNPJ, nomes, PJe/SEI) |
+
+### Sigilo verificado, não só prometido
+
+- **Testado sem internet a cada mudança:** no GitHub, os testes de conversão rodam numa máquina **sem rede
+  nenhuma** (PDF, escaneado com OCR, Word, Excel, formatos antigos, anonimização e exportação para 9 formatos).
+  Se alguma parte do Markinho tentar se conectar, o teste falha e a versão não sai
+  ([tests/test_offline.py](tests/test_offline.py)).
+- **Nada é baixado sem você pedir:** imagens da internet dentro de um documento viram links (não são
+  baixadas ao exportar); o programa não procura atualizações sozinho (só lembra você de conferir).
+- **Código aberto (AGPL-3.0):** qualquer pessoa pode conferir o que o programa faz. Detalhes em
+  [PRIVACIDADE.md](PRIVACIDADE.md) e [SEGURANCA.md](SEGURANCA.md).
+
+### Qualidade, com honestidade
+
+No teste público [olmOCR-bench](https://huggingface.co/datasets/allenai/olmOCR-bench) (Allen AI), a edição
+PADRÃO — que roda em qualquer computador, sem IA, a ~0,5 s por página — tirou **40%** (27/11/2026). Empata com
+os melhores em **não perder texto** (99,5%) e fica atrás dos programas com IA pesada em fórmulas matemáticas e
+escaneados muito antigos. Os líderes do teste usam IA com placa de vídeo ou serviços na nuvem (que mandam o
+documento para fora). A edição COMPLETA traz uma IA de layout que também roda **dentro do computador**.
+
+O Markinho reúne num só programa ideias do [markitdown](https://github.com/microsoft/markitdown), do
+[Docling](https://github.com/docling-project/docling), do [Marker](https://github.com/datalab-to/marker), do
+[Pandoc](https://pandoc.org) e do [PyMuPDF4LLM](https://github.com/pymupdf/pymupdf4llm) (sem copiar código) e
+já vem com soluções para os problemas mais comuns de conversão.
 
 ## Edições
 
