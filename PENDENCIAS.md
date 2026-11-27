@@ -141,8 +141,8 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
 - [ ] **Doações — GitHub Sponsors** (cadastro enviado em 27/11/2026, **em análise** pelo GitHub; conta
       bancária direta, 0% de taxa; doador vê só o usuário `dontstopbelieve`). Quando aprovado: criar
       `.github/FUNDING.yml` (`github: dontstopbelieve`), seção “Apoie o Markinho” no README (opcional, sem
-      obrigação de suporte ou atualização) e, se o dono quiser, Ajuda > Apoie o Markinho. Pix direto ficou
-      de fora por enquanto (mostra o nome e parte do CPF do recebedor).
+      obrigação de suporte ou atualização) e, se o dono quiser, Ajuda > Apoie o Markinho. **Pix** (chave aleatória)
+      publicado no README em 27/11/2026, com QR Code em `docs/apoie-pix.png` (nome no código: MARKINHO).
 - [ ] **Ideias de usabilidade inspiradas na SoMark** (27/11/2026; só ideias, sem código nem o modelo OXR, cuja
       licença tem restrição comercial; se alguma entrar, registrar a SoMark em `INSPIRED_BY`):
       1. Selo fixo “🔒 Offline: seus documentos não saíram do computador” na barra de status (pequeno; v3.0).

@@ -397,6 +397,25 @@ Copyright © 2026 dontstopbelieve.
 
 Segurança: veja [SEGURANCA.md](SEGURANCA.md) (verificações já feitas e como relatar uma falha).
 
+## Apoie o Markinho
+
+O Markinho é gratuito e continuará gratuito. Se ele foi útil e você quiser agradecer, pode fazer
+uma doação de qualquer valor por **Pix**. É totalmente **opcional** e **não cria nenhuma obrigação**
+de suporte, correções ou novas versões — o projeto continua “como está”.
+
+<img src="docs/apoie-pix.png" alt="QR Code do Pix para apoiar o Markinho" width="200">
+
+- **Chave Pix (aleatória):** `1487d3bd-979f-482e-a83a-026329e0b143`
+- **Pix copia e cola:**
+
+  ```
+  00020126580014br.gov.bcb.pix01361487d3bd-979f-482e-a83a-026329e0b1435204000053039865802BR5908MARKINHO6006BRASIL62070503***63047522
+  ```
+
+No aplicativo do banco aparece o nome do mantenedor como recebedor — é o padrão do Pix.
+Outras formas de ajudar (sem dinheiro): relatar problemas, sugerir funções e indicar o Markinho
+(veja [CONTRIBUTING.md](CONTRIBUTING.md)).
+
 ## Créditos
 
 O Markinho é feito sobre o trabalho de muitos projetos de código aberto: **Ajuda > Sobre o

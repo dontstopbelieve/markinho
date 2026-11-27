@@ -22,6 +22,11 @@ licença — só não enviamos de volta para este repositório.
 - **Arquivos de exemplo** que reproduzam o problema — **somente sem dados pessoais** e que você
   tenha direito de compartilhar.
 
+## Doações
+
+Opcionais, por Pix — veja a seção “Apoie o Markinho” no [README](README.md#apoie-o-markinho).
+Não criam obrigação de suporte ou atualização.
+
 ## Falhas de segurança
 
 **Não abra issue pública.** Veja [SEGURANCA.md](SEGURANCA.md) para relatar de forma privada.
