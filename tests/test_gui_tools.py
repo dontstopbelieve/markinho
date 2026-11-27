@@ -181,7 +181,12 @@ def test_ollama_missing_shows_inline_help_without_freezing(win, monkeypatch):
     while "não foi encontrado" not in w.panel.ollama_status.text() and time.time() < end:
         app.processEvents()
         time.sleep(0.02)
-    assert "ollama.com" in w.panel.ollama_status.text() and w.panel.ollama_model.isEnabled()
+    # o aviso traz o link de download do Ollama (confere o endereço do link, não um pedaço do texto)
+    import re
+    from urllib.parse import urlparse
+
+    links = re.findall(r"href=['\"]([^'\"]+)['\"]", w.panel.ollama_status.text())
+    assert any(urlparse(u).hostname == "ollama.com" for u in links) and w.panel.ollama_model.isEnabled()
     monkeypatch.setattr(describe, "list_models", lambda *a, **k: ["qwen2.5vl:3b", "llama3"])
     w.panel._refresh_ollama()
     end = time.time() + 5
