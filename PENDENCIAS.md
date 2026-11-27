@@ -59,6 +59,9 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
       dots.ocr (IA de 3B, placa de vídeo, licença própria): 79,1%. Onde ele ainda ganha longe: tabelas (88%
       × 46%) e fórmulas (82% × 0%) — precisam de IA que lê a imagem. Próximo passo possível: medir o Docling
       com o pacote Fórmulas na categoria de fórmulas.
+      **OCR automático Tesseract + PP-OCR latino (27/11):** texto miúdo **63% → 74%**, escaneados antigos
+      21,5% (igual: lá o Tesseract continua). O PP-OCR é lento (4–12 s/página de letra miúda neste servidor);
+      OpenVINO deixa 2× mais rápido, mas tem 180 MB e um pacote de telemetria — avaliar só como pacote extra.
 - [ ] **Destino da COMPLETA**: gerar no GitHub (Windows e Linux) para ver o tamanho real (limite de 2 GB
       por arquivo nas Releases) e comparar a qualidade Docling × Nativo. Se o ganho for pequeno, ficar com
       uma versão só.
