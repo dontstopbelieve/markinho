@@ -305,6 +305,66 @@ class SkillDialog(QDialog):
 
 
 # --------------------------------------------------------------------------- #
+# Atualizações (sem internet: só lembra e abre a página se a pessoa clicar)
+# --------------------------------------------------------------------------- #
+class UpdateDialog(QDialog):
+    """Ajuda > Procurar atualizações… e o lembrete a cada 2 meses."""
+
+    def __init__(self, parent, settings: QSettings, reminder: bool = False):
+        from . import __version__
+        from .edition import label
+        from .updates import RELEASES_URL, build_date
+
+        super().__init__(parent)
+        self.settings = settings
+        self.setWindowTitle(tr("Atualizações do Markinho"))
+        self.resize(520, 300)
+        lay = QVBoxLayout(self)
+        built = build_date()
+        from .i18n import language
+
+        when = (built.strftime("%d/%m/%Y") if language() in ("pt", "es") else built.isoformat()) if built else ""
+        version = tr("Versão instalada: <b>{0}</b> · edição {1}").format(__version__, label())
+        if when:
+            version += tr(" · de {0}").format(when)
+        head = tr("<h3>Hora de conferir se há uma versão nova</h3>") if reminder else tr("<h3>Procurar atualizações</h3>")
+        lay.addWidget(QLabel(head + version))
+        lay.addWidget(_hint(tr("Para proteger a sua privacidade, o Markinho <b>não acessa a internet</b> — por isso ele "
+                               "não sabe sozinho se saiu uma versão nova (com correções e melhorias). Confira de vez em "
+                               "quando a página de versões do projeto no GitHub; para atualizar, baixe o instalador da "
+                               "mesma edição e instale por cima: as suas configurações são mantidas.")))
+        link = QLabel(f"<a href='{RELEASES_URL}'>{RELEASES_URL}</a>")
+        link.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        link.linkActivated.connect(lambda _u: self.open_page())
+        lay.addWidget(link)
+        self.remind = QCheckBox(tr("Lembrar a cada 2 meses"))
+        self.remind.setChecked(not settings.value("updates/never", False, type=bool))
+        lay.addWidget(self.remind)
+        bb = QDialogButtonBox()
+        b_open = bb.addButton(tr("Abrir a página de versões"), QDialogButtonBox.AcceptRole)
+        b_open.clicked.connect(self.open_page)
+        bb.addButton(tr("Lembrar depois") if reminder else tr("Fechar"), QDialogButtonBox.RejectRole)
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+        self.finished.connect(lambda _r: self._save())
+
+    def _save(self) -> None:
+        from .updates import snooze
+
+        self.settings.setValue("updates/never", not self.remind.isChecked())
+        snooze(self.settings)                     # o próximo lembrete conta a partir de hoje
+
+    def open_page(self) -> None:
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+
+        from .updates import RELEASES_URL
+
+        QDesktopServices.openUrl(QUrl(RELEASES_URL))     # só quando a pessoa clica
+        self.accept()
+
+
+# --------------------------------------------------------------------------- #
 # Dividir por títulos
 # --------------------------------------------------------------------------- #
 class SplitDialog(QDialog):

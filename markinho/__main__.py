@@ -119,7 +119,11 @@ def cli(argv: list[str]) -> int:
         logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s", force=True)
 
     if args.version:
-        print(f"Markinho {__version__}")
+        from .updates import RELEASES_URL, build_date
+
+        built = build_date()
+        print(f"Markinho {__version__}" + (f" ({built.isoformat()})" if built else ""))
+        print(tr("O Markinho não acessa a internet. Para ver se há versão nova: {0}").format(RELEASES_URL))
         return 0
     if args.mostrar_skill:
         from .agent_skill import skill_text

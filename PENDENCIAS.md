@@ -33,6 +33,12 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
 
 ## Decisões que dependem do dono do projeto
 
+- [x] **OCR quase parando com várias conversões ao mesmo tempo** (achado no teste público, 27/11/2026): cada
+      Tesseract tentava usar todos os núcleos (OpenMP) e 4 ao mesmo tempo se atropelavam (página de 2 s → 30 min).
+      Corrigido com `OMP_THREAD_LIMIT=1` em `ocr.py` (4 páginas: 6 s) e limite de 180 s por página (a página é
+      pulada com aviso). Vale também para o botão direito e a pasta monitorada.
+- [x] **Lembrete de atualização sem internet** (27/11/2026): a cada 60 dias (contando da data do instalador,
+      `resources/build-date.txt`), nunca na 1ª semana; Ajuda > Procurar atualizações…; `--version` mostra o link.
 - [x] **Edições: de 3 para 2** (decidido em 27/11/2026): a LEVE foi juntada à PADRÃO (a diferença era só
       OCR + Pandoc, ~50 MB, e a falta de OCR confundia). Ficam **PADRÃO** (recomendada) e **COMPLETA**.
       Marcador antigo “leve” é lido como PADRÃO; o .deb da PADRÃO substitui o antigo `markinho-leve`.

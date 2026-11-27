@@ -78,3 +78,50 @@ def test_tessdata_arg_without_windows_quotes(monkeypatch):
     import shlex
 
     assert shlex.split(arg) == ["--tessdata-dir", "/dados/pasta com espaço/tessdata_best"]
+
+
+def test_ocr_um_nucleo_por_tesseract_e_limite_de_tempo(monkeypatch):
+    """4 conversões ao mesmo tempo com o Tesseract usando todos os núcleos quase paravam (27/11/2026)."""
+    import os
+
+    import pytest
+
+    from markinho import ocr
+
+    assert os.environ.get("OMP_THREAD_LIMIT") == "1"
+    pytesseract = pytest.importorskip("pytesseract")
+    calls = {}
+
+    def lento(*a, **k):
+        calls.update(k)
+        raise RuntimeError("Tesseract process timeout")
+
+    monkeypatch.setattr(pytesseract, "image_to_data", lento)
+    from PIL import Image
+
+    with pytest.raises(ocr.OcrTimeout):
+        ocr._tess_data(Image.new("L", (10, 10), 255), "por", "")
+    assert calls["timeout"] == ocr.TESS_TIMEOUT
+
+
+def test_pagina_com_ocr_lento_e_pulada(tmp_path, monkeypatch):
+    import pytest
+
+    pytest.importorskip("reportlab")
+    from reportlab.pdfgen.canvas import Canvas
+
+    from markinho import ocr, pdf
+    from markinho.core import convert
+
+    target = tmp_path / "escaneado.pdf"
+    c = Canvas(str(target))
+    c.rect(100, 100, 200, 200, fill=1)        # página sem texto: vai para o OCR
+    c.save()
+
+    def lento(*a, **k):
+        raise ocr.OcrTimeout("O OCR demorou mais de 180 s numa página e foi interrompido.")
+
+    monkeypatch.setattr(pdf, "_ocr_page_blocks", lento)
+    monkeypatch.setattr(ocr, "pick_backend", lambda *a, **k: "tesseract")
+    res = convert(target, "native", {"ocr": "force"})
+    assert any("demorou mais de" in w for w in res.warnings)

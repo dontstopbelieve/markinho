@@ -2002,6 +2002,7 @@ class MainWindow(QMainWindow):
         help_menu.addAction(tr("Privacidade e relatório de erro"), self.privacy)
         help_menu.addAction(tr("Gerar relatório de erro…"), self.error_report)
         help_menu.addAction(tr("Página do projeto"), self.open_project_page)
+        help_menu.addAction(tr("Procurar atualizações…"), self.check_updates)
         help_menu.addSeparator()
         help_menu.addAction(tr("Apoie o Markinho ❤…"), self.support)
         edit_menu = self.menuBar().addMenu(tr("Editar"))
@@ -2133,6 +2134,7 @@ class MainWindow(QMainWindow):
         self._base_pt = {id(w): w.font().pointSizeF() for w in (self.editor, self.preview)}
         QTimer.singleShot(0, lambda: self.text_zoom(None))     # aplica o tamanho guardado
         QTimer.singleShot(300, self.offer_resume)                  # lote anterior que não terminou
+        QTimer.singleShot(2500, self.remind_updates)               # a cada 2 meses: conferir versão nova
 
         center = QWidget()
         cv = QVBoxLayout(center)
@@ -3616,6 +3618,22 @@ class MainWindow(QMainWindow):
 
     def about(self, tab: int = 0) -> None:
         AboutDialog(self, tab).exec()
+
+    def check_updates(self) -> None:
+        from .gui_tools import UpdateDialog
+
+        UpdateDialog(self, self.settings).exec()
+
+    def remind_updates(self) -> None:
+        """Lembrete sem internet: aparece a cada ~2 meses, nunca por cima de outra janela nem no meio de um lote."""
+        from . import updates
+
+        if QApplication.activeModalWidget() is not None or any(e.busy for e in self.entries.values()):
+            return
+        if updates.due(self.settings):
+            from .gui_tools import UpdateDialog
+
+            UpdateDialog(self, self.settings, reminder=True).exec()
 
     def open_project_page(self) -> None:
         from PySide6.QtCore import QUrl

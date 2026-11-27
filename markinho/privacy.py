@@ -18,6 +18,9 @@ de IA de um motor opcional — e mesmo aí nenhum documento é enviado.
   serviço on-line é chamado.
 - O servidor para assistentes de IA (MCP) só abre as pastas que você autorizou e só grava se você
   permitir.
+- Como não procura atualizações, o Markinho **lembra você a cada 2 meses** de conferir a página de
+  versões no GitHub (Ajuda > Procurar atualizações…). A página só abre se você clicar; o lembrete
+  pode ser desligado.
 - As suas configurações (motor, opções, últimas pastas usadas) ficam salvas apenas no seu
   computador, nas configurações do usuário do sistema.
 - O Markinho conta, só no seu computador, quantos documentos você já converteu, para mostrar
@@ -97,6 +100,9 @@ models of an optional engine — and even then no document is sent.
   service is called.
 - The server for AI assistants (MCP) only opens the folders you authorized and only writes if you
   allow it.
+- Since it does not check for updates, Markinho **reminds you every 2 months** to look at the releases
+  page on GitHub (Help > Check for updates…). The page only opens if you click; the reminder can be
+  turned off.
 - Your settings (engine, options, last folders used) are saved only on your computer, in the
   system user settings.
 - Markinho counts, only on your computer, how many documents you have converted, to show a thank
@@ -177,6 +183,9 @@ IA de un motor opcional — e incluso entonces no se envía ningún documento.
   llama a ningún servicio en línea.
 - El servidor para asistentes de IA (MCP) solo abre las carpetas que usted autorizó y solo escribe
   si usted lo permite.
+- Como no busca actualizaciones, Markinho **le recuerda cada 2 meses** que consulte la página de
+  versiones en GitHub (Ayuda > Buscar actualizaciones…). La página solo se abre si usted hace clic; el
+  recordatorio se puede desactivar.
 - Su configuración (motor, opciones, últimas carpetas usadas) se guarda solo en su equipo, en la
   configuración de usuario del sistema.
 - Markinho cuenta, solo en su equipo, cuántos documentos ha convertido, para mostrar un

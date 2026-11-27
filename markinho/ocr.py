@@ -20,6 +20,18 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
+# Cada Tesseract usa uma linha de execução só. Sem isso, cada um tenta usar todos os núcleos (OpenMP) e,
+# com várias conversões ao mesmo tempo (padrão: 4), eles se atropelam e quase param — páginas de 2 s
+# levavam 30 min (achado no teste público de 27/11/2026). As conversões em paralelo já usam os núcleos.
+os.environ.setdefault("OMP_THREAD_LIMIT", "1")
+TESS_TIMEOUT = 180       # segundos por página: uma imagem patológica não trava o lote inteiro
+
+
+
+class OcrTimeout(RuntimeError):
+    """O Tesseract passou do tempo numa imagem (a página fica sem texto, com aviso)."""
+
+
 OCR_BACKENDS = [("auto", "Automático"), ("tesseract", tr("Tesseract (mantém acentos)")),
                 ("rapidocr", tr("RapidOCR (sem instalação, perde acentos)"))]
 
@@ -234,7 +246,13 @@ def _option(key: str, default):
 def _tess_data(img, lang: str, config: str):
     import pytesseract
 
-    data = pytesseract.image_to_data(img, lang=lang, config=config, output_type=pytesseract.Output.DICT)
+    try:
+        data = pytesseract.image_to_data(img, lang=lang, config=config, output_type=pytesseract.Output.DICT,
+                                         timeout=TESS_TIMEOUT)
+    except RuntimeError as exc:                   # o pytesseract avisa o tempo esgotado com RuntimeError
+        if "timeout" not in str(exc).lower():
+            raise
+        raise OcrTimeout(tr("O OCR demorou mais de {0} s numa página e foi interrompido.").format(TESS_TIMEOUT)) from exc
     confs = [float(c) for w, c in zip(data["text"], data["conf"]) if w.strip() and float(c) >= 0]
     return data, (sum(confs) / len(confs) if confs else 0.0)
 

@@ -77,6 +77,7 @@ markinho/
                    metadados, EXIF das imagens (OutputOptions.anon; aplicado em finalize_result)
   outline.py       títulos do Markdown (painel Sumário)
   compare.py       comparar duas versões (parágrafos e palavras; relatório HTML)
+  updates.py       lembrete de atualização sem internet (a cada 60 dias; data do build em resources/build-date.txt)
   support.py       Apoie o Markinho: Pix e agradecimento único aos 100/1.000 documentos
   privacy.py       texto de privacidade (Ajuda > Privacidade); PRIVACIDADE.md é cópia (teste confere)
   watch.py         pasta monitorada (QFileSystemWatcher + varredura)

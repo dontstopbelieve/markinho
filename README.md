@@ -146,6 +146,12 @@ python run.py
 | **Relatório de erro** | Ajuda > Gerar relatório de erro: texto para mandar ao suporte, **sem o conteúdo dos documentos** (você confere antes de salvar) |
 | **Assistente inicial e modo simples** | Na primeira abertura, o Markinho pergunta para que você vai usá-lo (IA, Obsidian, documentação) e ajusta as opções. O **modo simples** esconde motores e opções avançadas (Exibir > Modo simples) |
 
+**Como saber se há versão nova:** o Markinho **não acessa a internet** (é isso que protege os seus
+documentos), então ele não sabe sozinho quando sai uma versão nova. Em vez disso, a cada 2 meses ele
+lembra você de conferir a página [Releases](https://github.com/dontstopbelieve/markinho/releases) — a
+página só abre se você clicar, e o lembrete pode ser desligado. A qualquer momento: **Ajuda > Procurar
+atualizações…** (ou `markinho --version` no terminal).
+
 **Atualizar ou trocar de edição:** basta rodar o instalador novo. Ele substitui a versão instalada no
 mesmo lugar (não fica um programa duplicado), apaga antes os arquivos internos da versão anterior e
 mantém as suas configurações. Vale para atualizar (3.0 → 3.1) e para subir ou descer de edição
@@ -481,6 +487,7 @@ markinho/
   chunker.py      pedaços para RAG (JSON/JSONL)
   batch.py        lotes que retomam de onde pararam (--retomar)
   tables.py       só as tabelas → Excel (uma aba por tabela + índice) ou CSV
+  updates.py      lembrete de atualização a cada 2 meses (sem internet)
   agent_skill.py  skill que ensina assistentes de IA a usar o Markinho (--instalar-skill)
   aitools.py      Copiar para IA: tokens e divisão em partes
   skillpack.py    Exportar como skill para IA (SKILL.md + capítulos)

@@ -11,6 +11,9 @@ de IA de um motor opcional — e mesmo aí nenhum documento é enviado.
   serviço on-line é chamado.
 - O servidor para assistentes de IA (MCP) só abre as pastas que você autorizou e só grava se você
   permitir.
+- Como não procura atualizações, o Markinho **lembra você a cada 2 meses** de conferir a página de
+  versões no GitHub (Ajuda > Procurar atualizações…). A página só abre se você clicar; o lembrete
+  pode ser desligado.
 - As suas configurações (motor, opções, últimas pastas usadas) ficam salvas apenas no seu
   computador, nas configurações do usuário do sistema.
 - O Markinho conta, só no seu computador, quantos documentos você já converteu, para mostrar

@@ -507,7 +507,13 @@ def _layout_pdf(path: Path) -> str:
 
                 img = page.to_image(resolution=safe_resolution(W, H, 300)).original
                 blocks = [b for b in blocks if b["kind"] == "table"] if mode != "force" else []
-                segs = _ocr_page_blocks(img, 72 / 300, backend, lang)
+                from .ocr import OcrTimeout
+
+                try:
+                    segs = _ocr_page_blocks(img, 72 / 300, backend, lang)
+                except OcrTimeout as exc:                 # página patológica: segue com as outras
+                    warn(f"{exc} ({tr('página {0}').format(i + 1)})", [i + 1])
+                    segs = []
                 blocks += segs
                 ocr_pages += 1
                 conf = mean_confidence(segs)

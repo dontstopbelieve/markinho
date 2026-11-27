@@ -19,10 +19,15 @@ assert EDITION in ("padrao", "completa"), EDITION
 marker_dir = ROOT / "build" / f"edition-{EDITION}"
 marker_dir.mkdir(parents=True, exist_ok=True)
 (marker_dir / "edition.txt").write_text(EDITION, encoding="utf-8")
+# data da versão (lida por markinho/updates.py para lembrar de procurar atualizações, sem internet)
+import datetime as _dt  # noqa: E402
+
+(marker_dir / "build-date.txt").write_text(_dt.date.today().isoformat(), encoding="utf-8")
 
 datas = [(str(ROOT / "markinho" / "resources"), "markinho/resources"),
          (str(ROOT / "markinho" / "locale"), "markinho/locale"),
          (str(marker_dir / "edition.txt"), "markinho/resources"),
+         (str(marker_dir / "build-date.txt"), "markinho/resources"),
          (str(ROOT / "THIRD_PARTY_LICENSES.md"), "."),
          (str(ROOT / "THIRD_PARTY_LICENSES.md"), "licenses"),
          (str(ROOT / "PRIVACIDADE.md"), "."),
