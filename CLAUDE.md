@@ -14,7 +14,7 @@ para poder oferecer licença comercial no futuro).
 - Dono: `dontstopbelieve` (GitHub, repositório `dontstopbelieve/markinho`). Explique os passos de forma
   simples, sem jargão.
 - **Idioma**: conversa, interface, mensagens, comentários e commits em **português do Brasil**.
-  Interface em pt-BR e **inglês** (`i18n.tr("texto em português")`; traduções em `markinho/locale/en.json`).
+  Interface em pt-BR, **inglês** e **espanhol** (`i18n.tr("texto em português")`; traduções em `markinho/locale/en.json` e `es.json`).
 - Antes de começar, leia **`PENDENCIAS.md`** (lista viva do que falta e do que foi decidido).
 
 ## Regras que não podem ser quebradas
@@ -78,7 +78,7 @@ markinho/
   gui_tools.py     janelas: Para IA, Dividir, Pasta monitorada, Relatório de erro, Assistente inicial
   winshell.py      liga/desliga o menu do botão direito do Windows pelo programa (HKCU; igual ao instalador)
   pagesync.py      “Ver original ao lado”: posição no texto ↔ página do PDF
-  i18n.py          idiomas: tr(), num() (1.000 / 1,000); locale/en.json; idioma: MARKINHO_LANG > ui/lang > sistema
+  i18n.py          idiomas: tr(), num() (1.000 / 1,000); locale/en.json e es.json; idioma: MARKINHO_LANG > ui/lang > sistema
   sanitize.py      limpeza antes de exportar: sem downloads, sem scripts, imagens só das pastas do MCP
   __main__.py      `markinho` sem argumentos abre a interface; com arquivos roda no terminal
 packaging/         build.py (todos os instaladores), markinho.spec (PyInstaller por edição),
@@ -132,6 +132,6 @@ python packaging/build.py --edition leve app zip deb             # instaladores 
 - Testes com Qt: um único QApplication (`tests/conftest.py`); nunca crie/destrua QCoreApplication em
   testes. Tarefas em segundo plano recebem `quick.SettingsSnapshot`, não QSettings.
 - Idiomas: texto novo na tela = `tr("...")` com texto literal (f-string vira `tr("{0}").format(x)`) **e** a
-  tradução em `locale/en.json` (o teste `test_i18n` acusa). Nunca passe códigos internos por `tr()` nem decida
+  tradução em `locale/en.json` e `locale/es.json` (o teste `test_i18n` acusa). Nunca passe códigos internos por `tr()` nem decida
   nada comparando texto traduzido. Testes rodam em português (`MARKINHO_LANG=pt` no conftest).
 - Console do Windows é cp1252: não imprima “→”/acentos sem `reconfigure` (já feito em build.py e __main__).

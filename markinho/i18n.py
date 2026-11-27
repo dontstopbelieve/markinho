@@ -7,7 +7,7 @@ O texto original (português do Brasil) é a própria chave: ``tr("Converter")``
 português — o programa nunca quebra por falta de tradução.
 
 O idioma é decidido uma vez, na primeira importação, nesta ordem: variável ``MARKINHO_LANG``,
-configuração “ui/lang” (Configurações > Aparência), idioma do sistema (português → pt; outros → en).
+configuração “ui/lang” (Configurações > Aparência), idioma do sistema (português → pt; espanhol → es; outros → en).
 Trocar de idioma vale ao abrir o programa de novo.
 """
 from __future__ import annotations
@@ -16,7 +16,7 @@ import json
 import os
 from pathlib import Path
 
-LANGUAGES = [("auto", "Automático (idioma do sistema)"), ("pt", "Português (Brasil)"), ("en", "English")]
+LANGUAGES = [("auto", "Automático (idioma do sistema)"), ("pt", "Português (Brasil)"), ("en", "English"), ("es", "Español")]
 _DIR = Path(__file__).resolve().parent / "locale"
 
 
@@ -30,7 +30,8 @@ def _detect() -> str:
         saved = str(QSettings("Markinho", "Markinho").value("ui/lang", "auto") or "auto")
         if saved != "auto":
             return saved[:2]
-        return "pt" if QLocale.system().name().lower().startswith("pt") else "en"
+        sys_lang = QLocale.system().name().lower()[:2]
+        return sys_lang if sys_lang in ("pt", "es") else "en"
     except Exception:  # noqa: BLE001
         return "pt"
 
@@ -54,9 +55,9 @@ def tr(text: str) -> str:
 
 
 def num(n: int) -> str:
-    """Número com separador de milhar do idioma: 1.023 (português) ou 1,023 (inglês)."""
+    """Número com separador de milhar do idioma: 1.023 (português, espanhol) ou 1,023 (inglês)."""
     s = f"{n:,}"
-    return s.replace(",", ".") if LANG == "pt" else s
+    return s.replace(",", ".") if LANG in ("pt", "es") else s
 
 
 def language() -> str:

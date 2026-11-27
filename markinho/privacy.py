@@ -148,8 +148,82 @@ confidential, tick “Hide file names”.
 """
 
 
+TEXT_ES = """# Privacidad e informe de error
+
+## Sus documentos se quedan en su equipo
+
+Markinho convierte todo **en su equipo**. No envía documentos, textos, imágenes ni nombres de
+archivos a internet, no tiene telemetría (no “cuenta” lo que usted hace) y no busca actualizaciones
+por su cuenta. Solo usa internet cuando **usted lo pide**, por ejemplo para descargar los modelos de
+IA de un motor opcional — e incluso entonces no se envía ningún documento.
+
+- La descripción de imágenes usa el **Ollama instalado en su equipo** (una dirección local); no se
+  llama a ningún servicio en línea.
+- El servidor para asistentes de IA (MCP) solo abre las carpetas que usted autorizó y solo escribe
+  si usted lo permite.
+- Su configuración (motor, opciones, últimas carpetas usadas) se guarda solo en su equipo, en la
+  configuración de usuario del sistema.
+- Markinho cuenta, solo en su equipo, cuántos documentos ha convertido, para mostrar un
+  agradecimiento **una sola vez** a los 100 y a los 1.000 documentos (con la opción “No volver a
+  mostrar”). Ese número nunca se envía a nadie.
+
+## Anonimizar
+
+La opción **Anonimizar datos personales** reemplaza CPF, CNPJ, correos, teléfonos, nombres de su
+lista y otros datos por marcadores, y quita el autor, las fechas y los datos ocultos de las
+imágenes. Se ejecuta en su equipo y no guarda la relación entre “[PESSOA 1]” y el nombre real. Las
+reglas de detección están hechas para documentos brasileños (CPF, CNPJ, PIS, título de elector,
+número de proceso del CNJ, teléfonos de Brasil); los correos, las tarjetas de crédito y su propia
+lista funcionan en cualquier idioma.
+
+En **su lista**, mayúsculas, minúsculas y acentos no importan (“josé”, “JOSÉ” y “Jose” son
+iguales), pero **hay que escribir cada variante**: “Juan Pérez” no oculta “Juan”, “Sr. Pérez” ni
+“J. Pérez”. Escriba todas las formas, una por línea.
+
+**Aviso:** la anonimización automática nunca es 100 %. Markinho no se responsabiliza por datos que
+no se encuentren o que se reemplacen por error; **le corresponde al usuario revisar el archivo
+anonimizado antes de cualquier uso o difusión.** Reemplazar nombres por marcadores es
+*seudonimización* — según las leyes de protección de datos (como el RGPD o la LGPD de Brasil), el
+texto puede seguir siendo un dato personal si el contexto muestra de quién se trata.
+
+## El informe de error
+
+Cuando una conversión falla, Markinho guarda el error **en memoria, solo mientras el programa está
+abierto**. No se escribe nada en el disco ni se envía nada automáticamente. En **Ayuda > Generar
+informe de error…** usted ve el informe completo, puede ocultar los nombres de los archivos y
+decide si lo guarda, lo copia o lo envía al soporte.
+
+**Qué contiene el informe**
+
+- Versión y edición de Markinho; versiones de Python y Qt.
+- Sistema operativo, número de procesadores, memoria, idioma del sistema, tamaño y escala de la
+  pantalla.
+- Motores de conversión disponibles (instalados o no).
+- Su configuración de Markinho, **sin carpetas ni rutas**.
+- Para cada error desde que se abrió el programa: hora, nombre del archivo (puede cambiarse por
+  “arquivo1.pdf”), tipo y tamaño, el mensaje de error, detalles técnicos (dónde falló el programa)
+  y la configuración usada en esa conversión (motor, opciones, imágenes, perfil).
+- Los últimos mensajes internos del programa, sin rutas y sin el nombre del usuario del equipo.
+
+**Qué nunca contiene el informe**
+
+- El contenido de sus documentos (texto, tablas, imágenes).
+- Carpetas y rutas completas de los archivos.
+- Su nombre de usuario en el equipo.
+
+## ¿Tengo que aceptar algo?
+
+No hay recopilación automática: el informe solo existe en la pantalla hasta que usted decida qué
+hacer con él. Si decide enviarlo al soporte, se usará **solo para entender y corregir el
+problema**, y usted puede pedir que se borre. Revise el texto antes de enviarlo: si algún nombre de
+archivo es confidencial, marque “Ocultar los nombres de los archivos”.
+
+*Este texto describe cómo funciona el programa; no es asesoramiento jurídico.*
+"""
+
+
 def text() -> str:
-    """O texto no idioma da interface (português ou inglês)."""
+    """O texto no idioma da interface (português, inglês ou espanhol)."""
     from .i18n import language
 
-    return TEXT if language() == "pt" else TEXT_EN
+    return {"pt": TEXT, "es": TEXT_ES}.get(language(), TEXT_EN)

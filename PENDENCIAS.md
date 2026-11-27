@@ -175,8 +175,9 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
       por pistas (Sr., réu, paciente, assinatura…) e pela lista do usuário. Detectar qualquer nome exige
       um modelo de IA de reconhecimento de nomes; antes, conferir a licença do modelo (venda permitida).
 - [~] **Idiomas** (decidido em 27/11/2026): **inglês feito em 27/11/2026** (interface, terminal, servidor MCP,
-      relatório do lote, Privacidade; ~960 textos em `locale/en.json`). Falta revisão de nativo antes de divulgar
-      fora do Brasil; depois espanhol e outros, que saem do inglês com facilidade.
+      relatório do lote, Privacidade; ~960 textos em `locale/en.json`); **espanhol feito em 27/11/2026**
+      (`locale/es.json`, Privacidade em espanhol, sistema em espanhol → interface em espanhol). Falta revisão de
+      nativos (inglês e espanhol) antes de divulgar fora do Brasil; outros idiomas saem do mesmo jeito.
       - Ficam em português de propósito: relatório de erro (é para o dono ler), marcadores do texto anonimizado
         ([PESSOA 1], CPF…), marcas dentro do Markdown (`<!-- página N -->`), nomes das opções do terminal.
       - Testes (`tests/test_i18n.py`): todo `tr()` tem tradução, mesmos `{0}`, sem sobras, `tr()` só com texto
@@ -186,7 +187,7 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
         idioma automático pelo sistema ou escolhido em Configurações > Aparência (reiniciar para aplicar).
       - ~950 textos (~12 mil palavras) no programa + ~6 mil na documentação (README/PRIVACIDADE em inglês: depois).
       - **Adaptar ao idioma/país** (etapa seguinte): anonimização com documentos de cada país (EUA: SSN/EIN;
-        Reino Unido: NI number; Espanha: DNI/NIE; México: CURP/RFC…), idioma do OCR (eng, spa…), exemplos e dicas.
+        Reino Unido: NI number; Espanha: DNI/NIE; México: CURP/RFC…), idioma do OCR (eng, spa — hoje só por+eng), exemplos e dicas.
         PJe, SEI e ABNT continuam (são do Brasil).
       - Instaladores em inglês (termos de uso, mensagens do Inno/WiX): depois.
 - [x] `CLAUDE.md` criado: memória do projeto lida em toda sessão nova.
