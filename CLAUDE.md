@@ -81,6 +81,7 @@ markinho/
   support.py       Apoie o Markinho: Pix e agradecimento único aos 100/1.000 documentos
   privacy.py       texto de privacidade (Ajuda > Privacidade); PRIVACIDADE.md é cópia (teste confere)
   watch.py         pasta monitorada (QFileSystemWatcher + varredura)
+  gui_simple.py    modos Simples/Completo (cabeçalho com a troca, SimpleView) e a folha de estilo comum (claro/escuro)
   gui_tools.py     janelas: Para IA, Dividir, Pasta monitorada, Relatório de erro, Assistente inicial
   winshell.py      liga/desliga o menu do botão direito do Windows pelo programa (HKCU; igual ao instalador)
   pagesync.py      “Ver original ao lado”: posição no texto ↔ página do PDF
@@ -136,7 +137,8 @@ python packaging/build.py --edition padrao app zip deb           # instaladores 
   `ConversionResult.review_pages`; `info=True` não mostra ⚠. Progresso/parada: `report_progress`,
   `check_cancel` (o PDF nativo chama a cada página).
 - Testes com Qt: um único QApplication (`tests/conftest.py`); nunca crie/destrua QCoreApplication em
-  testes. Tarefas em segundo plano recebem `quick.SettingsSnapshot`, não QSettings.
+  testes. A janela abre no modo Simples; o conftest força o Completo (`MainWindow.DEFAULT_MODE`) e apaga
+  `ui/mode` antes de cada teste — testes do Simples ficam em `tests/test_modos.py`. Tarefas em segundo plano recebem `quick.SettingsSnapshot`, não QSettings.
 - Idiomas: texto novo na tela = `tr("...")` com texto literal (f-string vira `tr("{0}").format(x)`) **e** a
   tradução em `locale/en.json` e `locale/es.json` (o teste `test_i18n` acusa). Nunca passe códigos internos por `tr()` nem decida
   nada comparando texto traduzido. Testes rodam em português (`MARKINHO_LANG=pt` no conftest).

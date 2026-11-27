@@ -576,8 +576,8 @@ class FirstRunDialog(QDialog):
         if self.group.checkedId() < 0:
             self.group.button(len(PURPOSES) - 1).setChecked(True)
         lay.addWidget(box)
-        self.simple = QCheckBox(tr("Modo simples: esconder motores e opções avançadas"))
-        self.simple.setChecked(settings.value("ui/simple", True, type=bool))
+        self.simple = QCheckBox(tr("Começar no modo simples (dá para trocar a qualquer momento no alto da janela)"))
+        self.simple.setChecked(str(settings.value("ui/mode", "simple")) == "simple")
         lay.addWidget(self.simple)
         from . import winshell
 
@@ -600,7 +600,7 @@ class FirstRunDialog(QDialog):
         for k, v in values.items():
             self.settings.setValue(k, v)
         self.settings.setValue("ui/purpose", pid)
-        self.settings.setValue("ui/simple", self.simple.isChecked())
+        self.settings.setValue("ui/mode", "simple" if self.simple.isChecked() else "complete")
         self.settings.setValue("ui/first_run_done", True)
         if self.shell.isVisible() and self.shell.isChecked():
             try:

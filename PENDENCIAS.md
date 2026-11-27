@@ -33,6 +33,10 @@ interface nova (UX A+B) e as 7 correções da anonimização — falta o teste n
 
 ## Decisões que dependem do dono do projeto
 
+- [x] **Modos Simples e Completo** (aprovado em 27/11/2026, a partir do protótipo): abre no Simples (soltar →
+      converte sozinho → Salvar/Copiar/Copiar para IA/Exportar; anonimizar à vista; avisos com link para o
+      Completo); Completo = janela de sempre. Troca no cabeçalho (Ctrl+1/2), lembra o último. Mesmo visual nos
+      dois (`gui_simple.stylesheet`, claro e escuro). O antigo “modo simples” (esconder opções) saiu.
 - [x] **OCR quase parando com várias conversões ao mesmo tempo** (achado no teste público, 27/11/2026): cada
       Tesseract tentava usar todos os núcleos (OpenMP) e 4 ao mesmo tempo se atropelavam (página de 2 s → 30 min).
       Corrigido com `OMP_THREAD_LIMIT=1` em `ocr.py` (4 páginas: 6 s) e limite de 180 s por página (a página é

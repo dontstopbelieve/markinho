@@ -1857,6 +1857,8 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._update_buttons()
 
+    DEFAULT_MODE = "simple"          # modo da primeira abertura (os testes antigos usam o Completo)
+
     # ---------------- construção da interface ----------------
     def _build_ui(self) -> None:
         st = self.style()
@@ -1973,11 +1975,6 @@ class MainWindow(QMainWindow):
         tools.addAction(self.act_merge)
         for text, slot in extra:
             tools.addAction(text, slot)
-        self.act_simple = QAction(tr("Modo simples"), self, checkable=True)
-        self.act_simple.setChecked(self.settings.value("ui/simple", False, type=bool))
-        self.act_simple.setToolTip(tr("Esconde os motores e as opções avançadas"))
-        self.act_simple.toggled.connect(self._set_simple)
-        tools.addAction(self.act_simple)
         from . import winshell
 
         self.act_shell = QAction(tr("Botão direito do Windows (menu Markinho)"), self, checkable=True)
@@ -1994,6 +1991,7 @@ class MainWindow(QMainWindow):
         tools.addAction(st.standardIcon(QStyle.SP_MessageBoxInformation), tr("Sobre o Markinho"), self.about)
         # barra de menus: Ajuda > Sobre (no macOS, “Sobre” vai para o menu do app)
         help_menu = self.menuBar().addMenu(tr("Ajuda"))
+        self._help_menu = help_menu
         a_about = help_menu.addAction(tr("Sobre o Markinho"), self.about)
         a_about.setMenuRole(QAction.AboutRole)
         help_menu.addAction(tr("Créditos"), lambda: self.about(1))
@@ -2120,6 +2118,7 @@ class MainWindow(QMainWindow):
         zl.setContentsMargins(0, 0, 4, 0)
         for text, step, tip in (("A−", -1, tr("Diminuir o texto (Ctrl −)")), ("A+", 1, tr("Aumentar o texto (Ctrl +)"))):
             b = QPushButton(text)
+            b.setObjectName("zoomBtn")
             b.setFixedWidth(34)
             b.setToolTip(tip + tr(" — também com Ctrl + rodinha do mouse"))
             b.clicked.connect(lambda _c=False, st=step: self.text_zoom(st))
@@ -2133,8 +2132,9 @@ class MainWindow(QMainWindow):
                 self.addAction(a)
         self._base_pt = {id(w): w.font().pointSizeF() for w in (self.editor, self.preview)}
         QTimer.singleShot(0, lambda: self.text_zoom(None))     # aplica o tamanho guardado
-        QTimer.singleShot(300, self.offer_resume)                  # lote anterior que não terminou
-        QTimer.singleShot(2500, self.remind_updates)               # a cada 2 meses: conferir versão nova
+        # avisos da abertura: só com a janela na tela (nunca por trás nem depois de fechada)
+        QTimer.singleShot(300, lambda: self.isVisible() and self.offer_resume())     # lote que não terminou
+        QTimer.singleShot(2500, lambda: self.isVisible() and self.remind_updates())  # a cada 2 meses
 
         center = QWidget()
         cv = QVBoxLayout(center)
@@ -2346,7 +2346,12 @@ class MainWindow(QMainWindow):
             a_z.setShortcutContext(Qt.WidgetShortcut)      # o atalho de verdade já existe na janela
             vm.addAction(a_z)
         vm.addSeparator()
-        vm.addAction(self.act_simple)
+        for mode, text, key in (("simple", tr("Modo simples"), "Ctrl+1"), ("complete", tr("Modo completo"), "Ctrl+2")):
+            a_m = QAction(text, self)
+            a_m.setShortcut(key)
+            a_m.triggered.connect(lambda _c=False, m=mode: self.set_mode(m))
+            self.addAction(a_m)                       # funciona mesmo com a barra de menus escondida (Simples)
+            vm.addAction(a_m)
         # painel aberto/fechado é lembrado; em telas pequenas começa fechado (o texto fica com o espaço)
         saved_panel = self.settings.value("ui/panel", None)
         if saved_panel is None:
@@ -2355,7 +2360,8 @@ class MainWindow(QMainWindow):
             dock.setVisible(not small)
         else:
             dock.setVisible(saved_panel in (True, "true", "1"))
-        dock.visibilityChanged.connect(lambda v: self.settings.setValue("ui/panel", v) if self.isVisible() else None)
+        dock.visibilityChanged.connect(lambda v: self.settings.setValue("ui/panel", v)
+                                       if self.isVisible() and getattr(self, "mode", "complete") == "complete" else None)
 
         self.progress = QProgressBar()
         self.progress.setMaximumWidth(200)
@@ -2372,9 +2378,9 @@ class MainWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self.offline_label)
         self.statusBar().showMessage(tr("Pronto"))
         self.setAcceptDrops(True)               # soltar arquivos em qualquer lugar da janela
-        self.panel.set_simple(self.act_simple.isChecked())
         self._watcher = None
         self._start_watch()
+        self._build_modes()
 
     # ---------------- arrastar e soltar na janela ----------------
     def dragEnterEvent(self, e):
@@ -2424,8 +2430,8 @@ class MainWindow(QMainWindow):
             item = QListWidgetItem(f.name)
             item.setData(ROLE_PATH, key)
             self.list.addItem(item)
-            if self.act_auto.isChecked():
-                self._start(key)
+            if self.act_auto.isChecked() or getattr(self, "mode", "complete") == "simple":
+                self._start(key)                  # no modo Simples a conversão começa sozinha
             else:
                 self._decorate(item)
             added += 1
@@ -2732,6 +2738,8 @@ class MainWindow(QMainWindow):
 
     def _update_progress(self) -> None:
         self._save_pending()
+        if getattr(self, "mode", "complete") == "simple" and hasattr(self, "simple"):
+            self.simple.refresh()
         self._update_steps()
         if hasattr(self, "act_cancel"):
             self.act_cancel.setEnabled(any(x.busy for x in self.entries.values()))
@@ -2936,8 +2944,8 @@ class MainWindow(QMainWindow):
             self.info.setText(f"<span style='color:#c0392b'>⚠ {html.escape(e.error)}</span>")
         else:
             self.editor.setPlainText(e.text)
-            if self.act_simple.isChecked() and e.result.engine != "editor":
-                self.tabs.setCurrentWidget(self.preview)     # modo simples: o texto formatado primeiro
+            if e.result.engine != "editor" and self.tabs.currentWidget() is self.fixes:
+                self.tabs.setCurrentWidget(self.preview)
             where = Path(e.path).name if not e.path.startswith("<") else tr("Documento novo (não salvo)")
             self.info.setText(f"<b>{html.escape(where)}</b>  •  {html.escape(e.result.converter)}  •  "
                               + tr("{0} caracteres").format(num_br(len(e.text))) + (tr("  •  ✎ editado") if e.edited else ""))
@@ -3003,18 +3011,25 @@ class MainWindow(QMainWindow):
             self._ptimer.timeout.connect(self._refresh_views)
         self._ptimer.start(400)
 
+    def _render_preview(self, view) -> None:
+        """Texto formatado do documento atual (com as imagens em memória) — Completo e Simples."""
+        e = self._current()
+        view.assets = e.result.assets if e is not None and e.result is not None else {}
+        text = self.editor.toPlainText()
+        if "```" in text or "~~~" in text:          # código: colorido (Pygments)
+            from .exporter import markdown_to_html
+
+            dark = view.palette().color(QPalette.Base).lightness() < 128
+            view.setHtml(markdown_to_html(text, highlight=True, dark=dark))
+        else:
+            view.setMarkdown(text)
+
     def _refresh_views(self) -> None:
         w = self.tabs.currentWidget()
+        if getattr(self, "mode", "complete") == "simple" and hasattr(self, "simple"):
+            self.simple.refresh()
         if w is self.preview:
-            e = self._current()
-            self.preview.assets = e.result.assets if e is not None and e.result is not None else {}
-            text = self.editor.toPlainText()
-            if "```" in text or "~~~" in text:          # código: colorido (Pygments)
-                from .exporter import markdown_to_html
-
-                self.preview.setHtml(markdown_to_html(text, highlight=True))
-            else:
-                self.preview.setMarkdown(text)
+            self._render_preview(self.preview)
         elif w is self.fixes:
             self.fixes.setHtml(self._fixes_html())
 
@@ -3526,16 +3541,12 @@ class MainWindow(QMainWindow):
         except Exception as exc:  # noqa: BLE001
             QMessageBox.warning(self, tr("Botão direito do Windows"), tr('Não foi possível alterar o menu:\n{0}').format(exc))
 
-    def _set_simple(self, on: bool) -> None:
-        self.settings.setValue("ui/simple", on)
-        self.panel.set_simple(on)
-
     def first_run(self) -> None:
         from .gui_tools import FirstRunDialog
 
         if FirstRunDialog(self, self.settings).exec() == QDialog.Accepted:
             self.panel.reload_output()
-            self.act_simple.setChecked(self.settings.value("ui/simple", False, type=bool))
+            self.set_mode(str(self.settings.value("ui/mode", "simple")))
 
     def anonymize_file(self) -> None:
         """Anonimiza um .md já salvo (ou o documento aberto, se for o caso) e salva uma cópia."""
@@ -3618,6 +3629,117 @@ class MainWindow(QMainWindow):
 
     def about(self, tab: int = 0) -> None:
         AboutDialog(self, tab).exec()
+
+    # ---------------- modos Simples e Completo ----------------
+    def _build_modes(self) -> None:
+        from PySide6.QtWidgets import QStackedWidget
+
+        from .gui_simple import ModeHeader, SimpleView
+
+        self.header = ModeHeader(self.set_mode, self._help_menu, icon_path())
+        hb = QToolBar(tr("Modo"))
+        hb.setObjectName("headerBar")
+        hb.setMovable(False)
+        hb.setFloatable(False)
+        hb.toggleViewAction().setVisible(False)
+        hb.addWidget(self.header)
+        self.insertToolBar(self._toolbar, hb)
+        self.insertToolBarBreak(self._toolbar)
+        self._header_bar = hb
+        self.simple = SimpleView(self)
+        self.root_stack = QStackedWidget()
+        self.takeCentralWidget()
+        self.root_stack.addWidget(self._main_split)
+        self.root_stack.addWidget(self.simple)
+        self.setCentralWidget(self.root_stack)
+        self._list_home = (self._left.layout(), self._left.layout().indexOf(self.list))
+        mode = self.settings.value("ui/mode", None)
+        self.mode = "complete"
+        self.set_mode(str(mode) if mode in ("simple", "complete") else self.DEFAULT_MODE)   # 1ª vez: Simples
+
+    def set_mode(self, mode: str) -> None:
+        """Simples (só o essencial) ou Completo (tudo). Lembra o último; a fila e os textos são os mesmos."""
+        mode = "simple" if mode == "simple" else "complete"
+        self.header.set_mode(mode)
+        if mode == self.mode and self.root_stack.currentWidget() is (self.simple if mode == "simple" else self._main_split):
+            return
+        self.settings.setValue("ui/mode", mode)
+        simple = mode == "simple"
+        if simple:
+            self._dock_was = self._dock.isVisible()
+        self.mode = mode
+        self.menuBar().setVisible(not simple)
+        self._toolbar.setVisible(not simple)
+        self.offline_label.setVisible(not simple)       # o selo já está no cabeçalho
+        if simple:
+            self._dock.setVisible(False)
+            self.simple.list_slot.addWidget(self.list)
+            self.root_stack.setCurrentWidget(self.simple)
+            self.simple.refresh()
+        else:
+            lay, idx = self._list_home
+            lay.insertWidget(idx, self.list, 1)
+            self.root_stack.setCurrentWidget(self._main_split)
+            self._dock.setVisible(getattr(self, "_dock_was", self.settings.value("ui/panel", True) in (True, "true", "1")))
+            self._show_item(self.list.currentItem())
+        self.list.setVisible(True)
+
+    def open_in_complete(self, review: bool = False) -> None:
+        """Link dos avisos do Simples: vai para o Completo e, se houver páginas a revisar, mostra o original."""
+        self.set_mode("complete")
+        e = self._current()
+        if review and e is not None and e.result is not None and e.result.review_pages:
+            self._go_review_page(f"page:{e.result.review_pages[0]}")
+
+    def quick_export(self, fid: str, template: str | None = None) -> None:
+        """Exportar do modo Simples: um formato, o documento atual, sem janela de opções."""
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+
+        e = self._current()
+        if e is None or e.result is None or e.busy or e.error:
+            return
+        fmt = FORMATS_BY_ID[fid]
+        start = Path(recall_dir(self.settings, "export")) / (self._stem(e) + fmt.ext)
+        target, _ = QFileDialog.getSaveFileName(self, tr("Exportar como {0}").format(fmt.label), str(start),
+                                                f"{fmt.label} (*{fmt.ext})")
+        if not target:
+            return
+        target = Path(target)
+        if target.suffix.lower() != fmt.ext:
+            target = target.with_suffix(fmt.ext)
+        remember_dir(self.settings, str(target), "export")
+        opts = {"source": Path(e.path).name, "metadata": e.result.metadata}
+        if template:
+            opts["template"] = template
+        import tempfile
+
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            with tempfile.TemporaryDirectory(prefix="markinho_exp_") as tmp:
+                base = tmp if e.result.assets and write_assets(e.text, e.result.assets, Path(tmp)) else str(Path(e.path).parent)
+                partial = target.with_name(f".~{target.stem}{target.suffix}")
+                try:
+                    export(e.text, partial, fid, opts, "auto", base_dir=base)
+                    os.replace(partial, target)
+                finally:
+                    partial.unlink(missing_ok=True)
+        except Exception as exc:  # noqa: BLE001
+            QApplication.restoreOverrideCursor()
+            QMessageBox.warning(self, tr("Exportar"), tr("Não foi possível exportar:\n{0}").format(exc))
+            return
+        QApplication.restoreOverrideCursor()
+        box = QMessageBox(self)
+        box.setWindowTitle(tr("Exportado"))
+        box.setText(tr("{0} foi salvo em {1}").format(target.name, target.parent))
+        b_open = box.addButton(tr("Abrir arquivo"), QMessageBox.AcceptRole)
+        b_dir = box.addButton(tr("Abrir pasta"), QMessageBox.ActionRole)
+        box.addButton(tr("Fechar"), QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is b_open:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(target)))
+        elif box.clickedButton() is b_dir:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(target.parent)))
 
     def check_updates(self) -> None:
         from .gui_tools import UpdateDialog
@@ -3804,8 +3926,11 @@ def apply_theme(theme: str) -> None:
     app = QApplication.instance()
     if app is None:
         return
+    from .gui_simple import stylesheet
+
     if theme == "system":
         app.setPalette(_light_palette(app))
+        app.setStyleSheet(stylesheet(False))
         try:
             hints = QGuiApplication.styleHints()
             if hints.colorScheme() == Qt.ColorScheme.Dark:
@@ -3816,6 +3941,7 @@ def apply_theme(theme: str) -> None:
             return
     if theme == "light":
         app.setPalette(_light_palette(app))
+        app.setStyleSheet(stylesheet(False))
         return
     p = QPalette()
     dark, base, text, mid = QColor(37, 37, 38), QColor(30, 30, 30), QColor(225, 225, 225), QColor(128, 128, 128)
@@ -3829,6 +3955,7 @@ def apply_theme(theme: str) -> None:
     for role in (QPalette.Text, QPalette.ButtonText, QPalette.WindowText):
         p.setColor(QPalette.Disabled, role, QColor(110, 110, 110))
     app.setPalette(p)
+    app.setStyleSheet(stylesheet(True))
 
 
 def main() -> int:

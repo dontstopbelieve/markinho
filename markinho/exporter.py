@@ -237,9 +237,10 @@ def _strikethrough(html: str) -> str:
     return "".join(out)
 
 
-def markdown_to_html(md: str, toc: bool = False, highlight: bool = False) -> str:
+def markdown_to_html(md: str, toc: bool = False, highlight: bool = False, dark: bool = False) -> str:
     """Markdown -> fragmento HTML (biblioteca `markdown`; sem ela, usa o Qt).
-    `highlight`: blocos de código coloridos (Pygments, cores embutidas — funciona no Qt e no HTML)."""
+    `highlight`: blocos de código coloridos (Pygments, cores embutidas — funciona no Qt e no HTML).
+    `dark`: cores do código para fundo escuro (visualização no tema escuro)."""
     md = _fix_list_indent(md)
     try:
         import markdown as mdlib
@@ -251,7 +252,7 @@ def markdown_to_html(md: str, toc: bool = False, highlight: bool = False) -> str
                 import pygments  # noqa: F401
 
                 exts.append("codehilite")
-                cfg = {"codehilite": {"noclasses": True, "guess_lang": False, "pygments_style": "default"}}
+                cfg = {"codehilite": {"noclasses": True, "guess_lang": False, "pygments_style": "monokai" if dark else "default"}}
             except ImportError:
                 pass
         body = _strikethrough(mdlib.markdown(md, extensions=exts, extension_configs=cfg, output_format="html"))

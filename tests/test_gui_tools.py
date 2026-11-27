@@ -85,13 +85,6 @@ def test_review_banner_for_scanned_pdf_without_ocr(win):
     assert w.list.item(0).text().endswith("⚠")
 
 
-def test_simple_mode_hides_advanced(win):
-    app, w = win
-    w.act_simple.setChecked(True)
-    assert w.panel.engine_box.isHidden() and w.panel.fix_box.isHidden()
-    w.act_simple.setChecked(False)
-    assert not w.panel.engine_box.isHidden()
-
 
 def test_export_dialog_abnt_option(win):
     from markinho.gui import ExportDialog

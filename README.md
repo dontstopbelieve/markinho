@@ -144,7 +144,8 @@ python run.py
 | **Juntar e dividir** | Arquivo > Juntar todos em um .md; Ferramentas > Dividir por títulos (um arquivo por capítulo) |
 | **Relatório do lote** | Ferramentas > Relatório do lote: planilha (CSV, abre no Excel) ou página HTML com o que deu certo, avisos e erros |
 | **Relatório de erro** | Ajuda > Gerar relatório de erro: texto para mandar ao suporte, **sem o conteúdo dos documentos** (você confere antes de salvar) |
-| **Assistente inicial e modo simples** | Na primeira abertura, o Markinho pergunta para que você vai usá-lo (IA, Obsidian, documentação) e ajusta as opções. O **modo simples** esconde motores e opções avançadas (Exibir > Modo simples) |
+| **Modos Simples e Completo** | Como a calculadora do Windows: o Markinho abre no **Simples** — arrastar os documentos (a conversão começa sozinha), ver o texto formatado e usar 4 botões grandes: **Salvar, Copiar, Copiar para IA, Exportar** (Word, Word ABNT, PDF, Excel só com as tabelas, página web). O **Completo** tem tudo (motores, opções, abas, ferramentas). A troca fica sempre no alto da janela (Ctrl+1 / Ctrl+2); o Markinho lembra o último modo, e a fila e os textos são os mesmos nos dois. Avisos importantes aparecem no Simples com um link para conferir no Completo |
+| **Assistente inicial** | Na primeira abertura, o Markinho pergunta para que você vai usá-lo (IA, Obsidian, documentação), ajusta as opções e oferece começar no modo simples |
 
 **Como saber se há versão nova:** o Markinho **não acessa a internet** (é isso que protege os seus
 documentos), então ele não sabe sozinho quando sai uma versão nova. Em vez disso, a cada 2 meses ele
