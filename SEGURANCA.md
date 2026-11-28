@@ -142,7 +142,8 @@ Revisão do pacote inteiro com a ferramenta de revisão do Claude Code. Corrigid
   nome dos arquivos originais. Teste: `test_erro_fica_registrado_e_e_refeito`.
 - Exportações (janela, botão direito, terminal) e “Salvar todos” também gravam de forma atômica.
 
-- O registro do lote (`.markinho-lote.json`) fica na pasta de saída e pode ser mexido por qualquer um: o
+- (Desde 28/11/2026 o registro fica na pasta interna do Markinho e é apagado no fim do lote; o antigo, se
+  achado na pasta de saída, é aproveitado e apagado.) O registro do lote pode ser mexido por qualquer um: o
   nome de saída guardado nele só é usado se for um nome de arquivo simples (sem barras, `..`, `:` nem ponto
   inicial); senão o Markinho escolhe o nome normalmente. Registro estragado = recomeça, sem apagar nada.
 - Gravação atômica (temporário na mesma pasta + troca): queda no meio nunca deixa arquivo pela metade nem

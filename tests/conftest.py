@@ -23,3 +23,12 @@ def _janela_no_modo_completo(monkeypatch):
     monkeypatch.setattr(MainWindow, "DEFAULT_AUTO_CONVERT", False)    # testes da fila contam com ela parada
     QSettings("Markinho", "Markinho").remove("queue/auto")
     QSettings("Markinho", "Markinho").remove("ui/mode")      # o último modo não passa de um teste para outro
+
+
+@pytest.fixture(autouse=True)
+def _registros_de_lote_isolados(monkeypatch, tmp_path_factory):
+    """Os registros de lote ficam na pasta interna do Markinho: nos testes, numa pasta temporária."""
+    from markinho import batch
+
+    d = tmp_path_factory.mktemp("lotes")
+    monkeypatch.setattr(batch, "records_dir", lambda: d)

@@ -5,18 +5,18 @@
 Privacidade: o registro guarda só impressões digitais (do caminho e do conteúdo), o nome do arquivo gerado e
 a situação — nunca o nome ou o caminho do arquivo original nem o texto dos erros.
 
-Na pasta de saída fica um registro (``.markinho-lote.json``) com a “impressão digital” (SHA-256) de cada
-arquivo de origem, a configuração usada e o arquivo gerado. Se o lote cair no meio (queda de energia,
-computador desligado, erro), rodar de novo pula o que já está pronto e não mudou, e refaz só o que faltou,
-o que deu erro e o que mudou (arquivo ou configuração). O registro é gravado a cada arquivo, e os arquivos
-são gravados de forma atômica (primeiro num temporário, depois trocados), então nunca fica meio arquivo.
+O registro fica na pasta interna do Markinho (``<dados do usuário>/lotes/``, um por pasta de saída) — nunca
+na pasta do usuário — com a “impressão digital” (SHA-256) de cada arquivo de origem, a configuração usada e
+o arquivo gerado. Se o lote cair no meio (queda de energia, computador desligado, erro), rodar de novo pula o
+que já está pronto e não mudou, e refaz só o que faltou, o que deu erro e o que mudou. Quando o lote termina
+sem erros, o registro é **apagado** (``close``); só a pasta monitorada guarda o seu, para lembrar o que já
+converteu. Registros antigos (``.markinho-lote.json`` na pasta de saída) são aproveitados e apagados.
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import os
-import sys
 import tempfile
 from pathlib import Path
 
@@ -88,27 +88,62 @@ def _safe_name(name: object) -> str | None:
     return name
 
 
+def records_dir() -> Path:
+    """Pasta interna dos registros de lote (na pasta de dados do Markinho, não na do usuário)."""
+    from .models import user_data_dir
+
+    return user_data_dir() / "lotes"
+
+
 class Manifest:
-    """Registro do lote na pasta de saída."""
+    """Registro de um lote, guardado na pasta interna do Markinho (um arquivo por pasta de saída)."""
 
     def __init__(self, folder: Path):
         self.folder = Path(folder)
-        self.path = self.folder / MANIFEST
+        try:
+            where = str(self.folder.resolve())
+        except OSError:
+            where = str(self.folder.absolute())
+        self.path = records_dir() / (hashlib.sha256(where.encode("utf-8", "surrogatepass")).hexdigest()[:32] + ".json")
         self.entries: dict[str, dict] = {}
         self.corrupt = False
+        self._load(self.path)
+        old = self.folder / MANIFEST                # versões anteriores gravavam na pasta de saída
+        if old.is_file():
+            self._load(old, merge=True)
+            try:
+                old.unlink()                        # aproveita o conteúdo e não deixa lixo na pasta do usuário
+                if self.entries:
+                    self.save()
+            except OSError:
+                pass
+
+    def _load(self, path: Path, merge: bool = False) -> None:
         try:
-            data = json.loads(self.path.read_text(encoding="utf-8"))
+            data = json.loads(path.read_text(encoding="utf-8"))
             if isinstance(data, dict) and isinstance(data.get("files"), dict):
-                self.entries = {k: v for k, v in data["files"].items() if isinstance(k, str) and isinstance(v, dict)}
+                got = {k: v for k, v in data["files"].items() if isinstance(k, str) and isinstance(v, dict)}
+                self.entries = {**got, **self.entries} if merge else got
         except FileNotFoundError:
             pass
         except (OSError, ValueError):
             self.corrupt = True                    # registro estragado: recomeça (nada é apagado)
 
+    def close(self) -> bool:
+        """Fim do lote: sem nada pela metade nem com erro, apaga o registro (não fica lixo). Devolve True se
+        apagou; com erro ou interrompido, ele fica para a próxima vez retomar."""
+        if any(e.get("status") in ("convertendo", "erro") for e in self.entries.values()):
+            return False
+        try:
+            self.path.unlink(missing_ok=True)
+        except OSError:
+            return False
+        return True
+
     @staticmethod
     def key(src: Path | str) -> str:
-        """Impressão digital do caminho de origem, não o caminho: o registro fica na pasta de saída, que pode
-        ser compartilhada (inclusive depois de anonimizar), e o nome do arquivo original não pode ir junto."""
+        """Impressão digital do caminho de origem, não o caminho: nem o registro guarda o nome do arquivo
+        original (privacidade)."""
         return hashlib.sha256(str(Path(src).resolve()).encode("utf-8", "surrogatepass")).hexdigest()[:32]
 
     def output_name(self, src: Path | str, cfg: str) -> str | None:
@@ -154,18 +189,3 @@ class Manifest:
 
     def save(self) -> None:
         atomic_write(self.path, json.dumps({"markinho": _VERSION, "files": self.entries}, ensure_ascii=False, indent=1))
-        hide_file(self.path)
-
-
-def hide_file(path: Path) -> None:
-    """No Windows, marca o arquivo como oculto (no Linux e no Mac o ponto no começo do nome já esconde): o
-    registro do lote não aparece como “um arquivo a mais” na pasta de saída."""
-    if sys.platform != "win32":
-        return
-    try:
-        import ctypes
-
-        FILE_ATTRIBUTE_HIDDEN = 0x2
-        ctypes.windll.kernel32.SetFileAttributesW(str(path), FILE_ATTRIBUTE_HIDDEN)
-    except Exception:  # noqa: BLE001 — se não der para esconder, o arquivo continua funcionando
-        pass

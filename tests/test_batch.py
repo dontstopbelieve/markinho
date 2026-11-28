@@ -25,32 +25,16 @@ def _run(src, out, *extra):
     return cli([*sorted(str(p) for p in src.iterdir()), "-o", str(out) + "/", "--retomar", *extra])
 
 
-def test_retomar_pula_o_que_ja_esta_pronto(lote, capsys):
-    src, out = lote
-    assert _run(src, out) == 0
-    reg = json.loads((out / batch.MANIFEST).read_text(encoding="utf-8"))["files"]
-    assert len(reg) == 3 and all(e["status"] == "ok" and len(e["sha256"]) == 64 for e in reg.values())
-    capsys.readouterr()
-    assert _run(src, out) == 0
-    err = capsys.readouterr().err
-    assert err.count("sem mudanças — pulado") == 3 and "0 convertido(s), 3 pulado(s)" in err
-    assert sorted(p.name for p in out.glob("*.md")) == ["doc0.md", "doc1.md", "doc2.md"]   # nada de doc0_2.md
+def _registro(out):
+    return batch.Manifest(out).path
 
 
-def test_retomar_refaz_o_que_mudou_ou_faltou(lote, capsys):
+def test_lote_completo_apaga_o_registro(lote, capsys):
     src, out = lote
     assert _run(src, out) == 0
-    (out / "doc1.md").unlink()                                   # saída apagada
-    with open(src / "doc2.docx", "ab") as f:                     # arquivo de origem mudou
-        f.write(b"\0")
-    capsys.readouterr()
-    assert _run(src, out) == 0
-    err = capsys.readouterr().err
-    assert "2 convertido(s), 1 pulado(s)" in err
-    assert (out / "doc1.md").is_file() and not (out / "doc2_2.md").exists()
-    capsys.readouterr()
-    assert _run(src, out, "--profile", "llm") == 0              # configuração mudou: refaz tudo
-    assert "3 convertido(s)" in capsys.readouterr().err
+    assert sorted(p.name for p in out.iterdir()) == ["doc0.md", "doc1.md", "doc2.md"]   # nada a mais na pasta
+    assert not _registro(out).exists()                            # terminou sem erro: registro apagado
+    assert "3 convertido(s), 0 pulado(s)" in capsys.readouterr().err
 
 
 def test_queda_no_meio_do_lote(lote, capsys, monkeypatch):
@@ -69,20 +53,23 @@ def test_queda_no_meio_do_lote(lote, capsys, monkeypatch):
     monkeypatch.setattr(m, "convert", boom)
     with pytest.raises(KeyboardInterrupt):
         _run(src, out)
+    assert _registro(out).exists() and not (out / batch.MANIFEST).exists()   # guardado só na pasta interna
     monkeypatch.setattr(m, "convert", real)
     capsys.readouterr()
     assert _run(src, out) == 0
     assert "2 convertido(s), 1 pulado(s)" in capsys.readouterr().err
     assert not list(out.glob(".~*"))                            # nenhum temporário largado
+    assert sorted(p.name for p in out.glob("*.md")) == ["doc0.md", "doc1.md", "doc2.md"]
+    assert not _registro(out).exists()                          # retomou e terminou: apagado
 
 
 def test_erro_fica_registrado_e_e_refeito(lote, capsys):
     src, out = lote
     (src / "quebrado.pdf").write_bytes(b"%PDF-1.4 isto nao e um pdf")
     assert _run(src, out, "-e", "native") == 1
-    reg = json.loads((out / batch.MANIFEST).read_text(encoding="utf-8"))["files"]
+    reg = json.loads(_registro(out).read_text(encoding="utf-8"))["files"]
     assert any(e["status"] == "erro" for e in reg.values())
-    texto = (out / batch.MANIFEST).read_text(encoding="utf-8")
+    texto = _registro(out).read_text(encoding="utf-8")
     assert "quebrado" not in texto and "entrada" not in texto and "doc0.docx" not in texto   # sem nomes de origem
     capsys.readouterr()
     _run(src, out, "-e", "native")
@@ -92,17 +79,26 @@ def test_erro_fica_registrado_e_e_refeito(lote, capsys):
 
 def test_registro_mexido_nao_grava_fora_da_pasta(lote, tmp_path):
     src, out = lote
-    assert _run(src, out) == 0
-    path = out / batch.MANIFEST
-    data = json.loads(path.read_text(encoding="utf-8"))
-    for e in data["files"].values():
-        e["output"] = "../fora.md"
-        e["status"] = "convertendo"
-    path.write_text(json.dumps(data), encoding="utf-8")
+    path = _registro(out)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    files = {batch.Manifest.key(p): {"output": "../fora.md", "status": "convertendo", "config": "x", "sha256": "0"}
+             for p in src.iterdir()}
+    path.write_text(json.dumps({"markinho": 1, "files": files}), encoding="utf-8")
     assert _run(src, out) == 0
     assert not (tmp_path / "fora.md").exists()
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("{ estragado", encoding="utf-8")                # registro estragado: recomeça sem quebrar
     assert _run(src, out) == 0
+
+
+def test_registro_antigo_na_pasta_de_saida_e_aproveitado_e_apagado(lote):
+    src, out = lote
+    out.mkdir()
+    old = out / batch.MANIFEST
+    old.write_text(json.dumps({"markinho": 1, "files": {"abc": {"status": "erro"}}}), encoding="utf-8")
+    m = batch.Manifest(out)
+    assert not old.exists() and "abc" in m.entries and m.path.exists()
+    assert not m.close()                                           # com erro registrado, fica para retomar
 
 
 def test_retomar_exige_pasta(lote):
@@ -131,6 +127,4 @@ def test_exportacao_com_retomar(lote, capsys):
     src, out = lote
     assert _run(src, out, "-t", "html") == 0
     assert len(list(out.glob("*.html"))) == 3 and not list(out.glob(".~*"))
-    capsys.readouterr()
-    assert _run(src, out, "-t", "html") == 0
-    assert "3 pulado(s)" in capsys.readouterr().err
+    assert not _registro(out).exists() and not (out / batch.MANIFEST).exists()

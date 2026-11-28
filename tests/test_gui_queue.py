@@ -129,7 +129,7 @@ def test_retomar_lote_que_nao_terminou(win, monkeypatch):
     assert not asked
 
 
-def test_salvar_todos_de_novo_nao_duplica(win, tmp_path, monkeypatch):
+def test_salvar_todos_nao_deixa_registro(win, tmp_path, monkeypatch):
     from PySide6.QtWidgets import QDialog, QMessageBox
 
     import markinho.gui as g
@@ -156,6 +156,8 @@ def test_salvar_todos_de_novo_nao_duplica(win, tmp_path, monkeypatch):
     monkeypatch.setattr(g, "SaveAllDialog", FakeDialog)
     monkeypatch.setattr(QMessageBox, "information", staticmethod(lambda *a, **k: None))
     w.save_all()
-    w.save_all()                                         # de novo (ex.: depois de uma queda): mesmo arquivo
     assert sorted(p.name for p in out.glob("*.md")) == ["relatorio.md"]
-    assert (out / ".markinho-lote.json").is_file()
+    from markinho import batch
+
+    assert not (out / ".markinho-lote.json").exists()            # nada a mais na pasta do usuário
+    assert not batch.Manifest(out).path.exists()                 # terminou: registro interno apagado

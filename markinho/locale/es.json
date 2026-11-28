@@ -920,7 +920,6 @@
 "inicia o servidor MCP local (para Claude Desktop, Cursor, VS Code…)": "inicia el servidor MCP local (para Claude Desktop, Cursor, VS Code…)",
 "lista motores, OCR e formatos disponíveis": "lista los motores, el OCR y los formatos disponibles",
 "lote que retoma de onde parou: guarda a impressão digital (SHA-256) de cada arquivo na pasta de saída e, ao rodar de novo, pula o que já está pronto e não mudou": "lote que continúa donde se quedó: guarda la huella (SHA-256) de cada archivo en la carpeta de salida y, al ejecutarse de nuevo, omite lo que ya está listo y no cambió",
-"lote: {0} convertido(s), {1} pulado(s) sem mudanças, {2} com erro — registro em {3}": "lote: {0} convertido(s), {1} omitido(s) sin cambios, {2} con error — registro en {3}",
 "metadados YAML no topo do .md": "metadatos YAML al principio del .md",
 "modelo .docx/.odt/.pptx com seus estilos (opcional)": "plantilla .docx/.odt/.pptx con sus estilos (opcional)",
 "modelos de IA ({0}):": "modelos de IA ({0}):",
@@ -1134,5 +1133,7 @@
 "Cria uma categoria sua (ex.: EMPRESA, LOCAL, PROJETO). Os termos que você escrever embaixo dela viram [EMPRESA 1], [EMPRESA 2]…": "Crea una categoría propia (p. ej., EMPRESA, LUGAR, PROYECTO). Los términos que escriba debajo pasan a ser [EMPRESA 1], [EMPRESA 2]…",
 "Novo rótulo": "Nueva etiqueta",
 "Nome da categoria (ex.: EMPRESA, LOCAL, PROJETO, BANCO):": "Nombre de la categoría (p. ej., EMPRESA, LUGAR, PROYECTO, BANCO):",
-"Rótulos da lista: {0}": "Etiquetas de la lista: {0}"
+"Rótulos da lista: {0}": "Etiquetas de la lista: {0}",
+"lote: {0} convertido(s), {1} pulado(s) sem mudanças, {2} com erro": "lote: {0} convertido(s), {1} omitido(s) sin cambios, {2} con error",
+"o registro do lote ficou guardado para retomar: rode o mesmo comando de novo": "el registro del lote quedó guardado para reanudar: ejecute el mismo comando de nuevo"
 }

@@ -920,7 +920,6 @@
 "inicia o servidor MCP local (para Claude Desktop, Cursor, VS Code…)": "starts the local MCP server (for Claude Desktop, Cursor, VS Code…)",
 "lista motores, OCR e formatos disponíveis": "lists available engines, OCR and formats",
 "lote que retoma de onde parou: guarda a impressão digital (SHA-256) de cada arquivo na pasta de saída e, ao rodar de novo, pula o que já está pronto e não mudou": "resumable batch: keeps the fingerprint (SHA-256) of each file in the output folder and, when run again, skips what is already done and unchanged",
-"lote: {0} convertido(s), {1} pulado(s) sem mudanças, {2} com erro — registro em {3}": "batch: {0} converted, {1} skipped (unchanged), {2} with errors — record in {3}",
 "metadados YAML no topo do .md": "YAML metadata at the top of the .md",
 "modelo .docx/.odt/.pptx com seus estilos (opcional)": ".docx/.odt/.pptx template with your styles (optional)",
 "modelos de IA ({0}):": "AI models ({0}):",
@@ -1134,5 +1133,7 @@
 "Cria uma categoria sua (ex.: EMPRESA, LOCAL, PROJETO). Os termos que você escrever embaixo dela viram [EMPRESA 1], [EMPRESA 2]…": "Creates your own category (e.g. COMPANY, PLACE, PROJECT). The terms you write below it become [COMPANY 1], [COMPANY 2]…",
 "Novo rótulo": "New label",
 "Nome da categoria (ex.: EMPRESA, LOCAL, PROJETO, BANCO):": "Category name (e.g. COMPANY, PLACE, PROJECT, BANK):",
-"Rótulos da lista: {0}": "List labels: {0}"
+"Rótulos da lista: {0}": "List labels: {0}",
+"lote: {0} convertido(s), {1} pulado(s) sem mudanças, {2} com erro": "batch: {0} converted, {1} skipped (unchanged), {2} with errors",
+"o registro do lote ficou guardado para retomar: rode o mesmo comando de novo": "the batch record was kept so it can resume: run the same command again"
 }

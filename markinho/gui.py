@@ -3279,6 +3279,8 @@ class MainWindow(QMainWindow):
                 written += 1
                 if sha:
                     manifest.finish(src, True)
+        if manifest is not None:
+            manifest.close()                       # terminou: não fica registro nenhum
         msg = tr('{0} arquivo(s) salvo(s) em:\n{1}').format(written, folder)
         if skipped:
             msg += tr('\n\n{0} pulado(s) porque já existiam.').format(skipped)

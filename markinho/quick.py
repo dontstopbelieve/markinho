@@ -429,6 +429,11 @@ def main(paths: list[str], mode: str = "aqui") -> int:
         thread.quit()
         thread.wait(5000)
         results = state["results"]
+        if not state["cancel"].is_set():
+            from . import batch
+
+            for folder in {r.output.parent for r in results if getattr(r, "output", None)}:
+                batch.Manifest(folder).close()      # lote terminado: o registro é apagado
         if state["cancel"].is_set():
             from .core import CANCELLED
 

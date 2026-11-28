@@ -51,8 +51,9 @@ markinho/
   postprocess.py   frontmatter YAML, perfis (gfm, mdformat, obsidian, llm)
   textfix.py       correção de caracteres (mojibake, acentos, ligaduras…) com relatório
   chunker.py       pedaços para RAG (JSON/JSONL)
-  batch.py         retomar lotes (terminal, botão direito, pasta monitorada, janela): .markinho-lote.json com
-                   SHA-256 do conteúdo e do caminho (sem nomes de origem) + configuração; gravação atômica
+  batch.py         retomar lotes (terminal, botão direito, pasta monitorada, janela): registro em <dados>/lotes/
+                   (nunca na pasta do usuário), apagado no fim do lote (Manifest.close; a pasta monitorada guarda o
+                   dela); SHA-256 do conteúdo e do caminho (sem nomes de origem) + configuração; gravação atômica
   naming.py        padrões de nome de saída ({nome} {n} {titulo} {data}…)
   presets.py       modos Rápido / Equilibrado / Máxima qualidade
   exporter.py      Markdown → DOCX/PDF/HTML/… (Pandoc ou nativo)

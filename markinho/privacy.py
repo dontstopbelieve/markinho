@@ -33,9 +33,9 @@ de IA de um motor opcional — e mesmo aí nenhum documento é enviado.
   computador. Quando **você** cola esse texto ou usa a skill num assistente on-line (ChatGPT,
   Claude.ai, Gemini…), o conteúdo passa a ir para esse serviço, conforme as regras dele. Para
   documentos sigilosos, anonimize antes ou use um assistente que rode no seu computador.
-- Para **retomar lotes interrompidos**, o Markinho grava na pasta de saída um registro
-  (`.markinho-lote.json`) com impressões digitais (SHA-256) dos arquivos e das configurações — sem o
-  nome nem o caminho dos arquivos originais e sem o texto dos erros. A fila que faltava converter fica
+- Para **retomar lotes interrompidos**, o Markinho grava, na pasta interna dele (não na sua pasta), um
+  registro com impressões digitais (SHA-256) dos arquivos e das configurações — sem o nome nem o caminho
+  dos arquivos originais e sem o texto dos erros. **Quando o lote termina, o registro é apagado.** A fila que faltava converter fica
   nas configurações do usuário até o lote terminar.
 
 ## Anonimizar
@@ -119,9 +119,9 @@ models of an optional engine — and even then no document is sent.
   When **you** paste that text or use the skill in an online assistant (ChatGPT, Claude.ai,
   Gemini…), the content goes to that service, under its own rules. For confidential documents,
   anonymize first or use an assistant that runs on your computer.
-- To **resume interrupted batches**, Markinho writes a record (`.markinho-lote.json`) in the output
-  folder with fingerprints (SHA-256) of the files and settings — without the names or paths of the
-  original files and without the error texts. The queue still to be converted stays in the user
+- To **resume interrupted batches**, Markinho writes, in its own internal folder (not in your folder), a
+  record with fingerprints (SHA-256) of the files and settings — without the names or paths of the
+  original files and without the error texts. **When the batch finishes, the record is deleted.** The queue still to be converted stays in the user
   settings until the batch finishes.
 
 ## Anonymize
@@ -206,9 +206,9 @@ IA de un motor opcional — e incluso entonces no se envía ningún documento.
   equipo. Cuando **usted** pega ese texto o usa la skill en un asistente en línea (ChatGPT,
   Claude.ai, Gemini…), el contenido va a ese servicio, según sus propias reglas. Para documentos
   confidenciales, anonimice antes o use un asistente que se ejecute en su equipo.
-- Para **reanudar lotes interrumpidos**, Markinho guarda en la carpeta de salida un registro
-  (`.markinho-lote.json`) con huellas (SHA-256) de los archivos y de la configuración — sin el nombre
-  ni la ruta de los archivos originales y sin el texto de los errores. La cola que faltaba convertir
+- Para **reanudar lotes interrumpidos**, Markinho guarda, en su carpeta interna (no en su carpeta), un
+  registro con huellas (SHA-256) de los archivos y de la configuración — sin el nombre ni la ruta de los
+  archivos originales y sin el texto de los errores. **Cuando el lote termina, el registro se borra.** La cola que faltaba convertir
   queda en la configuración del usuario hasta que el lote termina.
 
 ## Anonimizar

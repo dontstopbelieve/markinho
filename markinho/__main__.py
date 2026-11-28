@@ -398,8 +398,11 @@ def cli(argv: list[str]) -> int:
             manifest.finish(f, True)
             counts["ok"] += 1
     if manifest is not None:
-        print(tr("lote: {0} convertido(s), {1} pulado(s) sem mudanças, {2} com erro — registro em {3}").format(
-            counts["ok"], counts["pulados"], counts["erro"], manifest.path), file=sys.stderr)
+        print(tr("lote: {0} convertido(s), {1} pulado(s) sem mudanças, {2} com erro").format(
+            counts["ok"], counts["pulados"], counts["erro"]), file=sys.stderr)
+        if not manifest.close():                  # terminou sem erro: o registro é apagado
+            print(tr("o registro do lote ficou guardado para retomar: rode o mesmo comando de novo"),
+                  file=sys.stderr)
     if args.skill is not None and skill_docs:
         status = max(status, _write_skill(skill_docs, args.skill, out))
     return status

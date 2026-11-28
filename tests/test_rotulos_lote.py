@@ -35,30 +35,3 @@ def test_janela_novo_rotulo(tmp_path):
     d.words.insertPlainText("Projeto Netuno")
     assert "[PROJETO ALFA 1]" in d.labels_info.text()
     assert d._new_label("123") == ""                       # só números não vira rótulo
-
-
-def test_registro_do_lote_fica_oculto_no_windows(tmp_path, monkeypatch):
-    import ctypes
-    import sys
-
-    from markinho import batch
-
-    chamadas = []
-
-    class K:
-        @staticmethod
-        def SetFileAttributesW(path, attr):
-            chamadas.append((path, attr))
-            return 1
-
-    class W:
-        kernel32 = K
-
-    monkeypatch.setattr(sys, "platform", "win32")
-    monkeypatch.setattr(ctypes, "windll", W, raising=False)
-    m = batch.Manifest(tmp_path)
-    m.save()
-    assert chamadas == [(str(tmp_path / batch.MANIFEST), 0x2)]
-    monkeypatch.setattr(sys, "platform", "linux")
-    batch.hide_file(tmp_path / batch.MANIFEST)              # fora do Windows não faz nada
-    assert len(chamadas) == 1

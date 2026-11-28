@@ -313,14 +313,16 @@ interrompidos**, ligado por padrão):
 
 | Onde | O que acontece |
 |---|---|
-| **Janela** | Ao abrir de novo, o Markinho avisa que o último lote não terminou e oferece colocar de volta na fila os arquivos que faltavam. **Salvar todos** numa pasta onde já salvou grava por cima do mesmo arquivo (sem criar `_2`) |
+| **Janela** | Ao abrir de novo, o Markinho avisa que o último lote não terminou e oferece colocar de volta na fila os arquivos que faltavam. **Salvar todos** interrompido no meio grava por cima do mesmo arquivo ao repetir (sem criar `_2`) |
 | **Botão direito** (vários arquivos) | Arquivos já convertidos para aquela pasta, com as mesmas configurações e sem mudanças, são pulados; o que ficou pela metade ou deu erro é refeito |
 | **Pasta monitorada** | Ao abrir o Markinho, converte o que chegou na pasta enquanto ele estava fechado e o que ficou pela metade; os arquivos que já estavam lá quando a monitoração começou continuam ignorados |
 | **Terminal** | `--retomar` (veja acima) |
 
-Como funciona: na pasta de saída fica um registro oculto (`.markinho-lote.json`) com a **impressão digital
-(SHA-256)** de cada arquivo e das configurações usadas. Se o arquivo de origem ou as configurações mudarem,
-ele é convertido de novo. Os arquivos são gravados de forma **atômica** (primeiro num temporário, depois
+Como funciona: enquanto o lote roda, a **pasta interna do Markinho** (não a sua pasta de saída) guarda um
+registro com a **impressão digital (SHA-256)** de cada arquivo e das configurações usadas. Se o lote cair no
+meio, rodar de novo pula o que já ficou pronto e refaz o resto. **Quando o lote termina sem erros, o registro
+é apagado** — nada fica sobrando. (A pasta monitorada guarda o dela, também só na pasta interna, para lembrar
+o que já converteu.) Os arquivos são gravados de forma **atômica** (primeiro num temporário, depois
 trocados): uma queda nunca deixa um arquivo pela metade. Por privacidade, o registro **não guarda o nome nem
 o caminho dos arquivos originais** (só impressões digitais), então a pasta de saída pode ser compartilhada,
 inclusive depois de anonimizar.
