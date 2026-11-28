@@ -44,7 +44,7 @@ def _hint(text: str) -> QLabel:
 class AiCopyDialog(QDialog):
     """Texto enxuto para colar no ChatGPT, Claude, Gemini…, com tokens e divisão em partes."""
 
-    def __init__(self, parent, markdown: str, settings: QSettings):
+    def __init__(self, parent, markdown: str, settings: QSettings, selection: bool = False):
         from .aitools import LIMITS, estimate_tokens, prepare
 
         super().__init__(parent)
@@ -55,6 +55,9 @@ class AiCopyDialog(QDialog):
         lay = QVBoxLayout(self)
         tokens = estimate_tokens(self.text)
         lay.addWidget(QLabel(tr("<b>Copiar o texto para colar no ChatGPT, Claude, Gemini…</b>")))
+        if selection:                       # deixa claro que é só o pedaço marcado, não o documento todo
+            lay.addWidget(anon_warning(tr("Só o trecho que você selecionou (não o documento inteiro). Para copiar "
+                                          "tudo, feche, clique no texto sem selecionar nada e abra de novo.")))
         lay.addWidget(_hint(tr("O Markinho <b>não usa IA nem gasta tokens</b> aqui: ele só prepara o texto (tira "
                             "imagens, comentários e marcas de página) e copia para a área de transferência. "
                             "Nada é enviado para a internet.")))

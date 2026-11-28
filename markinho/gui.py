@@ -1941,11 +1941,12 @@ class MainWindow(QMainWindow):
                                       QKeySequence.Delete)
         self.act_clear = menu_action(tr("Limpar a lista"), QStyle.SP_DialogResetButton, self.clear_all)
         self.act_copy = action(tr("Copiar"), QStyle.SP_DialogApplyButton, self.copy_current, tr("Ctrl+Shift+C"),
-                               tip=tr("Copiar o Markdown do documento aberto (Ctrl+Shift+C)"))
+                               tip=tr("Copiar o Markdown do documento aberto (Ctrl+Shift+C); com um trecho "
+                                      "selecionado, copia só o trecho"))
         self.act_copy.setIcon(draw_icon("copy"))
         self.act_ai = action(tr("Para IA"), QStyle.SP_MessageBoxQuestion, self.copy_for_ai, tr("Ctrl+Alt+C"),
                              tip=tr("Copiar para IA: texto enxuto, contagem de tokens e divisão em partes para "
-                                 "ChatGPT, Claude, Gemini…"))
+                                 "ChatGPT, Claude, Gemini… Com um trecho selecionado, só o trecho."))
         self.act_ai.setIcon(draw_icon("ai"))
         self.act_save = action(tr("Salvar .md"), QStyle.SP_DialogSaveButton, self.save_current, QKeySequence.Save,
                                tip=tr("Salvar o documento aberto como .md (Ctrl+S)"))
@@ -3200,9 +3201,21 @@ class MainWindow(QMainWindow):
         self._show_item(None)
         self._update_progress()
 
+    def _selected_text(self) -> str:
+        """Trecho selecionado no Markdown ou na Visualização ("" se nada estiver selecionado)."""
+        for w in (self.editor, getattr(self, "preview", None)):
+            try:
+                if w is not None and (w is self.editor or w.isVisible()) and w.textCursor().hasSelection():
+                    return w.textCursor().selectedText().replace("\u2029", "\n").replace("\u2028", "\n")
+            except AttributeError:
+                continue
+        return ""
+
     def copy_current(self) -> None:
-        QGuiApplication.clipboard().setText(self.editor.toPlainText())
-        self.statusBar().showMessage(tr("Markdown copiado para a área de transferência."), 3000)
+        part = self._selected_text()
+        QGuiApplication.clipboard().setText(part or self.editor.toPlainText())
+        self.statusBar().showMessage(tr("Trecho selecionado copiado.") if part
+                                     else tr("Markdown copiado para a área de transferência."), 3000)
 
     @staticmethod
     def _stem(e: Entry) -> str:
@@ -3475,7 +3488,8 @@ class MainWindow(QMainWindow):
         e = self._current()
         if e is None or e.result is None:
             return
-        AiCopyDialog(self, e.text, self.settings).exec()
+        part = self._selected_text()          # com um trecho selecionado, só ele
+        AiCopyDialog(self, part or e.text, self.settings, selection=bool(part)).exec()
 
     # ---------------- dividir, relatório, pasta monitorada ----------------
     def split_current(self) -> None:

@@ -244,10 +244,8 @@
 "Copiar chave": "Copiar clave",
 "Copiar configuração (Claude Desktop / Cursor)": "Copiar configuración (Claude Desktop / Cursor)",
 "Copiar configuração (VS Code)": "Copiar configuración (VS Code)",
-"Copiar o Markdown do documento aberto (Ctrl+Shift+C)": "Copiar el Markdown del documento abierto (Ctrl+Shift+C)",
 "Copiar o texto (Markdown) para colar em outro programa": "Copiar el texto (Markdown) para pegarlo en otro programa",
 "Copiar para IA": "Copiar para IA",
-"Copiar para IA: texto enxuto, contagem de tokens e divisão em partes para ChatGPT, Claude, Gemini…": "Copiar para IA: texto compacto, recuento de tokens y división en partes para ChatGPT, Claude, Gemini…",
 "Copiar parte selecionada": "Copiar parte seleccionada",
 "Copiar texto": "Copiar texto",
 "Copiar “Pix copia e cola”": "Copiar “Pix copia e cola”",
@@ -1127,5 +1125,9 @@
 "Solte arquivos na janela ou clique aqui para escolher": "Suelte archivos en la ventana o haga clic aquí para elegir",
 "Os arquivos estão na fila: clique aqui para converter (ou aperte F5)": "Los archivos están en la cola: haga clic aquí para convertir (o pulse F5)",
 "Aguarde: convertendo…": "Espere: convirtiendo…",
-"Pronto! Clique aqui para salvar, ou use Copiar / Exportar na barra de cima": "¡Listo! Haga clic aquí para guardar, o use Copiar / Exportar en la barra superior"
+"Pronto! Clique aqui para salvar, ou use Copiar / Exportar na barra de cima": "¡Listo! Haga clic aquí para guardar, o use Copiar / Exportar en la barra superior",
+"Só o trecho que você selecionou (não o documento inteiro). Para copiar tudo, feche, clique no texto sem selecionar nada e abra de novo.": "Solo el fragmento que seleccionó (no el documento entero). Para copiar todo, cierre, haga clic en el texto sin seleccionar nada y ábralo de nuevo.",
+"Trecho selecionado copiado.": "Fragmento seleccionado copiado.",
+"Copiar o Markdown do documento aberto (Ctrl+Shift+C); com um trecho selecionado, copia só o trecho": "Copiar el Markdown del documento abierto (Ctrl+Shift+C); con un fragmento seleccionado, copia solo ese fragmento",
+"Copiar para IA: texto enxuto, contagem de tokens e divisão em partes para ChatGPT, Claude, Gemini… Com um trecho selecionado, só o trecho.": "Copiar para IA: texto depurado, conteo de tokens y división en partes para ChatGPT, Claude, Gemini… Con un fragmento seleccionado, solo ese fragmento."
 }

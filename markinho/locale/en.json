@@ -244,10 +244,8 @@
 "Copiar chave": "Copy key",
 "Copiar configuração (Claude Desktop / Cursor)": "Copy configuration (Claude Desktop / Cursor)",
 "Copiar configuração (VS Code)": "Copy configuration (VS Code)",
-"Copiar o Markdown do documento aberto (Ctrl+Shift+C)": "Copy the Markdown of the open document (Ctrl+Shift+C)",
 "Copiar o texto (Markdown) para colar em outro programa": "Copy the text (Markdown) to paste into another program",
 "Copiar para IA": "Copy for AI",
-"Copiar para IA: texto enxuto, contagem de tokens e divisão em partes para ChatGPT, Claude, Gemini…": "Copy for AI: lean text, token count and splitting into parts for ChatGPT, Claude, Gemini…",
 "Copiar parte selecionada": "Copy selected part",
 "Copiar texto": "Copy text",
 "Copiar “Pix copia e cola”": "Copy “Pix copia e cola” code",
@@ -1127,5 +1125,9 @@
 "Solte arquivos na janela ou clique aqui para escolher": "Drop files on the window or click here to choose",
 "Os arquivos estão na fila: clique aqui para converter (ou aperte F5)": "The files are in the queue: click here to convert (or press F5)",
 "Aguarde: convertendo…": "Please wait: converting…",
-"Pronto! Clique aqui para salvar, ou use Copiar / Exportar na barra de cima": "Done! Click here to save, or use Copy / Export on the top bar"
+"Pronto! Clique aqui para salvar, ou use Copiar / Exportar na barra de cima": "Done! Click here to save, or use Copy / Export on the top bar",
+"Só o trecho que você selecionou (não o documento inteiro). Para copiar tudo, feche, clique no texto sem selecionar nada e abra de novo.": "Only the part you selected (not the whole document). To copy everything, close this, click in the text without selecting anything and open it again.",
+"Trecho selecionado copiado.": "Selected part copied.",
+"Copiar o Markdown do documento aberto (Ctrl+Shift+C); com um trecho selecionado, copia só o trecho": "Copy the Markdown of the open document (Ctrl+Shift+C); with a part selected, copies only that part",
+"Copiar para IA: texto enxuto, contagem de tokens e divisão em partes para ChatGPT, Claude, Gemini… Com um trecho selecionado, só o trecho.": "Copy for AI: lean text, token count and splitting into parts for ChatGPT, Claude, Gemini… With a part selected, only that part."
 }
