@@ -418,7 +418,6 @@
 "John MacFarlane": "John MacFarlane",
 "John MacFarlane e colaboradores": "John MacFarlane y colaboradores",
 "John Machin, Chris Withers": "John Machin, Chris Withers",
-"João da Silva\nJoão = [PESSOA A]\nSr. Silva = [PESSOA A]\nEmpresa Exemplo Ltda\nExemplo Ltda\nSão Paulo = [CIDADE]": "Juan Pérez\nJuan = [PERSONA A]\nSr. Pérez = [PERSONA A]\nEmpresa Ejemplo S.L.\nEjemplo S.L.\nMadrid = [CIUDAD]",
 "Juntar todos em um .md…": "Unir todos en un .md…",
 "Juntar todos em um único .md": "Unir todos en un único .md",
 "Largura": "Ancho",
@@ -454,7 +453,6 @@
 "Mais formatos… (EPUB, ODT, PowerPoint, LaTeX, pedaços para IA)": "Más formatos… (EPUB, ODT, PowerPoint, LaTeX, fragmentos para IA)",
 "Mais lento, para PDFs difíceis: tabelas complicadas, fórmulas e escaneados ruins (usa IA de layout na edição COMPLETA).": "Más lento, para PDF difíciles: tablas complicadas, fórmulas y escaneados malos (usa IA de diseño en la edición COMPLETA).",
 "Mais preciso (best), mais lento": "Más preciso (best), más lento",
-"Maiúsculas, minúsculas e acentos não fazem diferença: “joão”, “JOÃO” e “Joao” são iguais. Mas cada forma diferente precisa estar na lista: “João da Silva” não esconde “João”, “Sr. Silva” nem “J. Silva”. Escreva todas as variações, uma por linha (apelidos, sobrenome sozinho, siglas, plural, erros de digitação comuns). Para que variações virem o mesmo marcador, use “termo = substituto” (ex.: “João = [PESSOA A]”).": "Mayúsculas, minúsculas y acentos no importan: “josé”, “JOSÉ” y “Jose” son iguales. Pero cada forma distinta debe estar en la lista: “Juan Pérez” no oculta “Juan”, “Sr. Pérez” ni “J. Pérez”. Escriba todas las variantes, una por línea (apodos, apellido solo, siglas, plural, errores de escritura comunes). Para que las variantes se conviertan en el mismo marcador, use “término = sustituto” (p. ej.: “Juan = [PERSONA A]”).",
 "Manter cabeçalhos e rodapés": "Mantener encabezados y pies de página",
 "Manter o nome": "Mantener el nombre",
 "Marcador: [CPF], [E-MAIL], [PESSOA]": "Marcador: [CPF], [E-MAIL], [PESSOA]",
@@ -1129,5 +1127,12 @@
 "Só o trecho que você selecionou (não o documento inteiro). Para copiar tudo, feche, clique no texto sem selecionar nada e abra de novo.": "Solo el fragmento que seleccionó (no el documento entero). Para copiar todo, cierre, haga clic en el texto sin seleccionar nada y ábralo de nuevo.",
 "Trecho selecionado copiado.": "Fragmento seleccionado copiado.",
 "Copiar o Markdown do documento aberto (Ctrl+Shift+C); com um trecho selecionado, copia só o trecho": "Copiar el Markdown del documento abierto (Ctrl+Shift+C); con un fragmento seleccionado, copia solo ese fragmento",
-"Copiar para IA: texto enxuto, contagem de tokens e divisão em partes para ChatGPT, Claude, Gemini… Com um trecho selecionado, só o trecho.": "Copiar para IA: texto depurado, conteo de tokens y división en partes para ChatGPT, Claude, Gemini… Con un fragmento seleccionado, solo ese fragmento."
+"Copiar para IA: texto enxuto, contagem de tokens e divisão em partes para ChatGPT, Claude, Gemini… Com um trecho selecionado, só o trecho.": "Copiar para IA: texto depurado, conteo de tokens y división en partes para ChatGPT, Claude, Gemini… Con un fragmento seleccionado, solo ese fragmento.",
+"Maiúsculas, minúsculas e acentos não fazem diferença: “joão”, “JOÃO” e “Joao” são iguais. Mas cada forma diferente precisa estar na lista: “João da Silva” não esconde “João”, “Sr. Silva” nem “J. Silva”. Escreva todas as variações, uma por linha (apelidos, sobrenome sozinho, siglas, plural, erros de digitação comuns). Para que variações virem o mesmo marcador, use “termo = substituto” (ex.: “João = [PESSOA A]”). Para separar por tipo, crie rótulos: uma linha “[EMPRESA]” faz os termos de baixo virarem [EMPRESA 1], [EMPRESA 2]…; sem rótulo, viram [NOME 1], [NOME 2]…": "Mayúsculas, minúsculas y acentos no importan: “josé”, “JOSÉ” y “Jose” son iguales. Pero cada forma distinta debe estar en la lista: “Juan Pérez” no oculta “Juan”, “Sr. Pérez” ni “J. Pérez”. Escriba todas las variantes, una por línea (apodos, apellido solo, siglas, plural, errores de escritura comunes). Para que las variantes se conviertan en el mismo marcador, use “término = sustituto” (p. ej.: “Juan = [PERSONA A]”). Para separar por tipo, cree etiquetas: una línea “[EMPRESA]” hace que los términos de abajo pasen a ser [EMPRESA 1], [EMPRESA 2]…; sin etiqueta, pasan a ser [NOME 1], [NOME 2]…",
+"João da Silva\nJoão = [PESSOA A]\n[EMPRESA]\nEmpresa Exemplo Ltda\nOutra Empresa S.A.\n[LOCAL]\nFazenda Boa Vista": "Juan Pérez\nJuan = [PESSOA A]\n[EMPRESA]\nEmpresa Ejemplo S.L.\nOtra Empresa S.A.\n[LUGAR]\nFinca Buena Vista",
+"Novo rótulo…": "Nueva etiqueta…",
+"Cria uma categoria sua (ex.: EMPRESA, LOCAL, PROJETO). Os termos que você escrever embaixo dela viram [EMPRESA 1], [EMPRESA 2]…": "Crea una categoría propia (p. ej., EMPRESA, LUGAR, PROYECTO). Los términos que escriba debajo pasan a ser [EMPRESA 1], [EMPRESA 2]…",
+"Novo rótulo": "Nueva etiqueta",
+"Nome da categoria (ex.: EMPRESA, LOCAL, PROJETO, BANCO):": "Nombre de la categoría (p. ej., EMPRESA, LUGAR, PROYECTO, BANCO):",
+"Rótulos da lista: {0}": "Etiquetas de la lista: {0}"
 }

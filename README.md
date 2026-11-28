@@ -318,7 +318,7 @@ interrompidos**, ligado por padrão):
 | **Pasta monitorada** | Ao abrir o Markinho, converte o que chegou na pasta enquanto ele estava fechado e o que ficou pela metade; os arquivos que já estavam lá quando a monitoração começou continuam ignorados |
 | **Terminal** | `--retomar` (veja acima) |
 
-Como funciona: na pasta de saída fica um registro (`.markinho-lote.json`) com a **impressão digital
+Como funciona: na pasta de saída fica um registro oculto (`.markinho-lote.json`) com a **impressão digital
 (SHA-256)** de cada arquivo e das configurações usadas. Se o arquivo de origem ou as configurações mudarem,
 ele é convertido de novo. Os arquivos são gravados de forma **atômica** (primeiro num temporário, depois
 trocados): uma queda nunca deixa um arquivo pela metade. Por privacidade, o registro **não guarda o nome nem
@@ -649,7 +649,9 @@ Marque **Anonimizar dados pessoais** nas configurações (botão **Opções…**
   pseudonimização da LGPD (art. 13, § 4º): **guarde em local seguro, separada do documento**.
 - **Nomes**: assinaturas eletrônicas (“Assinado eletronicamente por…”) e nomes depois de pistas como
   Sr., Dra., réu, autor, paciente, nome: — cada nome encontrado é trocado no texto todo.
-- **Sua lista** de nomes, empresas e lugares (sem diferenciar maiúsculas e acentos; `termo = substituto`).
+- **Sua lista** de nomes, empresas e lugares (sem diferenciar maiúsculas e acentos; `termo = substituto`), com
+  **rótulos seus**: uma linha `[EMPRESA]` (ou o botão **Novo rótulo…**) faz os termos de baixo virarem
+  `[EMPRESA 1]`, `[EMPRESA 2]`…; sem rótulo, viram `[NOME 1]`, `[NOME 2]`…
 - **Metadados e imagens**: tira autor, datas, assunto e nome do arquivo do frontmatter; tira GPS/câmera
   das imagens sem recompactar; opção de não incluir imagens.
 - **Como trocar**: pseudônimo numerado (`[PESSOA 1]`, o mesmo dado sempre com o mesmo número),

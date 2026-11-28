@@ -16,6 +16,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 
@@ -153,3 +154,18 @@ class Manifest:
 
     def save(self) -> None:
         atomic_write(self.path, json.dumps({"markinho": _VERSION, "files": self.entries}, ensure_ascii=False, indent=1))
+        hide_file(self.path)
+
+
+def hide_file(path: Path) -> None:
+    """No Windows, marca o arquivo como oculto (no Linux e no Mac o ponto no começo do nome já esconde): o
+    registro do lote não aparece como “um arquivo a mais” na pasta de saída."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+
+        FILE_ATTRIBUTE_HIDDEN = 0x2
+        ctypes.windll.kernel32.SetFileAttributesW(str(path), FILE_ATTRIBUTE_HIDDEN)
+    except Exception:  # noqa: BLE001 — se não der para esconder, o arquivo continua funcionando
+        pass

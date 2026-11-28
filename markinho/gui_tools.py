@@ -952,10 +952,22 @@ class AnonDialog(QDialog):
         words = QGroupBox(tr("Sua lista: nomes, empresas, lugares… (um por linha)"))
         wl = QVBoxLayout(words)
         self.words = QPlainTextEdit(o.words)
-        self.words.setPlaceholderText(tr("João da Silva\nJoão = [PESSOA A]\nSr. Silva = [PESSOA A]\n"
-                                      "Empresa Exemplo Ltda\nExemplo Ltda\nSão Paulo = [CIDADE]"))
-        self.words.setFixedHeight(90)
+        self.words.setPlaceholderText(tr("João da Silva\nJoão = [PESSOA A]\n[EMPRESA]\nEmpresa Exemplo Ltda\n"
+                                      "Outra Empresa S.A.\n[LOCAL]\nFazenda Boa Vista"))
+        self.words.setFixedHeight(110)
         wl.addWidget(self.words)
+        lrow = QHBoxLayout()
+        b_label = QPushButton(tr("Novo rótulo…"))
+        b_label.setToolTip(tr("Cria uma categoria sua (ex.: EMPRESA, LOCAL, PROJETO). Os termos que você escrever "
+                              "embaixo dela viram [EMPRESA 1], [EMPRESA 2]…"))
+        b_label.clicked.connect(self._new_label)
+        lrow.addWidget(b_label)
+        self.labels_info = QLabel()
+        self.labels_info.setStyleSheet("color: palette(window-text); font-size: 12px;")
+        lrow.addWidget(self.labels_info, 1)
+        wl.addLayout(lrow)
+        self.words.textChanged.connect(self._show_labels)
+        self._show_labels()
         rules = QLabel(tr("<b>Como a lista funciona:</b> ") + LIST_HELP)
         rules.setWordWrap(True)
         rules.setStyleSheet("color: palette(window-text); font-size: 12px;")
@@ -1045,6 +1057,34 @@ class AnonDialog(QDialog):
         if rep.residual:
             text += "<br>⚠ " + rep.residual_summary()
         self.found.setText(text)
+
+    def _show_labels(self) -> None:
+        from .anonymize import list_labels
+
+        labels = list_labels(self.words.toPlainText())
+        self.labels_info.setText(tr("Rótulos da lista: {0}").format(", ".join(f"[{x} 1]" for x in labels))
+                                 if labels else "")
+
+    def _new_label(self, name: str | None = None) -> str:
+        """Pergunta o nome do rótulo e acrescenta “[RÓTULO]” no fim da lista, pronto para digitar os termos."""
+        from PySide6.QtGui import QTextCursor
+        from PySide6.QtWidgets import QInputDialog
+
+        from .anonymize import clean_label
+
+        if name is None:
+            name, ok = QInputDialog.getText(self, tr("Novo rótulo"),
+                                            tr("Nome da categoria (ex.: EMPRESA, LOCAL, PROJETO, BANCO):"))
+            if not ok:
+                return ""
+        label = clean_label(name)
+        if not label:
+            return ""
+        text = self.words.toPlainText().rstrip("\n")
+        self.words.setPlainText((text + "\n" if text else "") + f"[{label}]\n")
+        self.words.moveCursor(QTextCursor.End)
+        self.words.setFocus()
+        return label
 
     def _preview(self) -> None:
         text, _ = self.result_text()

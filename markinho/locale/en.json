@@ -418,7 +418,6 @@
 "John MacFarlane": "John MacFarlane",
 "John MacFarlane e colaboradores": "John MacFarlane and contributors",
 "John Machin, Chris Withers": "John Machin, Chris Withers",
-"João da Silva\nJoão = [PESSOA A]\nSr. Silva = [PESSOA A]\nEmpresa Exemplo Ltda\nExemplo Ltda\nSão Paulo = [CIDADE]": "John Smith\nJohn = [PERSON A]\nMr. Smith = [PERSON A]\nExample Company Ltd\nExample Ltd\nNew York = [CITY]",
 "Juntar todos em um .md…": "Merge all into one .md…",
 "Juntar todos em um único .md": "Merge all into a single .md",
 "Largura": "Width",
@@ -454,7 +453,6 @@
 "Mais formatos… (EPUB, ODT, PowerPoint, LaTeX, pedaços para IA)": "More formats… (EPUB, ODT, PowerPoint, LaTeX, AI chunks)",
 "Mais lento, para PDFs difíceis: tabelas complicadas, fórmulas e escaneados ruins (usa IA de layout na edição COMPLETA).": "Slower, for difficult PDFs: complicated tables, formulas and poor scans (uses layout AI in the COMPLETE edition).",
 "Mais preciso (best), mais lento": "More accurate (best), slower",
-"Maiúsculas, minúsculas e acentos não fazem diferença: “joão”, “JOÃO” e “Joao” são iguais. Mas cada forma diferente precisa estar na lista: “João da Silva” não esconde “João”, “Sr. Silva” nem “J. Silva”. Escreva todas as variações, uma por linha (apelidos, sobrenome sozinho, siglas, plural, erros de digitação comuns). Para que variações virem o mesmo marcador, use “termo = substituto” (ex.: “João = [PESSOA A]”).": "Upper case, lower case and accents make no difference: “john”, “JOHN” and “John” are the same. But each different form must be in the list: “John Smith” does not hide “John”, “Mr. Smith” or “J. Smith”. Write every variation, one per line (nicknames, surname alone, initials, plurals, common typos). To make variations become the same marker, use “term = replacement” (e.g. “John = [PERSON A]”).",
 "Manter cabeçalhos e rodapés": "Keep headers and footers",
 "Manter o nome": "Keep the name",
 "Marcador: [CPF], [E-MAIL], [PESSOA]": "Marker: [CPF], [E-MAIL], [PESSOA]",
@@ -1129,5 +1127,12 @@
 "Só o trecho que você selecionou (não o documento inteiro). Para copiar tudo, feche, clique no texto sem selecionar nada e abra de novo.": "Only the part you selected (not the whole document). To copy everything, close this, click in the text without selecting anything and open it again.",
 "Trecho selecionado copiado.": "Selected part copied.",
 "Copiar o Markdown do documento aberto (Ctrl+Shift+C); com um trecho selecionado, copia só o trecho": "Copy the Markdown of the open document (Ctrl+Shift+C); with a part selected, copies only that part",
-"Copiar para IA: texto enxuto, contagem de tokens e divisão em partes para ChatGPT, Claude, Gemini… Com um trecho selecionado, só o trecho.": "Copy for AI: lean text, token count and splitting into parts for ChatGPT, Claude, Gemini… With a part selected, only that part."
+"Copiar para IA: texto enxuto, contagem de tokens e divisão em partes para ChatGPT, Claude, Gemini… Com um trecho selecionado, só o trecho.": "Copy for AI: lean text, token count and splitting into parts for ChatGPT, Claude, Gemini… With a part selected, only that part.",
+"Maiúsculas, minúsculas e acentos não fazem diferença: “joão”, “JOÃO” e “Joao” são iguais. Mas cada forma diferente precisa estar na lista: “João da Silva” não esconde “João”, “Sr. Silva” nem “J. Silva”. Escreva todas as variações, uma por linha (apelidos, sobrenome sozinho, siglas, plural, erros de digitação comuns). Para que variações virem o mesmo marcador, use “termo = substituto” (ex.: “João = [PESSOA A]”). Para separar por tipo, crie rótulos: uma linha “[EMPRESA]” faz os termos de baixo virarem [EMPRESA 1], [EMPRESA 2]…; sem rótulo, viram [NOME 1], [NOME 2]…": "Upper case, lower case and accents make no difference: “john”, “JOHN” and “John” are the same. But each different form must be in the list: “John Smith” does not hide “John”, “Mr. Smith” or “J. Smith”. Write every variation, one per line (nicknames, surname alone, initials, plurals, common typos). To make variations become the same marker, use “term = replacement” (e.g. “John = [PERSON A]”). To separate by type, create labels: a line “[COMPANY]” makes the terms below it become [COMPANY 1], [COMPANY 2]…; without a label they become [NOME 1], [NOME 2]…",
+"João da Silva\nJoão = [PESSOA A]\n[EMPRESA]\nEmpresa Exemplo Ltda\nOutra Empresa S.A.\n[LOCAL]\nFazenda Boa Vista": "John Smith\nJohn = [PESSOA A]\n[COMPANY]\nExample Company Ltd\nOther Company Inc.\n[PLACE]\nGreen Valley Farm",
+"Novo rótulo…": "New label…",
+"Cria uma categoria sua (ex.: EMPRESA, LOCAL, PROJETO). Os termos que você escrever embaixo dela viram [EMPRESA 1], [EMPRESA 2]…": "Creates your own category (e.g. COMPANY, PLACE, PROJECT). The terms you write below it become [COMPANY 1], [COMPANY 2]…",
+"Novo rótulo": "New label",
+"Nome da categoria (ex.: EMPRESA, LOCAL, PROJETO, BANCO):": "Category name (e.g. COMPANY, PLACE, PROJECT, BANK):",
+"Rótulos da lista: {0}": "List labels: {0}"
 }

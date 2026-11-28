@@ -28,7 +28,9 @@ LIST_HELP = (tr("Maiúsculas, minúsculas e acentos não fazem diferença: “jo
              "Mas cada forma diferente precisa estar na lista: “João da Silva” não esconde “João”, "
              "“Sr. Silva” nem “J. Silva”. Escreva todas as variações, uma por linha (apelidos, sobrenome "
              "sozinho, siglas, plural, erros de digitação comuns). Para que variações virem o mesmo "
-             "marcador, use “termo = substituto” (ex.: “João = [PESSOA A]”)."))
+             "marcador, use “termo = substituto” (ex.: “João = [PESSOA A]”). Para separar por tipo, crie "
+             "rótulos: uma linha “[EMPRESA]” faz os termos de baixo virarem [EMPRESA 1], [EMPRESA 2]…; "
+             "sem rótulo, viram [NOME 1], [NOME 2]…"))
 
 # (id, rótulo na interface, marcador, ligado por padrão)
 KINDS: list[tuple[str, str, str, bool]] = [
@@ -293,17 +295,42 @@ def mask(kind: str, value: str) -> str:
     return "".join(out)
 
 
-def _word_list(text: str) -> list[tuple[str, str | None]]:
-    items: list[tuple[str, str | None]] = []
+_LABEL_LINE = re.compile(r"^\[[ \t]*(?P<label>[^\[\]\d=]{1,40}?)[ \t]*\]$")
+
+
+def clean_label(label: str) -> str:
+    """Rótulo criado pela pessoa: maiúsculas, sem colchetes nem números (“empresa” → “EMPRESA”)."""
+    label = re.sub(r"[\[\]\d=]", "", label or "").strip().upper()
+    return re.sub(r"\s+", " ", label)[:40]
+
+
+def _word_list(text: str) -> list[tuple[str, str | None, str]]:
+    """Linhas da lista → (termo, substituto fixo ou None, rótulo). Uma linha “[EMPRESA]” abre um rótulo novo:
+    os termos de baixo viram [EMPRESA 1], [EMPRESA 2]… (antes de qualquer rótulo, [NOME 1]…)."""
+    items: list[tuple[str, str | None, str]] = []
+    label = "NOME"
     for line in (text or "").splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
+        m = _LABEL_LINE.match(line)
+        if m:
+            label = clean_label(m.group("label")) or "NOME"
+            continue
         term, sep, sub = line.partition("=")
         term = term.strip()
         if len(term) >= 2:
-            items.append((term, sub.strip() if sep else None))
+            items.append((term, sub.strip() if sep else None, label))
     return sorted(items, key=lambda t: -len(t[0]))
+
+
+def list_labels(text: str) -> list[str]:
+    """Rótulos usados na lista, na ordem em que aparecem (para mostrar na janela)."""
+    out: list[str] = []
+    for _term, _sub, label in sorted(_word_list(text), key=lambda t: (text or "").find(t[0])):
+        if label not in out:
+            out.append(label)
+    return out
 
 
 def _term_re(term: str) -> re.Pattern:
@@ -340,12 +367,12 @@ def anonymize(md: str, opts: AnonOptions) -> tuple[str, AnonReport]:
     text = _PROTECT.sub(keep, md)
 
     # 1) lista do usuário (primeiro: o usuário sabe o que quer esconder)
-    for i, (term, sub) in enumerate(_word_list(opts.words)):
-        def repl_word(m: re.Match, sub=sub) -> str:
+    for i, (term, sub, label) in enumerate(_word_list(opts.words)):
+        def repl_word(m: re.Match, sub=sub, label=label) -> str:
             if sub:
                 rep.report.counts["lista"] += 1
                 return sub
-            return rep.token("lista", m.group(0), "NOME")
+            return rep.token("lista", m.group(0), label)
         text = _term_re(term).sub(repl_word, text)
 
     # 2) números e endereços
