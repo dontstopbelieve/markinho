@@ -22,11 +22,12 @@ def test_auto_prefers_native(tmp_path):
 
 
 def test_unavailable_engine_message(tmp_path):
-    f = tmp_path / "a.pdf"
-    f.write_bytes(b"%PDF-1.4")
+    """Motor não instalado não faz a conversão falhar: usa o automático e avisa (o aviso diz qual faltou)."""
     if not ENGINES["marker"].available()[0]:
-        with pytest.raises(ConversionError, match="pip install marker-pdf"):
-            convert(f, "marker")
+        src = Path(__file__).resolve().parent.parent / "exemplos" / "relatorio.pdf"
+        r = convert(src, "marker")
+        assert r.markdown.strip() and any("Marker" in w for w in r.warnings)
+        assert "pip install marker-pdf" in ENGINES["marker"].available()[1] + ENGINES["marker"].install_hint
 
 
 def test_fix_applied_and_raw_kept(tmp_path):
