@@ -262,3 +262,14 @@ def test_textos_explicam_cada_pacote():
     for pk in packs.PACKS:
         assert pk.need and pk.size_mb > 0 and pk.editions
     assert "espanhol" in PACKS_BY_ID["idiomas"].what and "por+spa" in PACKS_BY_ID["idiomas"].what
+
+
+def test_pacote_ignora_rascunhos_do_download(env):
+    tmp, src = env
+    cache = src / "docling" / FOLDER / ".cache" / "huggingface"
+    cache.mkdir(parents=True)
+    (cache / "arvore.json").write_text("{}")
+    z = build_pack(PACKS_BY_ID["formulas"], src, tmp / "limpo", "1")
+    import zipfile as _z
+
+    assert not any(".cache" in n for n in _z.ZipFile(z).namelist())

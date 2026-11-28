@@ -319,7 +319,8 @@ def embed_models() -> None:
     src = build_models()
     dest = exe_dir() / "models" / "docling"
     shutil.rmtree(dest, ignore_errors=True)
-    shutil.copytree(src, dest)
+    # sem as pastas de rascunho do download (.cache/huggingface…): não servem depois de baixado
+    shutil.copytree(src, dest, ignore=shutil.ignore_patterns(".cache", ".locks", "*.lock", "*.incomplete"))
     size = sum(f.stat().st_size for f in dest.rglob("*") if f.is_file()) / 1e6
     print(f"modelos do Docling embutidos ({size:.0f} MB) em {dest}")
 

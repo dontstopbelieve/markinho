@@ -282,7 +282,9 @@ def build_pack(pack: Pack, models: Path, out_dir: Path, version: str = PACKS_VER
         if src.is_file():
             found = [src]
         elif _has(src):
-            found = sorted(p for p in src.rglob("*") if p.is_file())
+            # sem rascunhos do download (.cache/huggingface, .locks…): só os arquivos do modelo
+            found = sorted(p for p in src.rglob("*") if p.is_file()
+                           and not any(part.startswith(".") for part in p.relative_to(src).parts))
         else:
             raise PackError(tr("modelo não encontrado: {0}").format(src))
         for f in found:
