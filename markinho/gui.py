@@ -1865,6 +1865,7 @@ class MainWindow(QMainWindow):
         self._update_buttons()
 
     DEFAULT_MODE = "simple"          # modo da primeira abertura (os testes antigos usam o Completo)
+    DEFAULT_AUTO_CONVERT = True        # “Converter ao adicionar” na primeira vez
 
     # ---------------- construção da interface ----------------
     def _build_ui(self) -> None:
@@ -1919,7 +1920,8 @@ class MainWindow(QMainWindow):
                                  tip=tr("Parar as conversões (Esc): as que estão em andamento param na próxima página "
                                      "e voltam para a fila"))
         self.act_auto = QCheckBox(tr("Converter ao adicionar"))
-        self.act_auto.setChecked(self.settings.value("queue/auto", False, type=bool))
+        # ligado por padrão: o arquivo converte assim que entra (como no modo Simples); dá para desligar
+        self.act_auto.setChecked(self.settings.value("queue/auto", self.DEFAULT_AUTO_CONVERT, type=bool))
         self.act_auto.setToolTip(tr("Ligado: converte assim que o arquivo entra. Desligado: acumula na fila e "
                                  "converte quando você clicar em “Converter” (F5)."))
         self.act_auto.toggled.connect(lambda v: self.settings.setValue("queue/auto", v))
@@ -2291,6 +2293,8 @@ class MainWindow(QMainWindow):
         self.steps.setTextFormat(Qt.RichText)
         self.steps.setAlignment(Qt.AlignCenter)
         self.steps.setStyleSheet("padding: 4px; font-size: 13px;")
+        self.steps.setTextInteractionFlags(Qt.LinksAccessibleByMouse | Qt.LinksAccessibleByKeyboard)
+        self.steps.linkActivated.connect(self._step_clicked)     # a etapa atual é um botão: faz o que ela diz
         cwrap = QWidget()
         cwl = QVBoxLayout(cwrap)
         cwl.setContentsMargins(6, 6, 6, 0)
@@ -3120,16 +3124,38 @@ class MainWindow(QMainWindow):
         step = 1 if not entries else 2 if (pending or busy or not done) else 3
         names = [tr("① Adicionar documentos"), tr("② Converter") + (tr(" (em andamento…)") if busy else ""),
                  tr("③ Salvar, copiar ou exportar")]
+        # o que fazer agora, escrito; na etapa atual, o nome vira botão (clique = faz a etapa)
+        hint = {1: tr("Solte arquivos na janela ou clique aqui para escolher"),
+                2: tr("Os arquivos estão na fila: clique aqui para converter (ou aperte F5)") if not busy
+                else tr("Aguarde: convertendo…"),
+                3: tr("Pronto! Clique aqui para salvar, ou use Copiar / Exportar na barra de cima")}[step]
+        actions = {1: "add", 2: "convert", 3: "save"}
         parts = []
         for k, n in enumerate(names, 1):
             if k == step:
-                parts.append(f"<span style='background:#1565C0;color:white;padding:2px 8px;'><b>&nbsp;{n}&nbsp;</b></span>")
+                label = ("▶ " + n) if (k == 2 and not busy) else n
+                box = f"<span style='background:#1565C0;color:white;'><b>&nbsp;{label}&nbsp;</b></span>"
+                if not (k == 2 and busy):
+                    box = f"<a href='{actions[k]}' style='text-decoration:none;'>{box}</a>"
+                parts.append(box)
             elif k < step:
                 parts.append(f"<span style='color:#2e7d32'>✓ {n}</span>")
             else:
                 parts.append(f"<span style='color:gray'>{n}</span>")
-        self.steps.setText("&nbsp;&nbsp;→&nbsp;&nbsp;".join(parts))
+        self.steps.setText("&nbsp;&nbsp;→&nbsp;&nbsp;".join(parts)
+                           + f"<br><span style='color:palette(window-text);font-size:12px;'>{hint}</span>")
+        self.steps.setToolTip(hint)
         self.center_stack.setCurrentIndex(0 if not entries else 1)
+
+    def _step_clicked(self, what: str) -> None:
+        """Clique na etapa atual da barra ① → ② → ③."""
+        if what == "add":
+            self.add_files_dialog()
+        elif what == "convert":
+            self.convert_queue(False)
+        elif what == "save":
+            done = self._done_entries()
+            (self.save_all if len(done) > 1 else self.save_current)()
 
     def _set_primary(self, act, on: bool) -> None:
         w_ = self._toolbar.widgetForAction(act) if hasattr(self, "_toolbar") else None

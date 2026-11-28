@@ -20,4 +20,6 @@ def _janela_no_modo_completo(monkeypatch):
     from markinho.gui import MainWindow
 
     monkeypatch.setattr(MainWindow, "DEFAULT_MODE", "complete")
+    monkeypatch.setattr(MainWindow, "DEFAULT_AUTO_CONVERT", False)    # testes da fila contam com ela parada
+    QSettings("Markinho", "Markinho").remove("queue/auto")
     QSettings("Markinho", "Markinho").remove("ui/mode")      # o último modo não passa de um teste para outro
