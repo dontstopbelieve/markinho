@@ -204,11 +204,20 @@ def convert(path: str | Path, engine: str = "auto", engine_options: dict[str, An
     """
     from .engines import ENGINES, pick_engine
 
+    missing = None
+    if engine != "auto" and engine in ENGINES and not ENGINES[engine].available()[0]:
+        # motor escolhido não instalado (ex.: PyMuPDF4LLM, que não vem no Markinho): usa o melhor disponível
+        missing, engine, engine_options = ENGINES[engine].name, "auto", None
     if fallback is None:
         fallback = engine == "auto"
     t_prog, t_cancel, t_part = _PROGRESS.set(progress), _CANCEL.set(cancel), _PARTIAL.set(partial)
     try:
-        return _convert_with_fallback(path, engine, engine_options, fix, output, fallback)
+        result = _convert_with_fallback(path, engine, engine_options, fix, output, fallback)
+        if missing:
+            result.warnings.insert(0, tr("O motor {0} não está instalado; o arquivo foi convertido com {1}. Para "
+                                         "não ver mais este aviso, escolha outro motor nas configurações.")
+                                   .format(missing, result.converter))
+        return result
     finally:
         _PROGRESS.reset(t_prog)
         _CANCEL.reset(t_cancel)

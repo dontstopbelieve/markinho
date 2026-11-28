@@ -568,6 +568,10 @@ class SettingsPanel(QWidget):
             idx = self.engine.count() - 1
             self.engine.setItemData(idx, eng.description + ("" if ok else tr('\n\nInstalar: {0}').format(eng.install_hint)),
                                     Qt.ToolTipRole)
+            if not ok:                      # aparece (para saber que existe), mas não pode ser escolhido
+                item = self.engine.model().item(idx)
+                if item is not None:
+                    item.setEnabled(False)
         bl.addWidget(self.engine)
         self.engine_info = QLabel()
         self.engine_info.setWordWrap(True)
@@ -776,6 +780,9 @@ class SettingsPanel(QWidget):
         lay.addStretch()
 
         saved = self.settings.value("engine", AUTO)
+        if saved in ENGINES and not ENGINES[saved].available()[0]:
+            saved = AUTO                    # motor de antes não está instalado nesta edição: volta ao automático
+            self.settings.setValue("engine", AUTO)
         i = self.engine.findData(saved)
         self.engine.setCurrentIndex(max(i, 0))
         self.engine.currentIndexChanged.connect(self._engine_selected)
