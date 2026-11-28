@@ -4023,7 +4023,9 @@ def apply_theme(theme: str) -> None:
     app.setStyleSheet(stylesheet(True))
 
 
-def main() -> int:
+def main(listener=None, early: dict | None = None, splash=None, claimed: bool = False) -> int:
+    """`claimed`: a instância única já foi garantida antes de carregar este módulo (__main__.start_gui), com
+    `early` guardando o que chegou enquanto carregava; `splash` é a telinha “Abrindo o Markinho…”."""
     from .models import setup_environment
 
     setup_environment()
@@ -4050,8 +4052,11 @@ def main() -> int:
         win.raise_()
         win.activateWindow()
 
-    listener = None
-    if os.environ.get("MARKINHO_MULTI") != "1":      # MARKINHO_MULTI=1 permite várias janelas
+    if claimed:
+        if early is not None:
+            pending.extend(early.get("pending", []))
+            early["cb"] = receive            # o que chegar daqui em diante vai direto para a janela
+    elif os.environ.get("MARKINHO_MULTI") != "1":      # MARKINHO_MULTI=1 permite várias janelas
         from .single import claim
 
         listener = claim("gui", paths, receive)
@@ -4066,11 +4071,16 @@ def main() -> int:
     if not settings.value("ui/first_run_done", False, type=bool) and os.environ.get("MARKINHO_SKIP_WELCOME") != "1":
         from .gui_tools import FirstRunDialog
 
+        if splash is not None:
+            splash.close()
+            splash = None
         FirstRunDialog(None, settings).exec()          # antes da janela: o painel já abre com as escolhas
     win = MainWindow()
     holder["win"] = win
     win._single = listener
     win.show()
+    if splash is not None:
+        splash.finish(win)
     if paths or pending:
         win.add_paths(paths + pending)
     return app.exec()

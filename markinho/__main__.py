@@ -456,10 +456,7 @@ def main() -> int:
 
         return run()
     if not argv or "--gui" in argv:
-        from .gui import main as gui_main
-
-        sys.argv = [sys.argv[0]] + [a for a in argv if a != "--gui"]
-        return gui_main()
+        return start_gui([a for a in argv if a != "--gui"])
     return cli(argv)
 
 
@@ -472,9 +469,55 @@ def gui_entry() -> int:
         from .quick import main as quick_main
 
         return quick_main([a for a in sys.argv[2:] if not a.startswith("-")], QUICK_FLAGS[sys.argv[1]])
+    return start_gui(sys.argv[1:])
+
+
+def start_gui(argv: list[str]) -> int:
+    """Abre a janela com o mínimo carregado primeiro: (1) toma a “vaga” de instância única — um segundo clique
+    enquanto o Markinho ainda carrega só traz esta janela para a frente, em vez de abrir outra; (2) mostra na
+    hora uma telinha “Abrindo o Markinho…”; (3) só então carrega o resto do programa."""
+    import os
+    from pathlib import Path
+
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication.instance() or QApplication([sys.argv[0], *argv])
+    app.setApplicationName("Markinho")
+    app.setOrganizationName("Markinho")
+    paths = [a for a in argv if not a.startswith("-")]
+    early: dict = {"cb": None, "pending": []}
+
+    def on_paths(new: list[str]) -> None:
+        if early["cb"] is not None:
+            early["cb"](new)
+        else:
+            early["pending"].extend(new)
+
+    listener = None
+    if os.environ.get("MARKINHO_MULTI") != "1":
+        from .single import claim
+
+        listener = claim("gui", paths, on_paths)
+        if listener is None:          # já estava abrindo/aberto: os arquivos (ou só o clique) foram para lá
+            return 0
+    splash = None
+    if os.environ.get("QT_QPA_PLATFORM") != "offscreen":
+        from PySide6.QtCore import Qt
+        from PySide6.QtGui import QPixmap
+        from PySide6.QtWidgets import QSplashScreen
+
+        icon = Path(__file__).resolve().parent / "resources" / "markinho.png"
+        pix = QPixmap(str(icon)) if icon.is_file() else QPixmap(256, 256)
+        if not pix.isNull():
+            pix = pix.scaled(220, 220, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        splash = QSplashScreen(pix)
+        splash.showMessage(tr("Abrindo o Markinho…"), Qt.AlignBottom | Qt.AlignHCenter)
+        splash.show()
+        app.processEvents()
     from .gui import main as gui_main
 
-    return gui_main()
+    sys.argv = [sys.argv[0], *argv]
+    return gui_main(listener=listener, early=early, splash=splash, claimed=True)
 
 
 if __name__ == "__main__":

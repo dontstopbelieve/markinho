@@ -1135,5 +1135,6 @@
 "Nome da categoria (ex.: EMPRESA, LOCAL, PROJETO, BANCO):": "Category name (e.g. COMPANY, PLACE, PROJECT, BANK):",
 "Rótulos da lista: {0}": "List labels: {0}",
 "lote: {0} convertido(s), {1} pulado(s) sem mudanças, {2} com erro": "batch: {0} converted, {1} skipped (unchanged), {2} with errors",
-"o registro do lote ficou guardado para retomar: rode o mesmo comando de novo": "the batch record was kept so it can resume: run the same command again"
+"o registro do lote ficou guardado para retomar: rode o mesmo comando de novo": "the batch record was kept so it can resume: run the same command again",
+"Abrindo o Markinho…": "Opening Markinho…"
 }

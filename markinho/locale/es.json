@@ -1135,5 +1135,6 @@
 "Nome da categoria (ex.: EMPRESA, LOCAL, PROJETO, BANCO):": "Nombre de la categoría (p. ej., EMPRESA, LUGAR, PROYECTO, BANCO):",
 "Rótulos da lista: {0}": "Etiquetas de la lista: {0}",
 "lote: {0} convertido(s), {1} pulado(s) sem mudanças, {2} com erro": "lote: {0} convertido(s), {1} omitido(s) sin cambios, {2} con error",
-"o registro do lote ficou guardado para retomar: rode o mesmo comando de novo": "el registro del lote quedó guardado para reanudar: ejecute el mismo comando de nuevo"
+"o registro do lote ficou guardado para retomar: rode o mesmo comando de novo": "el registro del lote quedó guardado para reanudar: ejecute el mismo comando de nuevo",
+"Abrindo o Markinho…": "Abriendo Markinho…"
 }
